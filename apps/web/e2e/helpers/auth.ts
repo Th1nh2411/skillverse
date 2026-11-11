@@ -30,12 +30,19 @@ export async function loginAs(page: Page, handle: SeedHandle): Promise<void> {
   const tried: string[] = [];
   for (const p of DEV_LOGIN_PATHS) {
     // page.request dùng chung cookie jar với BrowserContext → cookie phiên áp dụng cho trang.
-    const res = await page.request.post(p, {
-      data: { handle },
-      headers: { "content-type": "application/json" },
-      maxRedirects: 0,
-      failOnStatusCode: false,
-    });
+    const post = () =>
+      page.request.post(p, {
+        data: { handle },
+        headers: { "content-type": "application/json" },
+        maxRedirects: 0,
+        failOnStatusCode: false,
+      });
+    let res = await post();
+    // next dev có thể trả 500 thoáng qua khi đang biên dịch lại file người khác vừa sửa → thử lại.
+    for (let i = 0; i < 3 && res.status() >= 500; i++) {
+      await page.waitForTimeout(3000);
+      res = await post();
+    }
     tried.push(`${p} → ${res.status()}`);
     const isJson = (res.headers()["content-type"] ?? "").includes("application/json");
     if ((res.status() === 404 && !isJson) || res.status() === 405) continue;

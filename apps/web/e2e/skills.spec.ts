@@ -27,17 +27,20 @@ test.describe("Cây kỹ năng", () => {
   });
 
   test("trạng thái nút đọc được bằng trình đọc màn hình", async ({ page }) => {
-    // Trạng thái không chỉ bằng màu: tên truy cập của nút phải chứa trạng thái
-    await expect(clickable(page, /Sinh tồn cơ bản.*Đã đạt|Đã đạt.*Sinh tồn cơ bản/).first()).toBeVisible();
-    await expect(clickable(page, /Lửa bằng que.*Đang luyện|Đang luyện.*Lửa bằng que/).first()).toBeVisible();
-    await expect(clickable(page, /Sống sót 72 giờ.*Chưa mở|Chưa mở.*Sống sót 72 giờ/).first()).toBeVisible();
+    // Trạng thái không chỉ bằng màu: tên truy cập của nút phải chứa cấp hiện tại / "chưa mở"
+    await expect(clickable(page, /Sinh tồn cơ bản.*(cấp 5|đã đạt)/i).first()).toBeVisible();
+    await expect(clickable(page, /Lửa bằng que.*(cấp 3|đang luyện)/i).first()).toBeVisible();
+    await expect(clickable(page, /Sống sót 72 giờ.*chưa mở/i).first()).toBeVisible();
   });
 
   test("chọn nút đang luyện thấy yêu cầu cấp kế tiếp", async ({ page }) => {
     await clickable(page, /Lửa bằng que/).first().click();
     await expect(page.getByText(/Yêu cầu lên cấp 4|cấp 4/).first()).toBeVisible();
     await expect(page.getByText("Lửa thành ngọn dưới 5 phút, video liên tục")).toBeVisible();
-    await expect(clickable(page, /Đăng bằng chứng/).first()).toBeVisible();
+    // SKILL.md: tên hành động thống nhất "Gửi xác thực"
+    const cta = clickable(page, /Gửi xác thực|Đăng bằng chứng/).first();
+    await expect(cta).toBeVisible();
+    expect(await cta.getAttribute("href"), "Không đưa dữ liệu cá nhân lên URL").not.toMatch(/user|email/i);
   });
 
   test("danh mục không tồn tại trả 404", async ({ page }) => {
@@ -75,15 +78,15 @@ test.describe("Chi tiết kỹ năng", () => {
   });
 
   test("hành động chính là thử lên cấp kế tiếp", async ({ page }) => {
-    await expect(clickable(page, /Thử lên cấp 4|Lên cấp 4|Đăng bằng chứng/).first()).toBeVisible();
+    await expect(clickable(page, /Thử lên cấp 4|Lên cấp 4|Gửi xác thực|Đăng bằng chứng/).first()).toBeVisible();
   });
 
   test("kỹ năng rủi ro cao có cảnh báo gọn", async ({ page }) => {
-    await expect(page.getByText(/rủi ro|nguy hiểm|an toàn/i).first()).toBeVisible();
+    await expect(page.getByText(/Rủi ro cao/).first()).toBeVisible();
   });
 
   test("luật duyệt nằm sau nút thông tin (ⓘ), không hiện sẵn", async ({ page }) => {
-    const info = page.getByRole("button", { name: /Cách hoạt động|Thông tin|Giải thích/ });
+    const info = page.getByRole("button", { name: /^Cách |Thông tin|Giải thích/ });
     test.skip((await info.count()) === 0, "Chưa có nút ⓘ trên màn chi tiết");
     await info.first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
