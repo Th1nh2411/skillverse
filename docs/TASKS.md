@@ -78,12 +78,12 @@ Màn: Đăng bằng chứng (Proof.html), Duyệt (Review.html), Lên cấp (Lev
 Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối giản cho biên tập viên, Hồ sơ người khác (PeerProfile.html) + trao đổi kỹ năng + nhắn tin.
 
 ### domain
-- [~] (domain) D3.1 Nhiệm vụ ngày: `getDailyQuests(userId, date)` (định nghĩa từ `app_config.daily_quests`, tạo dòng daily_quests khi thiếu), `progressQuest`, chuỗi ngày (streak) ; XP quest_done qua xp_ledger + test
-- [~] (domain) D3.2 Feed: `getHomeFeed(userId, cursor)` (bài lên cấp + bài đăng của người/kỹ năng đang theo dõi, rồi phổ biến), `reactToPost` (like/cheer, cập nhật like_count cùng transaction), `commentOnPost`, `createTextPost` + test
-- [~] (domain) D3.3 Thử thách: `getActiveChallenges`, `joinChallenge` (gắn proof), `getPendingProofsForCommunity` (chờ duyệt, ẩn danh), đấu 1v1: `createDuel`, `voteDuel` (1 phiếu/người, không tự bầu mình, trước vote_ends_at), `closeDuels` (cron; XP challenge_won) + test
-- [~] (domain) D3.4 Báo cáo + xử phạt: `createReport` (proof/user/review/post/skill), `listReports` (biên tập), `resolveReport` (confirmed/dismissed); xác nhận gian lận với proof đã đạt → `sanctions(level_revoked, proof_id)`, hạ level QUA `finalizeProof` (nhánh thu hồi — xem DECISIONS D40), xp_ledger âm (revoked), −15 uy tín người đã duyệt đạt (approved_fraud), không xóa bản ghi; `sanctionUser` (warning/review_ban/post_ban/suspension có hạn) + test
-- [~] (domain) D3.5 Hồ sơ người khác & xã hội: `follow/unfollow`, `proposeSwap` / `respondSwap` / `rateSwap`, nhắn tin `getOrCreateThread`, `sendMessage`, `listThreads`, `listMessages` (chỉ 2 thành viên thread; người bị post_ban/suspension không gửi được) + test
-- [~] (domain) D3.6 `weeklyReputationRecovery` (+1 mỗi tuần không vi phạm khi < `reviewer_min_reputation`, idempotent theo tuần) + test
+- [x] (domain) D3.1 Nhiệm vụ ngày: `getDailyQuests(userId, date)` (định nghĩa từ `app_config.daily_quests`, tạo dòng daily_quests khi thiếu), `progressQuest`, chuỗi ngày (streak) ; XP quest_done qua xp_ledger + test
+- [x] (domain) D3.2 Feed: `getHomeFeed(userId, cursor)` (bài lên cấp + bài đăng của người/kỹ năng đang theo dõi, rồi phổ biến), `reactToPost` (like/cheer, cập nhật like_count cùng transaction), `commentOnPost`, `createTextPost` + test
+- [x] (domain) D3.3 Thử thách: `getActiveChallenges`, `joinChallenge` (gắn proof), `getPendingProofsForCommunity` (chờ duyệt, ẩn danh), đấu 1v1: `createDuel`, `voteDuel` (1 phiếu/người, không tự bầu mình, trước vote_ends_at), `closeDuels` (cron; XP challenge_won) + test
+- [x] (domain) D3.4 Báo cáo + xử phạt: `createReport` (proof/user/review/post/skill), `listReports` (biên tập), `resolveReport` (confirmed/dismissed); xác nhận gian lận với proof đã đạt → `sanctions(level_revoked, proof_id)`, hạ level QUA `finalizeProof` (nhánh thu hồi — xem DECISIONS D40), xp_ledger âm (revoked), −15 uy tín người đã duyệt đạt (approved_fraud), không xóa bản ghi; `sanctionUser` (warning/review_ban/post_ban/suspension có hạn) + test
+- [x] (domain) D3.5 Hồ sơ người khác & xã hội: `follow/unfollow`, `proposeSwap` / `respondSwap` / `rateSwap`, nhắn tin `getOrCreateThread`, `sendMessage`, `listThreads`, `listMessages` (chỉ 2 thành viên thread; người bị post_ban/suspension không gửi được) + test
+- [x] (domain) D3.6 `weeklyReputationRecovery` (+1 mỗi tuần không vi phạm khi < `reviewer_min_reputation`, idempotent theo tuần) + test
 
 ### api
 - [x] (api) A3.1 Router: `home.quests`, `home.feed`, `post.react`, `post.comment`, `post.create`
