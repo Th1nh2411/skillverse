@@ -16,7 +16,7 @@ Màn: Onboarding, Hồ sơ (Main.html), Cây kỹ năng, Chi tiết kỹ năng, 
 - [x] (domain) D1.4 Khám phá: `searchSkills`, `rarestSkills`, `trendingSkills` (tăng trưởng proofs/posts 7 ngày so với 7 ngày trước), `nearbyPeople` (cùng home_cell, chỉ share_location=true; không lộ vị trí) + test
 - [x] (domain) D1.5 Hồ sơ: `getProfile(db, {handle | userId, viewerId})` (cấp tổng, XP tiến độ, thống kê: số kỹ năng, số huy hiệu hiếm, số thử thách; kỹ năng nổi bật kèm độ hiếm + số người đã xác thực + trạng thái chờ duyệt) + test
 - [x] (domain) D1.6 Onboarding: `getOnboardingOptions`, `completeOnboarding(db, {userId, skillIds (≥3), selfLevels (chỉ gợi ý, KHÔNG ghi level)})` → tạo user_skills level 0 (nếu chưa có), skill_follows, đặt onboarded_at, trả thử thách đầu tiên gợi ý; Zod schema tương ứng trong packages/validation + test
-- [~] (domain) D1.7 (nếu còn thời gian) Bắt đầu lõi giai đoạn 2: `submitProof`, `assignReviewers`, `finalizeProof` + test (xem DATA_MODEL.md mục 3–5)
+- [x] (domain) D1.7 (nếu còn thời gian) Bắt đầu lõi giai đoạn 2: `submitProof`, `assignReviewers`, `finalizeProof` + test (xem DATA_MODEL.md mục 3–5)
 
 ### api
 - [x] (api) A1.1 Auth.js v5 (`next-auth@5 beta` đã cài): Google + email magic link (nodemailer; EMAIL_SERVER trống → in link ra console), adapter tự viết trên model User/AuthAccount/AuthSession/AuthVerificationToken, session strategy database. Tạo handle tự động khi tạo user.
@@ -28,8 +28,8 @@ Màn: Onboarding, Hồ sơ (Main.html), Cây kỹ năng, Chi tiết kỹ năng, 
 
 ### ui
 - [x] (ui) U1.1 Đọc SKILL.md skillverse-ui + skill frontend-design. Tinh chỉnh token (rừng đêm, WCAG AA), thành phần nền: Button, IconButton (aria-label), InfoSheet (ⓘ → bottom sheet), **LevelPatch** (huy hiệu vải thêu, hình theo danh mục, chỉ thêu theo độ hiếm), ProgressBar, Avatar chữ cái, EmptyState.
-- [~] (ui) U1.2 Màn Đăng nhập (`/login`: Google + email magic link + đăng nhập dev khi bật) và Onboarding (`/onboarding`)
-- [ ] U1.3 Hồ sơ của tôi (`/profile`, Main.html)
+- [x] (ui) U1.2 Màn Đăng nhập (`/login`: Google + email magic link + đăng nhập dev khi bật) và Onboarding (`/onboarding`)
+- [~] (ui) U1.3 Hồ sơ của tôi (`/profile`, Main.html)
 - [ ] U1.4 Cây kỹ năng (`/skills/tree/[category]`) — đường mòn bản đồ
 - [ ] U1.5 Chi tiết kỹ năng (`/skills/[slug]`)
 - [ ] U1.6 Khám phá (`/discover`). Mỗi màn: chụp Playwright 360/390px, so mockup, tự soi theo "Những thứ cần sửa" + "Ít chữ". Ảnh lưu `apps/web/screenshots/` (không commit thư mục này nếu nặng).

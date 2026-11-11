@@ -8,3 +8,4 @@ export * from "./skills";
 export * from "./discover";
 export * from "./profile";
 export * from "./onboarding";
+export * from "./proofs";
