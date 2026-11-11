@@ -1,0 +1,40 @@
+# Gọi tác vụ định kỳ của SkillVerse (thay cho hàng đợi/BullMQ trên bản demo miễn phí).
+# Cần cấu hình trong repo GitHub:
+#   - Secret   CRON_SECRET : trùng biến CRON_SECRET trên Vercel
+#   - Variable APP_URL     : URL gốc của bản triển khai, vd. https://skillverse-demo.vercel.app
+name: cron
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: skillverse-cron
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/cron
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Thiếu APP_URL (variable) hoặc CRON_SECRET (secret) - bỏ qua."
+            exit 0
+          fi
+          status=$(curl -sS -o response.json -w "%{http_code}" \
+            --retry 2 --retry-delay 5 --max-time 90 \
+            -X POST "${APP_URL%/}/api/cron" \
+            -H "Authorization: Bearer ${CRON_SECRET}")
+          cat response.json; echo
+          if [ "$status" != "200" ]; then
+            echo "::error::/api/cron trả về HTTP $status"
+            exit 1
+          fi
