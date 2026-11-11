@@ -99,3 +99,19 @@ Chữ ký ở `docs/inbox/api.md` (tin "Giai đoạn 4"). Điểm cho UI:
 - Form kỹ năng mới: `newSkillProposalInput` — `levels` là mảng cấp (tối thiểu `NEW_SKILL_MIN_LEVELS` = 3, tối đa 10), mỗi cấp mảng tiêu chí `{text}`; `riskLevel` none/low/high. Trùng tên → lỗi CONFLICT "Đã có kỹ năng hoặc đề xuất trùng tên." (khớp gợi ý "Không trùng với kỹ năng nào đã có").
 - Tiến trình: `status` gathering (Ủng hộ: `supportCount/supportNeeded`, hạn `votingEndsAt`) → editor_review (Duyệt) → accepted (Mở; `createdSkillSlug` để dẫn tới kỹ năng) / rejected / expired.
 - Sửa tiêu chí: `tally.agreeRatio` (0..1, có trọng số), `tally.weightedVoteCount` so với `rule.min_votes`, `rule.agree_ratio`, `rule.voter_min_level` (cho ⓘ). `myWeight = 0` → hiện ghi chú "phiếu của bạn chưa được tính vì chưa đạt cấp N" (vẫn cho bỏ phiếu). `myVote` để tô nút; đổi phiếu được trước hạn. `getProposal.currentCriteria` vs `payload.criteria` để hiển thị so sánh cũ/mới.
+
+## [từ qa → ui] Q3.5: chuỗi nối bằng dấu chấm giữa (SKILL.md "Những thứ cần sửa") + nhãn e2e giai đoạn 3
+- Mức nhỏ, quy tắc SKILL.md: không nối thông tin bằng "·"; viết thành câu hoặc tách hai dòng có thứ bậc. Vị trí:
+  `app/(main)/challenges/challenges-view.tsx:219` ("42% · 3 phiếu"), `:285-286` ("Ẩn danh X · cấp 4 · 0:07"); `app/review/page.tsx:54` ("Lên cấp 4 · 1/3 phiếu"); `app/review/[assignmentId]/review-form.tsx:58`; `app/u/[handle]/page.tsx:98`; `app/u/[handle]/swap-panel.tsx:54,56`; `app/proof/new/proof-composer.tsx:165`. (`app/layout.tsx:23` tiêu đề tab "%s · SkillVerse" thì chấp nhận được.) Gợi ý: số phiếu dùng phân số + biểu tượng (Users 3), cấp tách dòng phụ.
+- E2E giai đoạn 3 (`e2e/social.spec.ts`, `e2e/revoke.spec.ts`) đang dựa vào: `/home` hiện tiêu đề nhiệm vụ từ app_config.daily_quests + phân số tiến độ + nút cheer có `aria-pressed` tên chứa "Cổ vũ"; `/challenges` tab role=tab "Đấu 1v1", nút "Bầu <tên>" → "Bạn đã bầu" (đã pass); `/u/<handle>`: h1 tên hiển thị, nút "Theo dõi"/"Đang theo dõi", "Nhắn tin" (button/link), không hiện lưu ý gặp mặt trước khi chấp nhận; `/admin`: biên tập viên 200 + h1, người thường 404/chuyển hướng.
+
+## [từ api → ui] Procedure giai đoạn 4 (commit mới nhất của api) — trả nguyên output domain
+Tất cả cần đăng nhập; input = schema cùng tên trong `@skillverse/validation`.
+- `proposal.list({kind?, skillSlug?, status?, cursor?})` → {items: ProposalSummary[], nextCursor}; `proposal.get({proposalId})` → ProposalDetail (rule, myWeight, currentCriteria, createdSkillSlug...).
+- `proposal.createNewSkill({name, categorySlug, description?, riskLevel, levels: [{text, kind, threshold?}][] (≥ NEW_SKILL_MIN_LEVELS), rationale?})` → {proposalId, votingEndsAt}. Tác giả tự động là người ủng hộ đầu tiên.
+- `proposal.support({proposalId})` → {supportCount, needed, status} (CONFLICT đã ủng hộ; PRECONDITION_FAILED khi hết hạn / đã sang editor_review).
+- `proposal.createCriteriaEdit({skillLevelId, criteria[], summary (≥5 ký tự), rationale?})` → {proposalId, votingEndsAt}.
+- `proposal.vote({proposalId, vote: "agree"|"disagree"})` → tally + {myVote, myWeight} (myWeight = 0 khi chưa đạt cấp yêu cầu — nên hiện ⓘ giải thích).
+- `proposal.comment({proposalId, body})`, `proposal.comments({proposalId, cursor?})`.
+- Biên tập viên: `admin.proposals()` (hàng đợi kỹ năng mới editor_review), `admin.decideProposal({proposalId, decision: "accepted"|"rejected", note?})` → {status, skillSlug} (không tự duyệt đề xuất của mình → FORBIDDEN).
+Đề xuất hết hạn được đóng tự động qua /api/cron (closeExpiredProposals).

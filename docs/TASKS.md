@@ -119,9 +119,9 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 - [x] (domain) D4.6 Nhiệm vụ ngày suggest_criteria tiến khi góp ý/bỏ phiếu + test
 
 ### api
-- [ ] A4.1 Router `proposal.*`: createNewSkill, support, createCriteriaEdit, vote, list, get, comment
-- [ ] A4.2 `admin.proposals` (editorProcedure): hàng đợi editor_review, decide
-- [ ] A4.3 Cron gọi closeExpiredProposals thật; test router (quyền, validate)
+- [x] (api) A4.1 Router `proposal.*`: createNewSkill, support, createCriteriaEdit, vote, list, get, comment
+- [x] (api) A4.2 `admin.proposals` (editorProcedure): hàng đợi editor_review, decide
+- [x] (api) A4.3 Cron gọi closeExpiredProposals thật; test router (quyền, validate)
 
 ### ui
 - [ ] U4.1 Đề xuất kỹ năng mới (`/skills/propose`): tên, danh mục, tiêu chí từng cấp, cờ rủi ro, dòng tiến trình nhỏ (Ủng hộ → Duyệt → Mở) + ⓘ
@@ -149,8 +149,8 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 - [ ] U5.2 Trạng thái rỗng / lỗi / đang tải cho mọi màn
 
 ### domain
-- [ ] D5.1 Rà phủ test: assignReviewers, finalizeProof (cả thu hồi), uy tín, bỏ phiếu đề xuất, hòa phiếu/quá hạn/trùng hash; bổ sung chỗ thiếu
-- [ ] D5.2 Kiểm tra tính lại cache từ sổ cái: `recomputeUserCaches(userId)` khớp total_xp/reputation + test
+- [~] (domain) D5.1 Rà phủ test: assignReviewers, finalizeProof (cả thu hồi), uy tín, bỏ phiếu đề xuất, hòa phiếu/quá hạn/trùng hash; bổ sung chỗ thiếu
+- [~] (domain) D5.2 Kiểm tra tính lại cache từ sổ cái: `recomputeUserCaches(userId)` khớp total_xp/reputation + test
 
 ### qa
 - [ ] Q5.1 Chạy toàn bộ e2e trên build production cục bộ

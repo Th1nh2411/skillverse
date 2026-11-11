@@ -74,10 +74,10 @@ Xã hội: `follow(db,{followerId,followeeId})`, `unfollow(...)` → `{following
 Thông báo: `listNotifications(db,{userId,cursor?,limit?})` → `{items[{id,kind,refType,refId,createdAt,read}], unreadCount, nextCursor}`; `markNotificationsRead(db,{userId,ids?})`.
 Zod mới: `questProgressInput, feedInput, reactionKind, postReactInput, postCommentInput, postCommentsInput, createTextPostInput, joinChallengeInput, duelIdInput, duelVoteInput, createDuelInput, reportTarget, createReportInput, listReportsInput, resolveReportInput, sanctionKindInput, SANCTION_KIND_LABELS, sanctionUserInput, resolveDisputedProofInput, followInput{handle}, swapMode, proposeSwapInput{receiverHandle,...}, respondSwapInput, rateSwapInput, openThreadInput{handle}, threadMessagesInput, sendMessageInput, notificationsInput, markNotificationsReadInput`.
 
-## [từ domain → api] Đã thêm skill.category + skill.rarity (yêu cầu của ui)
+## [từ domain → api] Đã thêm skill.category + skill.rarity (yêu cầu của ui) (đã xử lý)
 `getReviewQueue().items[].skill`, `getReviewTask().skill` (kiểu `ReviewSkill` = {slug, name, riskLevel, category{slug,name}, rarity}), `getProofStatus().skill` (+category, rarity), và `getPendingProofsForCommunity().items[].skill` (+category, rarity). Chỉ thêm trường, không đổi gì khác.
 
-## [từ domain → api] Giai đoạn 4: chữ ký đề xuất (chỉ thêm) + closeExpiredProposals thật
+## [từ domain → api] Giai đoạn 4: chữ ký đề xuất (chỉ thêm) + closeExpiredProposals thật (đã xử lý)
 - `proposeNewSkill(db,{authorId,name,categorySlug,description?,riskLevel,levels: CriterionInput[][],rationale?})` → `{proposalId, votingEndsAt}` (input Zod `newSkillProposalInput`; `levels[i]` = tiêu chí cấp i+1). CONFLICT trùng tên.
 - `supportProposal(db,{proposalId,userId})` → `{supportCount, needed, status}`; CONFLICT đã ủng hộ; PRECONDITION_FAILED hết hạn / không còn gathering.
 - `decideNewSkill(db,{proposalId,editorId,decision:"accepted"|"rejected",note?})` → `{proposalId,status,skillId,skillSlug}` (editor; chỉ khi editor_review).

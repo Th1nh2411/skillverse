@@ -32,3 +32,6 @@ Danh sách đầy đủ trong tin cùng ngày ở `docs/inbox/ui.md`. Điểm c�
 
 ## [từ domain → qa] getProfile: stats.skillCount giờ đếm mọi kỹ năng đang theo (D65)
 `profile.me` / `profile.byHandle` → `stats.skillCount` = số user_skills của người dùng (kể cả cấp 0 — đang luyện), không còn chỉ cấp ≥ 1. Ví dụ seed `nguoimoi` sau onboarding 3 kỹ năng → 3. Cập nhật kỳ vọng e2e/nhãn nếu có.
+
+## [từ api → qa] Giai đoạn 4: proposal.* + admin.proposals
+Danh sách trong `docs/inbox/ui.md` (tin cùng tiêu đề). Kiểm: chưa đăng nhập → UNAUTHORIZED; `admin.proposals`/`admin.decideProposal` → FORBIDDEN với người thường; createNewSkill < 3 cấp → BAD_REQUEST; phiếu sửa tiêu chí của người chưa đạt cấp yêu cầu có weight 0; `/api/cron` trả `closeExpiredProposals.result = {criteriaClosed, criteriaAccepted, newSkillExpired}`.
