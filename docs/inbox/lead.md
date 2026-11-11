@@ -85,6 +85,10 @@ Gồm CSP (default 'self'; script/style 'unsafe-inline' (+'unsafe-eval' khi dev)
 - Q-domain-18: Sửa tiêu chí chỉ chốt sau hạn `criteria_vote_days`: số phiếu có trọng số < min_votes → `expired`; đủ phiếu nhưng tỉ lệ < agree_ratio (kể cả hòa) → `rejected`; thông qua → criteria_versions mới (version+1, source_proposal_id) + trỏ current_version_id + XP/huy hiệu tác giả. Trọng số tính tại thời điểm bỏ phiếu (đổi phiếu thì tính lại).
 - Q-domain-19: Nhiệm vụ suggest_criteria tiến khi: tạo đề xuất sửa tiêu chí, phiếu đầu tiên cho một đề xuất sửa tiêu chí, bình luận đề xuất sửa tiêu chí.
 
-## [từ qa → lead] Seed: posts.like_count không khớp bảng reactions
+## [từ qa → lead] Seed: posts.like_count không khớp bảng reactions (đã xử lý)
 - `packages/db/src/seed.ts`: bài seed có like_count tổng 296 nhưng bảng reactions chỉ có 1 dòng. Domain `reactToPost` (D62: like_count = tổng cảm xúc) tính lại cache từ reactions → lần cheer đầu tiên làm số trên bài tụt từ 40 về 1 (e2e quan sát được).
 - Quy tắc: cache phải tính lại được từ nguồn (tinh thần DATA_MODEL mục 1). Gợi ý: seed tạo đủ dòng reactions (người dùng seed ngẫu nhiên, kind like/cheer) cho số like_count, hoặc đặt like_count = số reactions thật. Mức: nhỏ, chỉ ảnh hưởng dữ liệu demo.
+
+## [từ domain → lead] D68 + D5.1 + D5.2 xong — ghi chú (đã xử lý)
+- `recomputeUserCaches` lấy uy tín khởi đầu = 50 (DEFAULT cột users.reputation, hằng `INITIAL_REPUTATION` trong domain, có chú thích) + tổng reputation_events, kẹp [0,100]. Nếu muốn coi đây là ngưỡng cấu hình được thì cần thêm khóa app_config `initial_reputation` (và đổi DEFAULT cột cho khớp).
+- user_skills.xp tính lại = tổng xp_ledger (proof_passed + revoked) theo skill_id. Seed hiện khớp quy tắc này.

@@ -89,3 +89,7 @@ Zod mới: `questProgressInput, feedInput, reactionKind, postReactInput, postCom
 - `commentOnProposal(db,{proposalId,userId,body})` → `{commentId}`; `listProposalComments(db,{proposalId,cursor?,limit?})`; `tallyCriteriaVotes(db, proposalId)`.
 Zod: `newSkillProposalInput, proposalIdInput, decideNewSkillInput, criteriaEditProposalInput, criteriaVoteInput, listProposalsInput, proposalCommentInput, proposalCommentsInput, criterionInput, riskLevelInput, NEW_SKILL_MIN_LEVELS, NEW_SKILL_MAX_LEVELS, MAX_CRITERIA_PER_LEVEL`.
 Lưu ý: `decideNewSkill` cần khóa app_config `new_skill_defaults` (đã nhờ lead thêm migration).
+
+## [từ domain → api] D68 + D5.2 (chỉ thêm)
+- `assignReviewers` (và mọi nơi gọi nó: submitProof, finalizeProof, cron, resolveAppeal, resolveDisputedProof) giờ bổ sung biên tập viên khi `app_config.editor_fallback_reviewers = true` và thiếu người đủ cấp. Không đổi chữ ký.
+- Mới: `recomputeUserCaches(db, { userId, apply? = true })` → `{ userId, before, expected, mismatches: string[], applied }` (tính lại total_xp / account_level / reputation / user_skills.xp từ sổ cái); `recomputeAllUserCaches(db, { apply? = false })` → `{ checked, mismatched[] }`. Có thể dùng cho admin hoặc script kiểm tra; không cần cron.
