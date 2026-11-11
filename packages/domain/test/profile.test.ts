@@ -65,7 +65,7 @@ describe("getProfile", () => {
     const p = await getProfile(db, { userId: me.id, viewerId: me.id });
     expect(p.isMe).toBe(true);
     expect(p.viewerFollows).toBe(false);
-    expect(p.stats).toEqual({ skillCount: 3, rareBadgeCount: 2, challengeCount: 1, followerCount: 1, followingCount: 0 });
+    expect(p.stats).toEqual({ skillCount: 4, rareBadgeCount: 2, challengeCount: 1, followerCount: 1, followingCount: 0 });
     expect(p.topCategories.map((c) => c.slug)).toEqual(["sinh-ton", "ky-nang-di"]);
   });
 

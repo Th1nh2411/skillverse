@@ -29,7 +29,7 @@ export type Profile = {
   reputation: number;
   xp: XpProgress;
   stats: {
-    /** Số kỹ năng đạt cấp ≥ 1. */
+    /** Số kỹ năng đang theo (mọi user_skills, kể cả cấp 0 — D65). */
     skillCount: number;
     /** Số kỹ năng đạt cấp ≥ 1 mà kỹ năng đó Hiếm/Huyền thoại (huy hiệu vải hiếm). */
     rareBadgeCount: number;
@@ -146,7 +146,7 @@ export async function getProfile(
     reputation: user.reputation,
     xp: xpProgress(user.totalXp, curve.step),
     stats: {
-      skillCount: achieved.length,
+      skillCount: userSkills.length,
       rareBadgeCount: achieved.filter((f) => f.rarity !== null).length,
       challengeCount,
       followerCount,
