@@ -98,7 +98,8 @@ export function LevelPatch({
         <path
           d={shapePath(shape, 0.96)}
           fill="none"
-          stroke="var(--color-border-strong)"
+          stroke={rarity === "common" ? "var(--color-border-strong)" : thread}
+          strokeOpacity={rarity === "common" ? 1 : 0.6}
           strokeWidth={2.4}
           strokeDasharray="5 4"
           strokeLinecap="round"
