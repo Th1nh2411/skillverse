@@ -5,7 +5,8 @@
 export type JobName =
   | "reassignExpiredReviews"
   | "closeExpiredProposals"
-  | "weeklyReputationRecovery";
+  | "weeklyReputationRecovery"
+  | "closeDuels";
 
 export interface JobRunner {
   /** Chạy (hoặc xếp hàng) một tác vụ. */

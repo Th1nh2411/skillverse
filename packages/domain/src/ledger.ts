@@ -68,22 +68,25 @@ export function questDate(now: Date): Date {
 /** Tăng tiến độ nhiệm vụ ngày; khi vừa đạt target → done_at + XP quest_done. */
 export async function bumpDailyQuest(
   tx: Tx,
-  o: { userId: string; questKey: string; now: Date },
+  o: { userId: string; questKey: string; now: Date; amount?: number },
 ): Promise<{ progress: number; target: number; completed: boolean; xpAwarded: number } | null> {
+  const amount = Math.max(1, Math.floor(o.amount ?? 1));
   const defs = await getConfig<DailyQuestDef[]>(tx, "daily_quests");
   const def = defs.find((d) => d.key === o.questKey);
   if (!def) return null;
   const date = questDate(o.now);
   const row = await tx.dailyQuest.upsert({
     where: { userId_date_questKey: { userId: o.userId, date, questKey: o.questKey } },
-    update: { progress: { increment: 1 } },
-    create: { userId: o.userId, date, questKey: o.questKey, progress: 1 },
+    update: { progress: { increment: amount } },
+    create: { userId: o.userId, date, questKey: o.questKey, progress: amount },
   });
   if (row.progress >= def.target && !row.doneAt) {
-    await tx.dailyQuest.update({
-      where: { userId_date_questKey: { userId: o.userId, date, questKey: o.questKey } },
+    // Điều kiện done_at IS NULL: hai lần cộng đồng thời chỉ một lần được thưởng.
+    const won = await tx.dailyQuest.updateMany({
+      where: { userId: o.userId, date, questKey: o.questKey, doneAt: null },
       data: { doneAt: o.now },
     });
+    if (won.count === 0) return { progress: row.progress, target: def.target, completed: false, xpAwarded: 0 };
     await awardXp(tx, { userId: o.userId, amount: def.xp, reason: "quest_done", refType: "daily_quest", now: o.now });
     return { progress: row.progress, target: def.target, completed: true, xpAwarded: def.xp };
   }

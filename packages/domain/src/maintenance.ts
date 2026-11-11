@@ -5,6 +5,7 @@ import { getConfig, type ReputationDeltas } from "./config";
 import { withTx, type Db } from "./db";
 import type { JobHandler, JobName } from "./jobs";
 import { applyReputation } from "./ledger";
+import { closeDuels } from "./challenges";
 import { expireOverdueAssignments } from "./proofs";
 
 const DAY_MS = 86_400_000;
@@ -57,5 +58,6 @@ export function createDomainJobHandlers(db: Db): Partial<Record<JobName, JobHand
     reassignExpiredReviews: () => reassignExpiredReviews(db),
     weeklyReputationRecovery: () => weeklyReputationRecovery(db),
     closeExpiredProposals: async () => ({ closed: 0 }),
+    closeDuels: () => closeDuels(db),
   };
 }

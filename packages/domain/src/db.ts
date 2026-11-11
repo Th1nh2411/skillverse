@@ -10,7 +10,7 @@ export type Db = PrismaClient | Tx;
 export async function withTx<T>(db: Db, fn: (tx: Tx) => Promise<T>): Promise<T> {
   const maybe = db as Partial<PrismaClient>;
   if (typeof maybe.$transaction === "function") {
-    return (db as PrismaClient).$transaction((tx) => fn(tx), { timeout: 20000 });
+    return (db as PrismaClient).$transaction((tx) => fn(tx), { maxWait: 15000, timeout: 30000 });
   }
   return fn(db);
 }

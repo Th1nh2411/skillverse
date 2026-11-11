@@ -4,7 +4,7 @@
  * QUY TẮC: `finalizeProof()` là nơi DUY NHẤT trong code ứng dụng ghi `user_skills.level`,
  * và luôn chạy trong MỘT transaction.
  */
-import type { Prisma, ProofStatus } from "@skillverse/db";
+import type { Prisma, ProofStatus, Tx } from "@skillverse/db";
 import { getConfig, getRarityThresholds, type MediaLimits, type ReputationDeltas } from "./config";
 import { withTx, type Db } from "./db";
 import { DomainError } from "./errors";
@@ -261,7 +261,7 @@ export async function assignReviewers(db: Db, p: AssignReviewersParams): Promise
         reputation: { gte: minRep },
         userSkills: { some: { skillId: proof.skillId, level: { gte: level.minReviewerLevel } } },
         sanctionsUser: {
-          none: { kind: "review_ban", startsAt: { lte: now }, OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+          none: { kind: { in: ["review_ban", "suspension"] }, startsAt: { lte: now }, OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
         },
         followsFollower: { none: { followeeId: submitter } },
         followsFollowee: { none: { followerId: submitter } },
@@ -336,6 +336,16 @@ export async function expireOverdueAssignments(
 
 export type FinalizeProofResult =
   | { outcome: "already_decided"; proofId: string; status: "passed" | "failed" }
+  | {
+      outcome: "revoked";
+      proofId: string;
+      sanctionId: string;
+      previousLevel: number;
+      newLevel: number;
+      xpRevoked: number;
+      penalizedReviewerIds: string[];
+    }
+  | { outcome: "already_revoked"; proofId: string }
   | { outcome: "waiting"; proofId: string; votes: number; required: number }
   | {
       outcome: "needs_more_reviewers" | "tie";
@@ -369,7 +379,7 @@ export type FinalizeProofResult =
  */
 export async function finalizeProof(
   db: Db,
-  p: { proofId: string; now?: Date; rng?: () => number },
+  p: { proofId: string; now?: Date; rng?: () => number; revoke?: RevokeParams },
 ): Promise<FinalizeProofResult> {
   const now = p.now ?? new Date();
   return withTx(db, async (tx) => {
@@ -383,6 +393,7 @@ export async function finalizeProof(
       },
     });
     if (!proof) throw new DomainError("NOT_FOUND", "Không tìm thấy bằng chứng.");
+    if (p.revoke) return revokeInTx(tx, proof, p.revoke, now);
     if (proof.status === "passed" || proof.status === "failed") {
       return { outcome: "already_decided", proofId: proof.id, status: proof.status };
     }
@@ -514,4 +525,103 @@ export async function finalizeProof(
       accountLevel: xp.accountLevel,
     };
   });
+}
+
+
+// ---------------------------------------------------------------------------
+// Nhánh thu hồi (DECISIONS D40) — chỉ gọi qua finalizeProof({ revoke })
+// ---------------------------------------------------------------------------
+
+export type RevokeParams = {
+  /** Biên tập viên thực hiện. */
+  byUserId: string;
+  reason: string;
+  /** Báo cáo đã xác nhận (nếu có). */
+  reportId?: string | null;
+};
+
+type ProofForRevoke = {
+  id: string;
+  userId: string;
+  skillId: string;
+  targetLevel: number;
+  status: ProofStatus;
+  skill: { name: string; maxLevel: number };
+  reviews: { reviewerId: string; verdict: "pass" | "fail"; assignment: { state: string } }[];
+};
+
+/**
+ * Thu hồi level của bằng chứng đã đạt bị xác nhận gian lận. Không xóa bản ghi nào:
+ * sanctions(level_revoked, proof_id), level = target − 1 (nếu đang ≥ target), xp_ledger âm (revoked),
+ * user_skills.xp / total_xp / account_level, holder_count (nếu rơi khỏi cấp cao nhất),
+ * −approved_fraud uy tín người đã duyệt đạt, proof → removed, ẩn bài level_up (deleted_at), thông báo.
+ */
+async function revokeInTx(tx: Tx, proof: ProofForRevoke, r: RevokeParams, now: Date): Promise<FinalizeProofResult> {
+  const existing = await tx.sanction.count({ where: { proofId: proof.id, kind: "level_revoked" } });
+  if (existing > 0) return { outcome: "already_revoked", proofId: proof.id };
+  if (proof.status !== "passed") throw new DomainError("PRECONDITION_FAILED", "Chỉ thu hồi được bằng chứng đã đạt.");
+
+  const sanction = await tx.sanction.create({
+    data: {
+      userId: proof.userId,
+      kind: "level_revoked",
+      reason: r.reason,
+      reportId: r.reportId ?? null,
+      proofId: proof.id,
+      createdBy: r.byUserId,
+      startsAt: now,
+    },
+  });
+
+  const us = await tx.userSkill.findUnique({ where: { userId_skillId: { userId: proof.userId, skillId: proof.skillId } } });
+  const previousLevel = us?.level ?? 0;
+  const newLevel = previousLevel >= proof.targetLevel ? proof.targetLevel - 1 : previousLevel;
+  const gained = await tx.xpLedger.findFirst({
+    where: { userId: proof.userId, refType: "proof", refId: proof.id, reason: "proof_passed" },
+    select: { amount: true },
+  });
+  const xpRevoked = gained?.amount ?? 0;
+  if (us) {
+    await tx.userSkill.update({
+      where: { userId_skillId: { userId: proof.userId, skillId: proof.skillId } },
+      data: { level: newLevel, xp: Math.max(0, us.xp - xpRevoked), updatedAt: now },
+    });
+  }
+  if (xpRevoked > 0) {
+    await awardXp(tx, {
+      userId: proof.userId,
+      amount: -xpRevoked,
+      reason: "revoked",
+      skillId: proof.skillId,
+      refType: "proof",
+      refId: proof.id,
+      now,
+    });
+  }
+  if (previousLevel >= proof.skill.maxLevel && newLevel < proof.skill.maxLevel) {
+    await tx.$executeRaw`UPDATE skills SET holder_count = GREATEST(holder_count - 1, 0) WHERE id = ${proof.skillId}::uuid`;
+  }
+
+  const deltas = await getConfig<ReputationDeltas>(tx, "reputation_deltas");
+  const approvers = [
+    ...new Set(proof.reviews.filter((v) => v.verdict === "pass" && v.assignment.state === "done").map((v) => v.reviewerId)),
+  ];
+  for (const reviewerId of approvers) {
+    await applyReputation(tx, { userId: reviewerId, delta: deltas.approved_fraud, reason: "approved_fraud", refId: proof.id, now });
+  }
+
+  await tx.proof.update({ where: { id: proof.id }, data: { status: "removed" } });
+  await tx.post.updateMany({ where: { proofId: proof.id, kind: "level_up", deletedAt: null }, data: { deletedAt: now } });
+  await tx.notification.create({
+    data: { userId: proof.userId, kind: "level_revoked", refType: "proof", refId: proof.id, createdAt: now },
+  });
+  return {
+    outcome: "revoked",
+    proofId: proof.id,
+    sanctionId: sanction.id,
+    previousLevel,
+    newLevel,
+    xpRevoked,
+    penalizedReviewerIds: approvers,
+  };
 }

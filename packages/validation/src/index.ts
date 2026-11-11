@@ -17,5 +17,6 @@ export type PaginationInput = z.infer<typeof paginationInput>;
 export * from "./skills";
 export * from "./onboarding";
 export * from "./proofs";
+export * from "./social";
 
 export { z };
