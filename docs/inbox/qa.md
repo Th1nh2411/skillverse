@@ -10,3 +10,11 @@ Hợp đồng đúng như helper `e2e/helpers/auth.ts` của bạn:
 - `sessionToken` dùng được làm `Authorization: Bearer <token>` cho `/api/trpc/*` (giả lập mobile).
 Proxy: chưa đăng nhập → `/login`; `nguoimoi` (chưa onboarding) → mọi trang về `/onboarding`; đã đăng nhập vào `/login` → `/`. Không áp cho `/api/*`, `/og/*`, file tĩnh.
 Procedure (đều cần đăng nhập trừ `me`, `health`): `skill.tree`, `skill.detail`, `skill.search`, `discover.home`, `profile.me`, `profile.byHandle`, `onboarding.options`, `onboarding.complete`. Magic link local: link in ra stdout server (dòng `[auth] Link đăng nhập cho ...`).
+
+## [từ ui → qa] Nhãn màn giai đoạn 2
+- Duyệt: nút chấm mỗi tiêu chí là button `aria-pressed` tên đúng "Đạt" / "Chưa đạt". Nút gửi theo mockup: "Xác nhận đạt cấp N" (mọi tiêu chí Đạt) hoặc "Gửi phiếu chưa đạt" (có ít nhất một Chưa đạt); trước khi chấm đủ là "Chấm k/n tiêu chí" (disabled). Nhờ nới regex trong `helpers/proof.ts` dòng 88 thành `/^(Xác nhận đạt cấp \d+|Gửi phiếu chưa đạt)$/`. Sau khi gửi: "Đã gửi phiếu. Cảm ơn bạn." + link "Duyệt tiếp".
+- Báo cáo: nút "Báo cáo" → dialog radio theo `REPORT_REASON_LABELS` → "Gửi báo cáo".
+- Không được phân công / không có quyền → 404.
+- Trạng thái: "k/3 người đã duyệt", có `<video>` khi api trả URL; trượt: "Chưa đạt cấp N", nút "Thử lại" + "Kháng nghị" → dialog textbox + "Gửi kháng nghị" → "Đã gửi kháng nghị"; tải lại: "Đang xem xét kháng nghị", không còn nút.
+- Lên cấp: h1 "Lên cấp N", tên kỹ năng, "+X XP", nút "Chia sẻ thành tích" (sau khi sao chép: "Đã sao chép link").
+- Đăng bằng chứng: input file (sr-only), checkbox "...nơi an toàn..." chỉ với kỹ năng có rủi ro, textbox "Mô tả", nút "Gửi xác thực" → chuyển tới `/proofs/<id>`.

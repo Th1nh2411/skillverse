@@ -31,6 +31,10 @@ Ghi lại mọi chỗ tài liệu không nói rõ và phương án đã chọn. 
 - **D47 — Bằng chứng trùng hash** → `proofs.status = disputed` (= hàng đợi biên tập viên, không phân công) + `fraud_signals(duplicate_hash, score = số bằng chứng trùng)`.
 - **D48 — Tỉ lệ đạt** so với `review_pass_ratio` (0.667) có sai số 0.0005 để đúng 2/3 phiếu được tính là đạt như DATA_MODEL ("≥ 2/3").
 - **D49 — Phân công**: "cấp cao" (ưu tiên uy tín) = target_level ≥ max_level − 1. Hòa/thiếu người → thêm người duyệt uy tín cao nhất trong số hợp lệ. `users.reputation` kẹp [0,100]; `reputation_events.delta` ghi delta thực áp dụng để tổng sổ cái = cache. Huy hiệu khi đạt: `first-proof`, `max-level`, `rare-holder`/`legendary-holder` (theo độ hiếm trước khi tăng holder_count).
+- **D55 — Kháng nghị overturned**: phân công vòng cũ chuyển `recused`; phiếu cũ giữ nguyên làm lịch sử nhưng không tính; `finalizeProof` chỉ đếm phiếu của vòng hiện tại.
+- **D56 — Ngày của nhiệm vụ ngày** tính theo lịch Việt Nam (UTC+7). Đây là múi giờ hiển thị, không phải ngưỡng nghiệp vụ, nên để hằng số trong domain.
+- **D57 — `finalizeProof` idempotent**: gọi lại trên bằng chứng đã chốt trả `already_decided`; khóa dòng proof để 3 phiếu đồng thời chỉ chốt một lần.
+- **D58 — Video**: key object `proofs/<uuid>-<hmac>.<ext>` (không chứa dữ liệu cá nhân, server xác minh được chủ sở hữu); bucket private; xem qua presigned GET có hạn cho người nộp, người được phân công, biên tập viên, hoặc khi bằng chứng đã đạt. AI kiểm tra sơ bộ là mô phỏng (thời lượng, định dạng, dung lượng), chỉ tham khảo.
 
 ## Auth & API
 - **D50 — Auth.js v5** với adapter tự viết trên Prisma, session lưu database; cùng `session_token` dùng cho cookie (web) và `Authorization: Bearer` (mobile). Google chỉ bật khi có biến môi trường; EMAIL_SERVER trống → link magic in ra console.

@@ -33,3 +33,13 @@ Màn `/login`:
 - E2E ở `apps/web/e2e/*.spec.ts` (chạy: `pnpm e2e`, cổng 3200, DB skillverse_e2e). Đăng nhập, onboarding, hồ sơ, cây kỹ năng, chi tiết kỹ năng: pass (kể cả a11y cơ bản: tên truy cập, vùng chạm 44px, lang=vi, không emoji). Selector dùng role/nhãn tiếng Việt — nếu đổi nhãn, các nhãn test đang dựa vào: "Bạn muốn giỏi điều gì?", nút "Tiếp tục"/"Đã chọn N/3"/"Bắt đầu thôi", chip aria-pressed, "Kỹ năng nổi bật", "Cây kỹ năng", "Gửi xác thực", "Rủi ro cao", ⓘ có nhãn bắt đầu bằng "Cách ".
 - Khám phá (`/discover`, U1.6) chưa dựng → discover.spec.ts đang fail/skip. Test chờ: h1 "Khám phá", heading "Hiếm nhất…" (trong `<section>`, thứ tự holder_count tăng dần: Thổi thủy tinh, Sống sót 72 giờ, Viết chữ ngược gương), heading "Thịnh hành…", bộ lọc "Sinh tồn"/"Kỹ năng dị"/"Thủ công"/"Thể chất" (button/tab/link), ô `searchbox` hoặc textbox tên chứa "Tìm"; gõ "nút dây" → kết quả "Thắt nút dây" dẫn tới `/skills/that-nut-day`; không kết quả → "Không tìm thấy…"/"Chưa có…"/"Đề xuất kỹ năng".
 - Nhỏ: `apps/web/app/(main)/profile/page.tsx` — IconLink "Thông báo" trỏ `/notifications` đang 404. Gợi ý: tạm ẩn hoặc dựng trang rỗng (EmptyState) cho tới giai đoạn thông báo.
+
+## [từ domain → ui] Giai đoạn 2: dữ liệu màn Duyệt / Trạng thái / Lên cấp / Chia sẻ
+Chữ ký đầy đủ ở `docs/inbox/api.md` (tin "Giai đoạn 2: chữ ký mới"). Điểm cho UI:
+- Duyệt: `review.task` trả `anonymousCode` (vd. "#A7F2" → "Người dùng #A7F2"), `votes/required` ("đã có 2/3 phiếu"), `criteria[]` để chấm Đạt/Chưa, `reviewerReputation` (0–100, hiển thị "Uy tín N"), `canSubmit`, `myReview` (đã chấm), `reported`. Không có tên/handle người nộp.
+- Gửi phiếu: `marks` phải có MỖI tiêu chí; verdict "pass" chỉ khi mọi tiêu chí Đạt (nút "Xác nhận đạt" chỉ bật khi tất cả Đạt; "Chưa đạt" khi có ít nhất một Chưa). Kết quả có `xpAwarded` (+25 XP) và `quest` (tiến độ nhiệm vụ "Duyệt 2 bằng chứng").
+- Báo cáo: lý do `reportReason` + nhãn tiếng Việt `REPORT_REASON_LABELS` từ `@skillverse/validation`.
+- Trạng thái bằng chứng của tôi: `votes/required`, `underEditorReview` (video trùng → chờ biên tập viên), khi đã chốt có `criteria[].metCount/notMetCount` + `comments[]` (ẩn danh), `canAppeal` + `appealDeadline`, `appeal.status`. Kháng nghị: `fileAppealInput` (lý do 10–1000 ký tự).
+- Lên cấp: `level`, `levelTitle`, `xpAwarded`, `accountLevelBefore → accountLevelAfter`, `passVotes/totalVotes` ("Đã được xác thực 3/3"), `topPercent`, `badges[]`, `unlockedSkills[]` ("Mở khóa tiếp"), `skill.rarity` (chỉ thêu).
+- Thẻ chia sẻ công khai: chỉ `displayName` + kỹ năng/cấp/độ hiếm/`verifiedCount`.
+- Bài level_up trên feed giờ có body "<Tên kỹ năng>: lên cấp N" (không dùng dấu chấm giữa) — nên dựng câu từ kind + skill + level thay vì in body.

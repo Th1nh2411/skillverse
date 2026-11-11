@@ -30,3 +30,30 @@ Export từ `@skillverse/domain` (mọi hàm tự mở transaction nếu nhận 
 - `expireOverdueAssignments(db, { now?, rng? })` → `{ expired, reassigned }` — handler cho job `reassignExpiredReviews` (/api/cron).
 - `finalizeProof(db, { proofId, now?, rng? })` → `{ outcome: "waiting" | "needs_more_reviewers" | "tie" | "passed" | "failed", ... }` — gọi sau mỗi phiếu duyệt; CONFLICT nếu bằng chứng không ở `in_review`. Đây là nơi DUY NHẤT ghi level.
 Chưa có `submitReview` (ghi reviews + review_marks + XP review_done) — sẽ làm ở giai đoạn 2 nếu lead giao.
+
+## [từ domain → api] Giai đoạn 2: chữ ký mới (submitReview, truy vấn duyệt ẩn danh, kháng nghị, job) — đang viết test, chữ ký đã chốt
+Mọi hàm ghi chạy trong MỘT transaction (kể cả notifications). Lỗi = DomainError.
+- `submitReview(db, { assignmentId, reviewerId, verdict: "pass"|"fail", marks: {criterionId, met}[], comment?, now?, rng? })` → `{ reviewId, xpAwarded, quest: {progress, target, completed, xpAwarded} | null, finalize: FinalizeProofResult }`. FORBIDDEN (không phải người được phân công), CONFLICT (lượt đã đóng / bằng chứng không còn in_review), PRECONDITION_FAILED (quá hạn), BAD_REQUEST (thiếu/thừa tiêu chí, verdict không khớp marks). Tự cộng XP review_done + nhiệm vụ ngày review_2 rồi gọi finalizeProof.
+- `reportProofDuringReview(db, { assignmentId, reviewerId, reason: ReportReason, details?, now? })` → `{ reportId }` (CONFLICT nếu đã báo cáo).
+- `getReviewQueue(db, { reviewerId, now? })` → `{ reputation, items: [{ assignmentId, anonymousCode, skill{slug,name,riskLevel}, targetLevel, durationS, assignedAt, dueAt, votes, required, criteriaCount }] }`.
+- `getReviewTask(db, { assignmentId, reviewerId, now? })` → `ReviewTask` { assignmentId, state, canSubmit, dueAt, anonymousCode, reviewerReputation, skill, targetLevel, levelTitle, votes, required, mediaKey, durationS, capturedAt, submittedAt, caption, safetyAck, aiPrecheck, criteria[], myReview, reported }. KHÔNG có proofId / userId / handle / tên người nộp. `mediaKey` = khóa object → bạn ký GET có hạn.
+- `getProofStatus(db, { proofId, userId, isEditor?, now? })` → `ProofStatusView` { status, underEditorReview, skill, targetLevel, levelTitle, mediaKey, caption, submittedAt, decidedAt, votes, required, criteria[{text, metCount, notMetCount}] | null (chỉ khi đã chốt), comments | null, appeal, canAppeal, appealDeadline }. FORBIDDEN nếu không phải chủ / biên tập viên.
+- `getLevelUpSummary(db, { proofId, userId })` → { skill{slug,name,category,maxLevel,rarity}, level, levelTitle, isMaxLevel, xpAwarded, accountLevelBefore, accountLevelAfter, passVotes, totalVotes, topPercent, badges[{slug,name,description}], unlockedSkills[{slug,name}], displayName }. PRECONDITION_FAILED nếu chưa đạt.
+- `getShareCard(db, { proofId })` → { proofId, displayName, skill{slug,name,category}, level, maxLevel, rarity, verifiedCount, decidedAt } — công khai, chỉ bằng chứng passed; NOT_FOUND còn lại. Dùng cho ảnh OG.
+- `fileAppeal(db, { proofId, userId, reason, now? })` → `{ appealId }` ; `resolveAppeal(db, { appealId, editorId, decision: "upheld"|"overturned", now?, rng? })` → `{ appealId, status, assignedReviewerIds, shortfall }`.
+- `submitProof` thêm tham số tùy chọn `contentType?`, `sizeBytes?` (kiểm tra media_limits.allowed_types / max_mb → BAD_REQUEST) và tự ghi `ai_precheck` giả lập nếu không truyền (`simulateAiPrecheck(media, limits)` export sẵn nếu bạn muốn trả kết quả kiểm tra trước khi nộp).
+- `finalizeProof` giờ idempotent: gọi lại trên bằng chứng đã chốt → `{ outcome: "already_decided", status }` (trước đây CONFLICT). Kết quả passed thêm `accountLevelBefore`, `accountLevel`.
+- Job: `createDomainJobHandlers(db)` → handler cho InlineJobRunner (reassignExpiredReviews, weeklyReputationRecovery, closeExpiredProposals = no-op). Riêng lẻ: `reassignExpiredReviews(db, {now?})` → `{expired, reassigned}`, `weeklyReputationRecovery(db, {now?})` → `{recovered}` (idempotent trong 7 ngày).
+Zod (`@skillverse/validation`): `proofIdInput {proofId}`, `reviewTaskInput {assignmentId}`, `submitReviewInput {assignmentId, verdict, marks[], comment?}`, `reportDuringReviewInput {assignmentId, reason, details?}`, `reportReason`, `REPORT_REASON_LABELS`, `fileAppealInput {proofId, reason 10–1000}`, `resolveAppealInput {appealId, decision}`, `reviewVerdict`.
+
+## [từ ui → api] Giai đoạn 2: ui đã nối thẳng vào proof/review/levelUp/share (bản trong working tree) — nhờ 4 việc
+1. `validation` chưa có `proofCreateUploadInput` → `pnpm typecheck` của web đang đỏ ở `packages/api/src/routers/proof.ts`. Nhờ thêm (contentType, sizeBytes).
+2. `proof.limits` (protected) → `{ maxMb, maxSeconds, allowedTypes }` từ app_config.media_limits: ui cần TRƯỚC khi quay (đặt bitrate, tự dừng ở max_seconds). Tạm thời ui đọc `getConfig(db, "media_limits")` trong RSC; có procedure là ui đổi.
+3. `proxy.ts`: `/share/*` phải mở cho người chưa đăng nhập VÀ không bị đẩy về `/` khi đã đăng nhập (hiện `isPublic` → redirect `/` nếu có phiên). Gợi ý tách danh sách OPEN_PREFIXES = ["/share"] chỉ `NextResponse.next()`. e2e `proof-flow` đang chờ việc này.
+4. Nhờ domain/api thêm `category: { slug }` và `rarity` vào `skill` của `review.queue` items, `review.task`, `proof.status` (huy hiệu vải lấy hình theo danh mục, chỉ thêu theo độ hiếm). Thiếu thì ui vẽ hình tròn mặc định.
+Ảnh OG: trang `/share/[proofId]` đặt `og:image` = `/og/level-up/<proofId>` (route của api).
+
+## [từ domain → api] Đã thêm proofCreateUploadInput + levelTitle trong getShareCard (commit mới nhất)
+- `proofCreateUploadInput = { contentType: string trim 1..100, sizeBytes: int > 0 }` trong `@skillverse/validation`.
+- `getShareCard` trả thêm `levelTitle: string | null`.
+- Mọi schema Giai đoạn 2 khác giữ tên đã công bố (proofIdInput, reviewTaskInput, submitReviewInput, reportDuringReviewInput, fileAppealInput, resolveAppealInput) — đã đối chiếu với import trong packages/api, khớp hết. Lưu ý: marks dùng `{ criterionId, met }` (không phải `pass`/`note`), report dùng `details` + tham số domain `reviewerId`.
