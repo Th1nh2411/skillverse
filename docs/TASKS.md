@@ -29,14 +29,14 @@ Màn: Onboarding, Hồ sơ (Main.html), Cây kỹ năng, Chi tiết kỹ năng, 
 ### ui
 - [x] (ui) U1.1 Đọc SKILL.md skillverse-ui + skill frontend-design. Tinh chỉnh token (rừng đêm, WCAG AA), thành phần nền: Button, IconButton (aria-label), InfoSheet (ⓘ → bottom sheet), **LevelPatch** (huy hiệu vải thêu, hình theo danh mục, chỉ thêu theo độ hiếm), ProgressBar, Avatar chữ cái, EmptyState.
 - [x] (ui) U1.2 Màn Đăng nhập (`/login`: Google + email magic link + đăng nhập dev khi bật) và Onboarding (`/onboarding`)
-- [~] (ui) U1.3 Hồ sơ của tôi (`/profile`, Main.html)
-- [ ] U1.4 Cây kỹ năng (`/skills/tree/[category]`) — đường mòn bản đồ
-- [ ] U1.5 Chi tiết kỹ năng (`/skills/[slug]`)
-- [ ] U1.6 Khám phá (`/discover`). Mỗi màn: chụp Playwright 360/390px, so mockup, tự soi theo "Những thứ cần sửa" + "Ít chữ". Ảnh lưu `apps/web/screenshots/` (không commit thư mục này nếu nặng).
+- [x] (ui) U1.3 Hồ sơ của tôi (`/profile`, Main.html)
+- [x] (ui) U1.4 Cây kỹ năng (`/skills/tree/[category]`) — đường mòn bản đồ
+- [x] (ui) U1.5 Chi tiết kỹ năng (`/skills/[slug]`)
+- [~] (ui) U1.6 Khám phá (`/discover`). Mỗi màn: chụp Playwright 360/390px, so mockup, tự soi theo "Những thứ cần sửa" + "Ít chữ". Ảnh lưu `apps/web/screenshots/` (không commit thư mục này nếu nặng).
 
 ### qa
-- [~] (qa) Q1.1 Cài Playwright chromium; `apps/web/playwright.config.ts` (webServer cổng 3200, `NEXT_DIST_DIR=.next-e2e`, DATABASE_URL=skillverse_e2e, globalSetup reset+seed DB e2e qua `SEED_RESET=1`)
-- [ ] Q1.2 Helper đăng nhập dev bằng handle (theo API của api; trước khi có thì viết sẵn, skip có điều kiện)
-- [ ] Q1.3 E2E giai đoạn 1: onboarding người mới (chọn 3 kỹ năng → hồ sơ), xem hồ sơ, cây kỹ năng, chi tiết kỹ năng, khám phá/tìm kiếm
-- [ ] Q1.4 Rà soát code theo QUY TẮC BẮT BUỘC + DATA_MODEL.md (grep ghi level ngoài finalizeProof, UPDATE criteria, ngưỡng hard-code, Prisma trong component, emoji, thiếu aria-label, dữ liệu cá nhân trên URL). Báo lỗi vào hộp thư chủ sở hữu; tổng hợp vào `docs/QA.md`.
-- [ ] Q1.5 Kiểm tra a11y cơ bản (axe nếu cài được, hoặc kiểm tra thủ công vùng chạm/aria) các màn giai đoạn 1
+- [x] (qa) Q1.1 Cài Playwright chromium; `apps/web/playwright.config.ts` (webServer cổng 3200, `NEXT_DIST_DIR=.next-e2e`, DATABASE_URL=skillverse_e2e, globalSetup reset+seed DB e2e qua `SEED_RESET=1`)
+- [x] (qa) Q1.2 Helper đăng nhập dev bằng handle (theo API của api; trước khi có thì viết sẵn, skip có điều kiện)
+- [x] (qa) Q1.3 E2E giai đoạn 1: onboarding người mới (chọn 3 kỹ năng → hồ sơ), xem hồ sơ, cây kỹ năng, chi tiết kỹ năng, khám phá/tìm kiếm
+- [x] (qa) Q1.4 Rà soát code theo QUY TẮC BẮT BUỘC + DATA_MODEL.md (grep ghi level ngoài finalizeProof, UPDATE criteria, ngưỡng hard-code, Prisma trong component, emoji, thiếu aria-label, dữ liệu cá nhân trên URL). Báo lỗi vào hộp thư chủ sở hữu; tổng hợp vào `docs/QA.md`.
+- [x] (qa) Q1.5 Kiểm tra a11y cơ bản (axe nếu cài được, hoặc kiểm tra thủ công vùng chạm/aria) các màn giai đoạn 1
