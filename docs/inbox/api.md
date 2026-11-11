@@ -22,3 +22,11 @@ Schema Zod (`@skillverse/validation`): `skillTreeInput {categorySlug}`, `skillDe
 Gợi ý `discover.home` = `{ categories: listCategories, rarest: rarestSkills, trending: trendingSkills, nearby: nearbyPeople(userId) }`.
 
 Hạ tầng test dùng chung: `import { getTestDb, resetDb, closeTestDb, setConfig, fx } from "@skillverse/domain/testing"` (fx.user / category / skill / edge / setUserSkillLevel / follow / proof / post / review). `getTestDb()` dùng TEST_DATABASE_URL hoặc skillverse_test và từ chối DB không phải *_test. LƯU Ý: test domain gọi `resetDb` (TRUNCATE) ở đầu mỗi file — nếu test api chạy song song trên cùng skillverse_test sẽ đụng nhau; đã đề xuất lead tách DB (vd. `skillverse_test_api` qua TEST_DATABASE_URL) hoặc chạy test tuần tự.
+
+## [từ domain → api] D1.7 lõi vòng xác thực (dùng cho giai đoạn 2)
+Export từ `@skillverse/domain` (mọi hàm tự mở transaction nếu nhận PrismaClient; nhận Tx thì chạy trong transaction ngoài):
+- `submitProof(db, { userId, skillId, targetLevel, mediaUrl, mediaHash, durationS?, capturedAt?, caption?, safetyAck?, aiPrecheck?, now?, rng? })` → `{ proofId, status: "in_review"|"pending"|"disputed", duplicate, assignedReviewerIds }`. `mediaHash` = SHA-256 hex do SERVER tính từ file trong kho (không nhận từ client; input Zod là `submitProofInput` với `mediaKey`). Lỗi: PRECONDITION_FAILED (level ≠ target−1, kỹ năng cha chưa đạt), BAD_REQUEST (thiếu safetyAck với kỹ năng rủi ro, quá `media_limits.max_seconds`), CONFLICT (đã có bằng chứng mở cho kỹ năng). Trùng hash → `disputed` + fraud_signals, không phân công.
+- `assignReviewers(db, { proofId, count?, preferHighReputation?, now?, rng? })` → `{ assignedReviewerIds, shortfall }`.
+- `expireOverdueAssignments(db, { now?, rng? })` → `{ expired, reassigned }` — handler cho job `reassignExpiredReviews` (/api/cron).
+- `finalizeProof(db, { proofId, now?, rng? })` → `{ outcome: "waiting" | "needs_more_reviewers" | "tie" | "passed" | "failed", ... }` — gọi sau mỗi phiếu duyệt; CONFLICT nếu bằng chứng không ở `in_review`. Đây là nơi DUY NHẤT ghi level.
+Chưa có `submitReview` (ghi reviews + review_marks + XP review_done) — sẽ làm ở giai đoạn 2 nếu lead giao.

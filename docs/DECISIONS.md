@@ -28,6 +28,9 @@ Ghi lại mọi chỗ tài liệu không nói rõ và phương án đã chọn. 
 - **D44 — "Đạt cấp cao"** ở chi tiết kỹ năng = level ≥ max_level − 1.
 - **D45 — Số kỹ năng tối thiểu khi onboarding (3)** là hằng số form (`ONBOARDING_MIN_SKILLS` trong packages/validation), không phải ngưỡng nghiệp vụ nên không đưa vào app_config.
 - **D46 — Khám phá**: "Hiếm nhất" bỏ kỹ năng holder_count = 0; "Thịnh hành" growth = (tuần này − tuần trước)/max(tuần trước, 1), chỉ lấy growth > 0.
+- **D47 — Bằng chứng trùng hash** → `proofs.status = disputed` (= hàng đợi biên tập viên, không phân công) + `fraud_signals(duplicate_hash, score = số bằng chứng trùng)`.
+- **D48 — Tỉ lệ đạt** so với `review_pass_ratio` (0.667) có sai số 0.0005 để đúng 2/3 phiếu được tính là đạt như DATA_MODEL ("≥ 2/3").
+- **D49 — Phân công**: "cấp cao" (ưu tiên uy tín) = target_level ≥ max_level − 1. Hòa/thiếu người → thêm người duyệt uy tín cao nhất trong số hợp lệ. `users.reputation` kẹp [0,100]; `reputation_events.delta` ghi delta thực áp dụng để tổng sổ cái = cache. Huy hiệu khi đạt: `first-proof`, `max-level`, `rare-holder`/`legendary-holder` (theo độ hiếm trước khi tăng holder_count).
 
 ## Auth & API
 - **D50 — Auth.js v5** với adapter tự viết trên Prisma, session lưu database; cùng `session_token` dùng cho cookie (web) và `Authorization: Bearer` (mobile). Google chỉ bật khi có biến môi trường; EMAIL_SERVER trống → link magic in ra console.

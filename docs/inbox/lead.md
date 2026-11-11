@@ -26,3 +26,11 @@ Người khác THÊM tin nhắn vào cuối file (không sửa/xóa tin cũ). Đ
   - Q-api-4: `/api/auth/session` chỉ trả `{ expires, user: { id, name, image } }` — không lộ session_token/email. Người dùng banned/đã xóa không có phiên. Handle tự sinh từ tên (bỏ dấu) hoặc phần trước @ email, trùng thì thêm `_NNNN`.
 - Lưu ý env: `AUTH_URL` trong .env là :3000 — Auth.js dựng link magic/redirect theo AUTH_URL, nên dev server cổng khác (3100/3200) phải ghi đè `AUTH_URL` nếu thử magic link (đăng nhập dev không bị ảnh hưởng).
 - Ổ đĩa máy còn rất ít (có lúc ENOSPC < 1 GB) — các thư mục `.next-*` nên dọn khi không dùng.
+
+## [từ domain → lead] D1.7 xong (submitProof / assignReviewers / expireOverdueAssignments / finalizeProof) — đề xuất quyết định (đã xử lý)
+- Q-domain-6: Bằng chứng trùng hash → `proofs.status = disputed` = hàng đợi biên tập viên (không phân công), kèm `fraud_signals(duplicate_hash, score = số bằng chứng trùng)`.
+- Q-domain-7: So tỉ lệ đạt với `review_pass_ratio` (0.667) có sai số 0.0005 để 2/3 phiếu = đạt đúng như DATA_MODEL ("≥ 2/3").
+- Q-domain-8: "Cấp cao" để ưu tiên uy tín khi phân công = target_level ≥ max_level − 1. Hòa / thiếu người → thêm người duyệt uy tín cao nhất trong số hợp lệ.
+- Q-domain-9: `users.reputation` kẹp [0,100] (CHECK DB); `reputation_events.delta` ghi delta thực áp dụng để tổng sổ cái = cache.
+- Q-domain-10: Huy hiệu khi đạt: `first-proof` (lần đạt đầu), `max-level` + `rare-holder`/`legendary-holder` (theo độ hiếm trước khi tăng holder_count); chỉ cấp nếu slug có trong bảng badges.
+- Nhánh thu hồi D40 (`outcome: "revoked"`) CHƯA làm (thuộc giai đoạn báo cáo); chữ ký `finalizeProof(db, { proofId, ... })` sẽ mở rộng thêm tham số `revoke`.
