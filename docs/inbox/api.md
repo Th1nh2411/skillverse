@@ -76,3 +76,16 @@ Zod mới: `questProgressInput, feedInput, reactionKind, postReactInput, postCom
 
 ## [từ domain → api] Đã thêm skill.category + skill.rarity (yêu cầu của ui)
 `getReviewQueue().items[].skill`, `getReviewTask().skill` (kiểu `ReviewSkill` = {slug, name, riskLevel, category{slug,name}, rarity}), `getProofStatus().skill` (+category, rarity), và `getPendingProofsForCommunity().items[].skill` (+category, rarity). Chỉ thêm trường, không đổi gì khác.
+
+## [từ domain → api] Giai đoạn 4: chữ ký đề xuất (chỉ thêm) + closeExpiredProposals thật
+- `proposeNewSkill(db,{authorId,name,categorySlug,description?,riskLevel,levels: CriterionInput[][],rationale?})` → `{proposalId, votingEndsAt}` (input Zod `newSkillProposalInput`; `levels[i]` = tiêu chí cấp i+1). CONFLICT trùng tên.
+- `supportProposal(db,{proposalId,userId})` → `{supportCount, needed, status}`; CONFLICT đã ủng hộ; PRECONDITION_FAILED hết hạn / không còn gathering.
+- `decideNewSkill(db,{proposalId,editorId,decision:"accepted"|"rejected",note?})` → `{proposalId,status,skillId,skillSlug}` (editor; chỉ khi editor_review).
+- `proposeCriteriaEdit(db,{authorId,skillLevelId,criteria,summary,rationale?})` → `{proposalId, votingEndsAt}`.
+- `voteCriteriaEdit(db,{proposalId,userId,vote:"agree"|"disagree"})` → `CriteriaTally & {myVote, myWeight}` (đổi phiếu được trước hạn).
+- `closeCriteriaProposal(db,{proposalId})` → `{status:"accepted",criteriaVersionId,version,tally} | {status:"rejected"|"expired",tally}`; `closeExpiredProposals(db,{now?})` → `{criteriaClosed, criteriaAccepted, newSkillExpired}` — đã nối vào `createDomainJobHandlers` (không còn stub).
+- `listProposals(db,{viewerId?,kind?,skillId?,skillSlug?,status?,cursor?,limit?})` → `{items: ProposalSummary[], nextCursor}` (ProposalSummary: id, kind, status, title, author, skill, targetLevel, createdAt, votingEndsAt, supportCount, supportNeeded, tally, commentCount, myVote). Hàng đợi admin = `listProposals({kind:"new_skill", status:"editor_review"})`.
+- `getProposal(db,{proposalId,viewerId?})` → ProposalDetail (+ rationale, payload, currentCriteria, rule, myWeight, decidedAt, createdSkillSlug).
+- `commentOnProposal(db,{proposalId,userId,body})` → `{commentId}`; `listProposalComments(db,{proposalId,cursor?,limit?})`; `tallyCriteriaVotes(db, proposalId)`.
+Zod: `newSkillProposalInput, proposalIdInput, decideNewSkillInput, criteriaEditProposalInput, criteriaVoteInput, listProposalsInput, proposalCommentInput, proposalCommentsInput, criterionInput, riskLevelInput, NEW_SKILL_MIN_LEVELS, NEW_SKILL_MAX_LEVELS, MAX_CRITERIA_PER_LEVEL`.
+Lưu ý: `decideNewSkill` cần khóa app_config `new_skill_defaults` (đã nhờ lead thêm migration).

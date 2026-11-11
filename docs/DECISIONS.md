@@ -42,6 +42,9 @@ Ghi lại mọi chỗ tài liệu không nói rõ và phương án đã chọn. 
 - **D63 — Đấu 1v1**: người tạo là một bên đấu hoặc biên tập viên (MVP: chỉ biên tập viên tạo qua trang quản trị); người đấu không được bỏ phiếu; hòa thì không ai thắng; XP người thắng = `app_config.xp_rewards.duel_won` (200, migration 0004).
 - **D64 — Hồi uy tín hằng tuần** idempotent theo cửa sổ 7 ngày trượt cho từng người.
 - **D65 — Thống kê "Kỹ năng" trên hồ sơ** đếm mọi kỹ năng người dùng đang theo (user_skills, kể cả cấp 0 — đang luyện).
+- **D66 — Đề xuất kỹ năng mới**: tác giả tự ủng hộ khi tạo (support_count bắt đầu 1); trùng tên (bỏ dấu, không phân biệt hoa thường) với kỹ năng/đề xuất đang mở → từ chối; form 3–10 cấp (hằng số form trong validation). Mọi kỹ năng mới (kể cả rủi ro cao) đều qua biên tập viên; biên tập viên không tự duyệt đề xuất của mình. Giá trị mặc định khi tạo: `app_config.new_skill_defaults`.
+- **D67 — Sửa tiêu chí** chỉ chốt sau hạn `criteria_vote_days`: số phiếu có trọng số < min_votes → `expired`; tỉ lệ < agree_ratio (kể cả hòa) → `rejected`; thông qua → criteria_versions mới (version+1, source_proposal_id), trỏ current_version_id, XP/huy hiệu tác giả. Trọng số tính tại thời điểm bỏ phiếu. Nhiệm vụ suggest_criteria tiến khi tạo đề xuất sửa, phiếu đầu tiên, hoặc bình luận đề xuất sửa.
+- **D68 — Người duyệt dự phòng là biên tập viên**: kỹ năng mới chưa ai đạt cấp nên không đủ người duyệt. Khi `app_config.editor_fallback_reviewers = true` và không đủ người hợp lệ, `assignReviewers` bổ sung biên tập viên (bỏ yêu cầu cấp kỹ năng, vẫn áp dụng loại trừ, uy tín, review_ban).
 
 ## Auth & API
 - **D50 — Auth.js v5** với adapter tự viết trên Prisma, session lưu database; cùng `session_token` dùng cho cookie (web) và `Authorization: Bearer` (mobile). Google chỉ bật khi có biến môi trường; EMAIL_SERVER trống → link magic in ra console.

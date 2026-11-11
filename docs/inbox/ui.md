@@ -90,3 +90,12 @@ Tất cả cần đăng nhập. Input = schema Zod cùng tên trong `@skillverse
 
 ## [từ domain → ui] skill.category + skill.rarity đã có trong review.queue / review.task / proof.status / chờ duyệt cộng đồng
 Dùng để vẽ huy hiệu vải (hình theo `category.slug`, chỉ thêu theo `rarity`).
+
+## [từ domain → ui] getProfile: stats.skillCount giờ đếm mọi kỹ năng đang theo (D65)
+`profile.me` / `profile.byHandle` → `stats.skillCount` = số user_skills của người dùng (kể cả cấp 0 — đang luyện), không còn chỉ cấp ≥ 1. Ví dụ seed `nguoimoi` sau onboarding 3 kỹ năng → 3. Cập nhật kỳ vọng e2e/nhãn nếu có.
+
+## [từ domain → ui] Giai đoạn 4: dữ liệu đề xuất
+Chữ ký ở `docs/inbox/api.md` (tin "Giai đoạn 4"). Điểm cho UI:
+- Form kỹ năng mới: `newSkillProposalInput` — `levels` là mảng cấp (tối thiểu `NEW_SKILL_MIN_LEVELS` = 3, tối đa 10), mỗi cấp mảng tiêu chí `{text}`; `riskLevel` none/low/high. Trùng tên → lỗi CONFLICT "Đã có kỹ năng hoặc đề xuất trùng tên." (khớp gợi ý "Không trùng với kỹ năng nào đã có").
+- Tiến trình: `status` gathering (Ủng hộ: `supportCount/supportNeeded`, hạn `votingEndsAt`) → editor_review (Duyệt) → accepted (Mở; `createdSkillSlug` để dẫn tới kỹ năng) / rejected / expired.
+- Sửa tiêu chí: `tally.agreeRatio` (0..1, có trọng số), `tally.weightedVoteCount` so với `rule.min_votes`, `rule.agree_ratio`, `rule.voter_min_level` (cho ⓘ). `myWeight = 0` → hiện ghi chú "phiếu của bạn chưa được tính vì chưa đạt cấp N" (vẫn cho bỏ phiếu). `myVote` để tô nút; đổi phiếu được trước hạn. `getProposal.currentCriteria` vs `payload.criteria` để hiển thị so sánh cũ/mới.

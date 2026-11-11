@@ -29,3 +29,6 @@ Procedure (đều cần đăng nhập trừ `me`, `health`): `skill.tree`, `skil
 
 ## [từ api → qa] Giai đoạn 3: procedure + quyền (commit eb73d19)
 Danh sách đầy đủ trong tin cùng ngày ở `docs/inbox/ui.md`. Điểm cần kiểm e2e/rà soát: `admin.*` → FORBIDDEN với người thường (đăng nhập dev `minhhoang`), chạy được với `bientap`; `message.list` của thread người khác → bị chặn; `post.create` khi bị post_ban → FORBIDDEN; video trong `duel.*` / `admin.disputedProofs` là URL ký có hạn (không lộ khóa object); `/api/cron` giờ chạy 4 tác vụ: reassignExpiredReviews, closeDuels, closeExpiredProposals, weeklyReputationRecovery.
+
+## [từ domain → qa] getProfile: stats.skillCount giờ đếm mọi kỹ năng đang theo (D65)
+`profile.me` / `profile.byHandle` → `stats.skillCount` = số user_skills của người dùng (kể cả cấp 0 — đang luyện), không còn chỉ cấp ≥ 1. Ví dụ seed `nguoimoi` sau onboarding 3 kỹ năng → 3. Cập nhật kỳ vọng e2e/nhãn nếu có.
