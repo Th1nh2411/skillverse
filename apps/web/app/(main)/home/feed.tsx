@@ -114,7 +114,7 @@ function LevelUpItem({ it }: { it: Item }) {
         <Actions it={it} />
       </div>
       <Link href={`/share/${lu.proofId}`} aria-label="Xem thẻ thành tích" className="shrink-0 self-start">
-        <LevelPatch categorySlug="" state="earned" level={lu.level} size={48} />
+        <LevelPatch categorySlug={it.skill?.category.slug ?? ""} rarity={it.skill?.rarity ?? null} state="earned" level={lu.level} size={48} />
       </Link>
     </article>
   );

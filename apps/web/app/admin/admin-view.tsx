@@ -178,7 +178,7 @@ function ReportCard({ r }: { r: Report }) {
           Xác nhận
         </Button>
       </div>
-      {r.targetType === "user" ? <SanctionForm userId={r.targetId} reportId={r.id} /> : null}
+      {r.target.ownerId ? <SanctionForm userId={r.target.ownerId} reportId={r.id} /> : null}
     </li>
   );
 }

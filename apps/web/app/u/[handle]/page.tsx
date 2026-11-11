@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import { getServerCaller } from "@/lib/server/trpc";
+import { getServerCaller, getViewer } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { ReportSheet } from "@/components/report-sheet";
 import { BackButton } from "@/components/ui/back-button";
@@ -27,11 +27,17 @@ export default async function PeerProfilePage({ params }: Params) {
   const api = await getServerCaller();
   const p = await orNotFound(api.profile.byHandle({ handle }));
   if (p.isMe) redirect("/profile");
-  const [me, swaps] = await Promise.all([api.profile.me(), api.swap.list()]);
+  const viewer = await getViewer();
+  const [mine, theirs, swaps] = await Promise.all([
+    viewer ? api.profile.skills({ handle: viewer.handle }) : Promise.resolve([]),
+    api.profile.skills({ handle: p.handle }),
+    api.swap.list(),
+  ]);
   const swap = swaps.find((s) => s.other.handle === p.handle && (s.status === "proposed" || s.status === "accepted")) ?? null;
 
-  const myTeach = me.featuredSkills.filter((s) => s.level >= 1).map((s) => ({ id: s.skillId, name: s.name }));
-  const theirTeach = p.featuredSkills.filter((s) => s.level >= 1).map((s) => ({ id: s.skillId, name: s.name }));
+  // profile.skills: toàn bộ kỹ năng cấp ≥ 1 (không bị cắt như featuredSkills).
+  const myTeach = mine.map((s) => ({ id: s.skillId, name: s.name }));
+  const theirTeach = theirs.map((s) => ({ id: s.skillId, name: s.name }));
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-10">

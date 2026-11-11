@@ -184,12 +184,12 @@ function Proposals({ slug, proposals, canSuggest }: { slug: string; proposals: P
         <ul className="flex flex-col gap-5">
           {proposals.slice(0, 3).map((p) => (
             <li key={p.id} className="flex flex-col gap-2.5">
-              <Link href={`/proposals/${p.id}`} className="flex items-start gap-2 text-[14px] leading-snug hover:underline">
+              <Link href={`/proposals/${p.id}`} className="flex min-h-11 items-center gap-2 text-[14px] leading-snug hover:underline">
                 <span className="flex-1">
                   {p.targetLevel ? <b className="font-semibold">Cấp {p.targetLevel}: </b> : null}
                   {(p.summary ?? p.proposedCriteria[0]?.text ?? "").replace(/^Cấp\s*\d+\s*:\s*/i, "")}
                 </span>
-                <ChevronRight size={16} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+                <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden />
               </Link>
               <CriteriaVote
                 proposalId={p.id}
@@ -203,7 +203,7 @@ function Proposals({ slug, proposals, canSuggest }: { slug: string; proposals: P
         </ul>
       )}
       {proposals.length > 3 ? (
-        <Link href={`/proposals?kind=edit_criteria&skill=${slug}`} className="text-[14px] font-semibold text-accent hover:underline">
+        <Link href={`/proposals?kind=edit_criteria&skill=${slug}`} className="inline-flex min-h-11 items-center text-[14px] font-semibold text-accent hover:underline">
           Xem tất cả {proposals.length} góp ý
         </Link>
       ) : null}
