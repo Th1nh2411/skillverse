@@ -4,6 +4,7 @@ import {
   createAuthAdapter,
   createSessionFor,
   devLogin,
+  devLoginEnabled,
   getSessionUser,
   handleBase,
   sessionTokenFromHeaders,
@@ -117,6 +118,11 @@ describe("phân giải phiên (cookie | Bearer)", () => {
     expect(await devLogin(db, u.handle, { AUTH_DEV_LOGIN: "false" } as NodeJS.ProcessEnv)).toBeNull();
     expect(await devLogin(db, u.handle, { AUTH_DEV_LOGIN: "true", VERCEL_ENV: "production" } as NodeJS.ProcessEnv)).toBeNull();
     expect(await devLogin(db, "khong_co_ai", { AUTH_DEV_LOGIN: "true" } as NodeJS.ProcessEnv)).toBeNull();
+    // Build production (next start / preview): phải bật rõ AUTH_DEV_LOGIN_ALLOW_PRODUCTION
+    const prod = { AUTH_DEV_LOGIN: "true", NODE_ENV: "production" } as NodeJS.ProcessEnv;
+    expect(devLoginEnabled(prod)).toBe(false);
+    expect(devLoginEnabled({ ...prod, AUTH_DEV_LOGIN_ALLOW_PRODUCTION: "true" })).toBe(true);
+    expect(devLoginEnabled({ ...prod, AUTH_DEV_LOGIN_ALLOW_PRODUCTION: "true", VERCEL_ENV: "production" })).toBe(false);
     const ok = await devLogin(db, u.handle, { AUTH_DEV_LOGIN: "true" } as NodeJS.ProcessEnv);
     expect(ok?.user.id).toBe(u.id);
     expect((await getSessionUser(db, ok!.sessionToken))?.id).toBe(u.id);

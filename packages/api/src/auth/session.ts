@@ -93,9 +93,17 @@ export async function createSessionFor(
   return { sessionToken, expires };
 }
 
-/** Bật đăng nhập dev? Chỉ khi AUTH_DEV_LOGIN=true và KHÔNG phải production thật trên Vercel. */
+/**
+ * Bật đăng nhập dev? Cần AUTH_DEV_LOGIN=true, và:
+ * - KHÔNG BAO GIỜ trên Vercel production (VERCEL_ENV=production), kể cả khi bật nhầm;
+ * - với build production khác (NODE_ENV=production: `next start`, Vercel preview) phải bật rõ thêm
+ *   AUTH_DEV_LOGIN_ALLOW_PRODUCTION=true (vd. preview demo / e2e trên bản build).
+ */
 export function devLoginEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.AUTH_DEV_LOGIN === "true" && env.VERCEL_ENV !== "production";
+  if (env.AUTH_DEV_LOGIN !== "true") return false;
+  if (env.VERCEL_ENV === "production") return false;
+  if (env.NODE_ENV === "production" && env.AUTH_DEV_LOGIN_ALLOW_PRODUCTION !== "true") return false;
+  return true;
 }
 
 /** Đăng nhập dev bằng handle seed. Trả null nếu tắt hoặc không có người dùng hợp lệ. */
