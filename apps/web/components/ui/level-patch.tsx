@@ -1,6 +1,6 @@
 import { Lock, type LucideIcon } from "lucide-react";
 import { useId } from "react";
-import { patchFabric, patchShape, RARITY_LABEL, type PatchShape, type Rarity } from "@/lib/skill-visual";
+import { patchFabric, patchShape, RARITY_LABEL, threadOf, type PatchShape, type Rarity, type Thread } from "@/lib/skill-visual";
 
 /**
  * Huy hiệu cấp độ vẽ như miếng vải thêu: viền vắt sổ (merrow) bằng chỉ, nền vải dệt chéo,
@@ -25,7 +25,7 @@ export type LevelPatchProps = {
   className?: string;
 };
 
-const THREAD: Record<Rarity, string> = {
+const THREAD: Record<Thread, string> = {
   common: "var(--color-thread-common)",
   rare: "var(--color-thread-rare)",
   legendary: "var(--color-thread-legendary)",
@@ -74,7 +74,7 @@ function shapePath(shape: PatchShape, scale: number): string {
 
 export function LevelPatch({
   categorySlug,
-  rarity = "common",
+  rarity: rarityIn = null,
   state = "earned",
   level,
   icon: Icon,
@@ -82,6 +82,7 @@ export function LevelPatch({
   label,
   className,
 }: LevelPatchProps) {
+  const rarity = threadOf(rarityIn);
   const uid = useId().replace(/:/g, "");
   const shape = patchShape(categorySlug);
   const fabric = patchFabric(categorySlug);

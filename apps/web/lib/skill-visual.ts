@@ -23,8 +23,13 @@ import {
 /** Hình miếng vải thêu theo danh mục kỹ năng. */
 export type PatchShape = "shield" | "hexagon" | "circle" | "square";
 
-/** Độ hiếm hiển thị bằng chỉ thêu (domain tính từ holder_count + app_config.rarity_thresholds). */
-export type Rarity = "legendary" | "rare" | "common";
+/**
+ * Độ hiếm hiển thị bằng chỉ thêu. Domain trả "legendary" | "rare" | null (null = phổ biến),
+ * tính từ holder_count + app_config.rarity_thresholds.
+ */
+export type Rarity = "legendary" | "rare" | null;
+export type Thread = "legendary" | "rare" | "common";
+export const threadOf = (r: Rarity | undefined): Thread => r ?? "common";
 
 const SKILL_ICONS: Record<string, LucideIcon> = {
   "sinh-ton-co-ban": Compass,
@@ -82,14 +87,14 @@ export function patchFabric(categorySlug: string): string {
   return CATEGORY_FABRIC[categorySlug] ?? "#2e3a33";
 }
 
-export const RARITY_LABEL: Record<Rarity, string> = {
+export const RARITY_LABEL: Record<Thread, string> = {
   legendary: "Huyền thoại",
   rare: "Hiếm",
   common: "Phổ biến",
 };
 
 /** Lớp màu chữ theo độ hiếm (dùng khi cần nhắc độ hiếm bằng màu, không bằng chữ in hoa). */
-export const RARITY_TEXT: Record<Rarity, string> = {
+export const RARITY_TEXT: Record<Thread, string> = {
   legendary: "text-accent",
   rare: "text-teal",
   common: "text-muted",

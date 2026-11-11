@@ -16,7 +16,7 @@ export default function KitPage() {
       <h1 className="font-display text-[28px] font-extrabold">Bộ thành phần</h1>
       {cats.map((c) => (
         <div key={c} className="flex items-center gap-3">
-          <LevelPatch categorySlug={c} rarity="common" level={3} size={64} />
+          <LevelPatch categorySlug={c} level={3} size={64} />
           <LevelPatch categorySlug={c} rarity="rare" level={4} size={64} />
           <LevelPatch categorySlug={c} rarity="legendary" level={5} size={64} />
           <LevelPatch categorySlug={c} rarity="rare" state="practicing" icon={skillIcon("", c)} size={64} />
