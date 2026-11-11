@@ -19,3 +19,4 @@ export * from "./quests";
 export * from "./feed";
 export * from "./challenges";
 export * from "./social";
+export * from "./proposals";

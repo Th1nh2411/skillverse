@@ -18,5 +18,6 @@ export * from "./skills";
 export * from "./onboarding";
 export * from "./proofs";
 export * from "./social";
+export * from "./proposals";
 
 export { z };

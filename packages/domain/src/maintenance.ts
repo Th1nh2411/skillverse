@@ -7,6 +7,7 @@ import type { JobHandler, JobName } from "./jobs";
 import { applyReputation } from "./ledger";
 import { closeDuels } from "./challenges";
 import { expireOverdueAssignments } from "./proofs";
+import { closeExpiredProposals } from "./proposals";
 
 const DAY_MS = 86_400_000;
 
@@ -52,12 +53,12 @@ export async function weeklyReputationRecovery(db: Db, p: { now?: Date } = {}): 
   return { recovered };
 }
 
-/** Handler domain cho InlineJobRunner. closeExpiredProposals chưa có (giai đoạn góp ý) → no-op. */
+/** Handler domain cho InlineJobRunner. */
 export function createDomainJobHandlers(db: Db): Partial<Record<JobName, JobHandler>> {
   return {
     reassignExpiredReviews: () => reassignExpiredReviews(db),
     weeklyReputationRecovery: () => weeklyReputationRecovery(db),
-    closeExpiredProposals: async () => ({ closed: 0 }),
+    closeExpiredProposals: () => closeExpiredProposals(db),
     closeDuels: () => closeDuels(db),
   };
 }
