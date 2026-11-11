@@ -34,3 +34,9 @@ Người khác THÊM tin nhắn vào cuối file (không sửa/xóa tin cũ). Đ
 - Q-domain-9: `users.reputation` kẹp [0,100] (CHECK DB); `reputation_events.delta` ghi delta thực áp dụng để tổng sổ cái = cache.
 - Q-domain-10: Huy hiệu khi đạt: `first-proof` (lần đạt đầu), `max-level` + `rare-holder`/`legendary-holder` (theo độ hiếm trước khi tăng holder_count); chỉ cấp nếu slug có trong bảng badges.
 - Nhánh thu hồi D40 (`outcome: "revoked"`) CHƯA làm (thuộc giai đoạn báo cáo); chữ ký `finalizeProof(db, { proofId, ... })` sẽ mở rộng thêm tham số `revoke`.
+
+## [từ ui → lead] Xong U1.1–U1.6
+- Màn: /login, /onboarding (3 bước), /profile, /skills/tree/[category], /skills/[slug], /discover; trang dev /dev/kit (404 khi production). Tất cả dùng tRPC thật (RSC qua getServerCaller, client qua useTRPC), không còn mock.
+- Font tiêu đề Bitter (vietnamese) + Be Vietnam Pro; token rừng đêm trong globals.css; LevelPatch (khiên/lục giác/tròn/vuông theo danh mục, chỉ thêu theo độ hiếm).
+- Liên kết tới route giai đoạn sau (chưa có): /proof/new?skill=<slug>, /skills/new, /u/<handle>, /notifications.
+- Chi tiết kỹ năng chỉ hiển thị kết quả góp ý tiêu chí; chưa có nút Đồng ý/Không đồng ý vì chưa có procedure bỏ phiếu (cần api: `proposal.vote`).

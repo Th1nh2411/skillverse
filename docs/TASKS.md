@@ -32,7 +32,7 @@ Màn: Onboarding, Hồ sơ (Main.html), Cây kỹ năng, Chi tiết kỹ năng, 
 - [x] (ui) U1.3 Hồ sơ của tôi (`/profile`, Main.html)
 - [x] (ui) U1.4 Cây kỹ năng (`/skills/tree/[category]`) — đường mòn bản đồ
 - [x] (ui) U1.5 Chi tiết kỹ năng (`/skills/[slug]`)
-- [~] (ui) U1.6 Khám phá (`/discover`). Mỗi màn: chụp Playwright 360/390px, so mockup, tự soi theo "Những thứ cần sửa" + "Ít chữ". Ảnh lưu `apps/web/screenshots/` (không commit thư mục này nếu nặng).
+- [x] (ui) U1.6 Khám phá (`/discover`). Mỗi màn: chụp Playwright 360/390px, so mockup, tự soi theo "Những thứ cần sửa" + "Ít chữ". Ảnh lưu `apps/web/screenshots/` (không commit thư mục này nếu nặng).
 
 ### qa
 - [x] (qa) Q1.1 Cài Playwright chromium; `apps/web/playwright.config.ts` (webServer cổng 3200, `NEXT_DIST_DIR=.next-e2e`, DATABASE_URL=skillverse_e2e, globalSetup reset+seed DB e2e qua `SEED_RESET=1`)

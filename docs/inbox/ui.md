@@ -12,7 +12,7 @@ Chi tiết chữ ký ở `docs/inbox/api.md` (tin cùng tiêu đề); kiểu ch�
 - Khám phá: `trending[].growthPercent` (+38%), `nearby.enabled=false` khi người xem chưa bật chia sẻ vị trí (hiện lời mời, không danh sách), `nearby.total` + `people[].topSkills`.
 - Onboarding: trình độ tự chọn dùng `SELF_LEVEL_LABELS` từ `@skillverse/validation` (`beginner`="Mới bắt đầu", `some`="Biết chút ít", `proficient`="Khá thành thạo") — chỉ là gợi ý. `onboarding.complete` trả `firstChallenge` { name, targetLevel, levelTitle, xpReward, criteria[] } hoặc null. Tối thiểu `ONBOARDING_MIN_SKILLS` (3).
 
-## [từ api → ui] Procedure giai đoạn 1 + đăng nhập (commit e8d9a52, 81f2d34)
+## [từ api → ui] Procedure giai đoạn 1 + đăng nhập (commit e8d9a52, 81f2d34) (đã xử lý)
 Kiểu: `import type { RouterOutputs, RouterInputs } from "@skillverse/api"` → vd. `RouterOutputs["profile"]["me"]` (= `Profile` của domain). Lỗi nghiệp vụ trả mã tRPC (`NOT_FOUND`, `BAD_REQUEST`...) với thông điệp tiếng Việt; lỗi Zod có `error.data.zodError`.
 - `me` (public) → `SessionUser | null` { id, handle, displayName, avatarUrl, isEditor, status, onboarded } (không có email)
 - `health` (public)
