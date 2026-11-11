@@ -134,6 +134,9 @@ describe("feed", () => {
     const { submitter, proofId } = await proofThroughLoop(db, { categoryId: catId });
     const feed = await getHomeFeed(db, { userId: submitter.id });
     expect(feed.items[0]).toMatchObject({ kind: "level_up", levelUp: { proofId, level: 1, passVotes: 3, totalVotes: 3 } });
+    // Huy hiệu trên bài lên cấp: danh mục + độ hiếm
+    expect(feed.items[0]!.skill).toMatchObject({ category: { slug: expect.any(String) } });
+    expect(feed.items[0]!.skill).toHaveProperty("rarity");
   });
 });
 

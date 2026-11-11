@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { getProfile } from "../src";
+import { getProfile, listUserSkills } from "../src";
 import { closeTestDb, fx, getTestDb, resetDb, type FxSkill } from "../src/testing";
 
 const db = getTestDb();
@@ -86,5 +86,19 @@ describe("getProfile", () => {
   it("không tìm thấy → NOT_FOUND; thiếu tham số → BAD_REQUEST", async () => {
     await expect(getProfile(db, { handle: "khong_co" })).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(getProfile(db, {})).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+});
+
+describe("listUserSkills", () => {
+  it("mọi kỹ năng cấp ≥ 1 (không cắt), sắp theo cấp giảm dần, kèm danh mục + độ hiếm", async () => {
+    const list = await listUserSkills(db, { handle: "minh_test" });
+    expect(list.map((s) => [s.name, s.level])).toEqual([
+      ["Sơ cứu", 5],
+      ["Nhóm lửa", 4],
+      ["Mở khóa", 2],
+    ]);
+    expect(list[2]).toMatchObject({ category: { slug: "ky-nang-di" }, rarity: "legendary" });
+    expect(await listUserSkills(db, { userId: me.id })).toHaveLength(3);
+    await expect(listUserSkills(db, { handle: "khong_co_ai" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });

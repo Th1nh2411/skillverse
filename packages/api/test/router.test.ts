@@ -104,6 +104,8 @@ describe("router gọi domain", () => {
     expect(me).toMatchObject({ handle: "minhhoang" });
     expect(await c.profile.byHandle({ handle: "nguoimoi" })).toMatchObject({ handle: "nguoimoi" });
     await expectCode(c.profile.byHandle({ handle: "khong_co_ai" }), "NOT_FOUND");
+    expect((await c.profile.skills({ handle: "minhhoang" })).map((s) => s.level)).toEqual([3]);
+    await expectCode((await caller(null)).profile.skills({ handle: "minhhoang" }), "UNAUTHORIZED");
   });
 
   it("skill.tree / detail / search; DomainError NOT_FOUND map sang mã tRPC", async () => {

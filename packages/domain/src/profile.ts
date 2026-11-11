@@ -161,3 +161,49 @@ export async function getProfile(
     onboarded: user.onboardedAt !== null,
   };
 }
+
+export type UserSkillItem = {
+  skillId: string;
+  slug: string;
+  name: string;
+  level: number;
+  maxLevel: number;
+  category: { slug: string; name: string };
+  rarity: Rarity;
+};
+
+/**
+ * Toàn bộ kỹ năng đã đạt cấp ≥ 1 của một người (không cắt như featuredSkills) — dùng cho đề nghị trao đổi
+ * ("Bạn dạy / Họ dạy"). Sắp theo cấp giảm dần rồi tên.
+ */
+export async function listUserSkills(db: Db, input: { handle?: string; userId?: string }): Promise<UserSkillItem[]> {
+  if (!input.handle && !input.userId) throw new DomainError("BAD_REQUEST", "Thiếu người dùng cần xem.");
+  const user = await db.user.findFirst({
+    where: { ...(input.userId ? { id: input.userId } : { handle: input.handle }), deletedAt: null, status: { not: "banned" } },
+    select: { id: true },
+  });
+  if (!user) throw new DomainError("NOT_FOUND", "Không tìm thấy người dùng.");
+  const [rows, thresholds] = await Promise.all([
+    db.userSkill.findMany({
+      where: { userId: user.id, level: { gte: 1 }, skill: { status: "active" } },
+      select: {
+        level: true,
+        skill: {
+          select: { id: true, slug: true, name: true, maxLevel: true, holderCount: true, category: { select: { slug: true, name: true } } },
+        },
+      },
+    }),
+    getRarityThresholds(db),
+  ]);
+  return rows
+    .map((r) => ({
+      skillId: r.skill.id,
+      slug: r.skill.slug,
+      name: r.skill.name,
+      level: r.level,
+      maxLevel: r.skill.maxLevel,
+      category: r.skill.category,
+      rarity: rarityOf(r.skill.holderCount, thresholds),
+    }))
+    .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name, "vi"));
+}

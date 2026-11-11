@@ -47,7 +47,10 @@ describe("báo cáo → thu hồi level qua finalizeProof (D40)", () => {
     const { reportId } = await createReport(db, { reporterId: reporter.id, targetType: "proof", targetId: proofId, reason: "reused_video", now: NOW });
     const second = await createReport(db, { reporterId: (await fx.user(db)).id, targetType: "proof", targetId: proofId, reason: "edited", now: NOW });
     const list = await listReports(db, { editorId: editor.id });
-    expect(list.items.find((i) => i.id === reportId)).toMatchObject({ openReportsOnTarget: 2, target: { proofStatus: "passed" } });
+    expect(list.items.find((i) => i.id === reportId)).toMatchObject({
+      openReportsOnTarget: 2,
+      target: { proofStatus: "passed", ownerId: submitter.id },
+    });
 
     const res = await resolveReport(db, { reportId, editorId: editor.id, decision: "confirmed", outcome: "Video trùng nguồn", now: NOW });
     expect(res.action).toBe("level_revoked");

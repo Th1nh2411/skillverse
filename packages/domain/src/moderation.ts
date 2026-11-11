@@ -130,6 +130,8 @@ export type ReportListItem = {
   openReportsOnTarget: number;
   /** Mô tả ngắn đối tượng cho biên tập viên. */
   target: {
+    /** Id người sở hữu đối tượng (người nộp / tác giả / người duyệt / chính người bị báo cáo) — để xử phạt. */
+    ownerId: string | null;
     ownerHandle: string | null;
     title: string;
     proofStatus?: string;
@@ -179,27 +181,27 @@ async function describeTarget(db: Db, type: ReportTarget, id: string): Promise<R
     case "proof": {
       const p = await db.proof.findUnique({
         where: { id },
-        select: { targetLevel: true, status: true, user: { select: { handle: true } }, skill: { select: { name: true } } },
+        select: { targetLevel: true, status: true, user: { select: { id: true, handle: true } }, skill: { select: { name: true } } },
       });
       return p
-        ? { ownerHandle: p.user.handle, title: `${p.skill.name}: cấp ${p.targetLevel}`, proofStatus: p.status }
-        : { ownerHandle: null, title: "(không còn)" };
+        ? { ownerId: p.user.id, ownerHandle: p.user.handle, title: `${p.skill.name}: cấp ${p.targetLevel}`, proofStatus: p.status }
+        : { ownerId: null, ownerHandle: null, title: "(không còn)" };
     }
     case "user": {
-      const u = await db.user.findUnique({ where: { id }, select: { handle: true, displayName: true } });
-      return { ownerHandle: u?.handle ?? null, title: u?.displayName ?? "(không còn)" };
+      const u = await db.user.findUnique({ where: { id }, select: { id: true, handle: true, displayName: true } });
+      return { ownerId: u?.id ?? null, ownerHandle: u?.handle ?? null, title: u?.displayName ?? "(không còn)" };
     }
     case "post": {
-      const p = await db.post.findUnique({ where: { id }, select: { body: true, author: { select: { handle: true } } } });
-      return { ownerHandle: p?.author.handle ?? null, title: (p?.body ?? "").slice(0, 120) };
+      const p = await db.post.findUnique({ where: { id }, select: { body: true, author: { select: { id: true, handle: true } } } });
+      return { ownerId: p?.author.id ?? null, ownerHandle: p?.author.handle ?? null, title: (p?.body ?? "").slice(0, 120) };
     }
     case "review": {
-      const r = await db.review.findUnique({ where: { id }, select: { verdict: true, comment: true, reviewer: { select: { handle: true } } } });
-      return { ownerHandle: r?.reviewer.handle ?? null, title: r ? `Phiếu ${r.verdict === "pass" ? "đạt" : "chưa đạt"}${r.comment ? `: ${r.comment.slice(0, 80)}` : ""}` : "(không còn)" };
+      const r = await db.review.findUnique({ where: { id }, select: { verdict: true, comment: true, reviewer: { select: { id: true, handle: true } } } });
+      return { ownerId: r?.reviewer.id ?? null, ownerHandle: r?.reviewer.handle ?? null, title: r ? `Phiếu ${r.verdict === "pass" ? "đạt" : "chưa đạt"}${r.comment ? `: ${r.comment.slice(0, 80)}` : ""}` : "(không còn)" };
     }
     case "skill": {
       const s = await db.skill.findUnique({ where: { id }, select: { name: true } });
-      return { ownerHandle: null, title: s?.name ?? "(không còn)" };
+      return { ownerId: null, ownerHandle: null, title: s?.name ?? "(không còn)" };
     }
   }
 }

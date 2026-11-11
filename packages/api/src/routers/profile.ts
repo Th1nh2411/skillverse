@@ -1,4 +1,4 @@
-import { getProfile } from "@skillverse/domain";
+import { getProfile, listUserSkills } from "@skillverse/domain";
 import { profileByHandleInput } from "@skillverse/validation";
 import { protectedProcedure, router } from "../trpc";
 
@@ -10,4 +10,9 @@ export const profileRouter = router({
   byHandle: protectedProcedure
     .input(profileByHandleInput)
     .query(({ ctx, input }) => getProfile(ctx.db, { handle: input.handle, viewerId: ctx.user.id })),
+
+  /** Toàn bộ kỹ năng cấp ≥ 1 của một người (đề nghị trao đổi "Bạn dạy / Họ dạy"). */
+  skills: protectedProcedure
+    .input(profileByHandleInput)
+    .query(({ ctx, input }) => listUserSkills(ctx.db, { handle: input.handle })),
 });

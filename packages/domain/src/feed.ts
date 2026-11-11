@@ -4,7 +4,9 @@
 import type { PostKind, Prisma } from "@skillverse/db";
 import { withTx, type Db } from "./db";
 import { DomainError } from "./errors";
+import { getRarityThresholds, type RarityThresholds } from "./config";
 import { assertCanPost } from "./moderation";
+import { rarityOf, type Rarity } from "./rarity";
 
 export const REACTION_KINDS = ["like", "cheer"] as const;
 export type ReactionKind = (typeof REACTION_KINDS)[number];
@@ -18,7 +20,8 @@ export type FeedItem = {
   likeCount: number;
   commentCount: number;
   author: { handle: string; displayName: string; avatarUrl: string | null; accountLevel: number };
-  skill: { slug: string; name: string } | null;
+  /** category + rarity để vẽ huy hiệu vải (hình theo danh mục, chỉ thêu theo độ hiếm). */
+  skill: { slug: string; name: string; category: { slug: string; name: string }; rarity: Rarity } | null;
   /** Bài lên cấp: cấp đạt + số người duyệt đạt / tổng phiếu ("3/3 người duyệt"). proofId để mở thẻ chia sẻ. */
   levelUp: { proofId: string; level: number; passVotes: number; totalVotes: number } | null;
   myReactions: ReactionKind[];
@@ -55,7 +58,7 @@ const postSelect = {
   skillId: true,
   proofId: true,
   author: { select: { handle: true, displayName: true, avatarUrl: true, accountLevel: true } },
-  skill: { select: { slug: true, name: true } },
+  skill: { select: { slug: true, name: true, holderCount: true, category: { select: { slug: true, name: true } } } },
   proof: {
     select: {
       targetLevel: true,
@@ -147,13 +150,19 @@ export async function getHomeFeed(
       })
     : [];
 
+  const thresholds = await getRarityThresholds(db);
   return {
-    items: rows.map(({ row, followed }) => toFeedItem(row, followed, reactions)),
+    items: rows.map(({ row, followed }) => toFeedItem(row, followed, reactions, thresholds)),
     nextCursor: next ? encodeCursor(next) : null,
   };
 }
 
-function toFeedItem(row: PostRow, followed: boolean, reactions: { postId: string; kind: string }[]): FeedItem {
+function toFeedItem(
+  row: PostRow,
+  followed: boolean,
+  reactions: { postId: string; kind: string }[],
+  thresholds: RarityThresholds,
+): FeedItem {
   return {
     id: row.id,
     kind: row.kind,
@@ -163,7 +172,14 @@ function toFeedItem(row: PostRow, followed: boolean, reactions: { postId: string
     likeCount: row.likeCount,
     commentCount: row.commentCount,
     author: row.author,
-    skill: row.skill,
+    skill: row.skill
+      ? {
+          slug: row.skill.slug,
+          name: row.skill.name,
+          category: row.skill.category,
+          rarity: rarityOf(row.skill.holderCount, thresholds),
+        }
+      : null,
     levelUp:
       row.kind === "level_up" && row.proof && row.proofId
         ? {
