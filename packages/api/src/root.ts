@@ -2,6 +2,8 @@ import { publicProcedure, router } from "./trpc";
 import { discoverRouter } from "./routers/discover";
 import { onboardingRouter } from "./routers/onboarding";
 import { profileRouter } from "./routers/profile";
+import { levelUpRouter, proofRouter, shareRouter } from "./routers/proof";
+import { reviewRouter } from "./routers/review";
 import { skillRouter } from "./routers/skill";
 
 export const appRouter = router({
@@ -12,6 +14,10 @@ export const appRouter = router({
   discover: discoverRouter,
   profile: profileRouter,
   onboarding: onboardingRouter,
+  proof: proofRouter,
+  review: reviewRouter,
+  levelUp: levelUpRouter,
+  share: shareRouter,
 });
 
 export type AppRouter = typeof appRouter;
