@@ -4,12 +4,12 @@
  * QUY TẮC: `finalizeProof()` là nơi DUY NHẤT trong code ứng dụng ghi `user_skills.level`,
  * và luôn chạy trong MỘT transaction.
  */
-import type { Prisma, ProofStatus, Tx } from "@skillverse/db";
-import { getAccountLevelCurve, getConfig, getRarityThresholds, type MediaLimits, type ReputationDeltas } from "./config";
+import type { Prisma, ProofStatus } from "@skillverse/db";
+import { getConfig, getRarityThresholds, type MediaLimits, type ReputationDeltas } from "./config";
 import { withTx, type Db } from "./db";
 import { DomainError } from "./errors";
+import { applyReputation, awardXp } from "./ledger";
 import { rarityOf } from "./rarity";
-import { accountLevelForXp } from "./xp";
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
@@ -34,11 +34,52 @@ export type SubmitProofParams = {
   capturedAt?: Date | null;
   caption?: string | null;
   safetyAck?: boolean;
-  /** Kết quả AI sơ bộ — chỉ tham khảo. */
+  /** MIME type của file (kiểm tra theo media_limits.allowed_types). */
+  contentType?: string | null;
+  /** Kích thước file (byte), kiểm tra theo media_limits.max_mb. */
+  sizeBytes?: number | null;
+  /** Kết quả AI sơ bộ — chỉ tham khảo. Bỏ trống → dùng bản giả lập `simulateAiPrecheck`. */
   aiPrecheck?: Prisma.InputJsonValue | null;
   now?: Date;
   rng?: () => number;
 };
+
+export type AiPrecheck = {
+  /** Luôn true: AI chỉ tham khảo, người duyệt quyết định. */
+  advisoryOnly: true;
+  checks: { key: "duration" | "format" | "size"; ok: boolean | null; detail: string }[];
+};
+
+/**
+ * Kiểm tra sơ bộ giả lập (MVP chưa có AI): chỉ đối chiếu thời lượng, định dạng, dung lượng với media_limits.
+ * `ok = null` khi thiếu dữ liệu.
+ */
+export function simulateAiPrecheck(
+  m: { durationS?: number | null; contentType?: string | null; sizeBytes?: number | null },
+  limits: MediaLimits,
+): AiPrecheck {
+  const mb = m.sizeBytes != null ? m.sizeBytes / (1024 * 1024) : null;
+  return {
+    advisoryOnly: true,
+    checks: [
+      {
+        key: "duration",
+        ok: m.durationS != null ? m.durationS <= limits.max_seconds : null,
+        detail: m.durationS != null ? `${m.durationS}/${limits.max_seconds} giây` : "Chưa rõ thời lượng",
+      },
+      {
+        key: "format",
+        ok: m.contentType ? limits.allowed_types.includes(m.contentType) : null,
+        detail: m.contentType ?? "Chưa rõ định dạng",
+      },
+      {
+        key: "size",
+        ok: mb != null ? mb <= limits.max_mb : null,
+        detail: mb != null ? `${mb.toFixed(1)}/${limits.max_mb} MB` : "Chưa rõ dung lượng",
+      },
+    ],
+  };
+}
 
 export type SubmitProofResult = {
   proofId: string;
@@ -77,11 +118,15 @@ export async function submitProof(db: Db, p: SubmitProofParams): Promise<SubmitP
     if (skill.riskLevel !== "none" && !p.safetyAck) {
       throw new DomainError("BAD_REQUEST", "Cần xác nhận cam kết an toàn cho kỹ năng có rủi ro.");
     }
-    if (p.durationS != null) {
-      const limits = await getConfig<MediaLimits>(tx, "media_limits");
-      if (p.durationS > limits.max_seconds) {
-        throw new DomainError("BAD_REQUEST", `Video dài tối đa ${limits.max_seconds} giây.`);
-      }
+    const limits = await getConfig<MediaLimits>(tx, "media_limits");
+    if (p.durationS != null && p.durationS > limits.max_seconds) {
+      throw new DomainError("BAD_REQUEST", `Video dài tối đa ${limits.max_seconds} giây.`);
+    }
+    if (p.contentType != null && !limits.allowed_types.includes(p.contentType)) {
+      throw new DomainError("BAD_REQUEST", "Định dạng video không được hỗ trợ.");
+    }
+    if (p.sizeBytes != null && p.sizeBytes > limits.max_mb * 1024 * 1024) {
+      throw new DomainError("BAD_REQUEST", `Video tối đa ${limits.max_mb} MB.`);
     }
 
     const parentIds = skill.skillEdgesChildSkill.map((e) => e.parentSkillId);
@@ -125,7 +170,7 @@ export async function submitProof(db: Db, p: SubmitProofParams): Promise<SubmitP
         capturedAt: p.capturedAt ?? null,
         caption: p.caption ?? null,
         safetyAck: p.safetyAck ?? false,
-        ...(p.aiPrecheck != null ? { aiPrecheck: p.aiPrecheck } : {}),
+        aiPrecheck: p.aiPrecheck ?? (simulateAiPrecheck(p, limits) as unknown as Prisma.InputJsonValue),
         status: duplicate ? "disputed" : "pending",
         createdAt: now,
       },
@@ -133,7 +178,10 @@ export async function submitProof(db: Db, p: SubmitProofParams): Promise<SubmitP
 
     if (duplicate) {
       await tx.fraudSignal.create({
-        data: { userId: p.userId, proofId: proof.id, signal: "duplicate_hash", score: dupCount },
+        data: { userId: p.userId, proofId: proof.id, signal: "duplicate_hash", score: dupCount, createdAt: now },
+      });
+      await tx.notification.create({
+        data: { userId: p.userId, kind: "proof_editor_review", refType: "proof", refId: proof.id, createdAt: now },
       });
       return { proofId: proof.id, status: "disputed", duplicate: true, assignedReviewerIds: [] };
     }
@@ -242,7 +290,7 @@ export async function assignReviewers(db: Db, p: AssignReviewersParams): Promise
         data: chosen.map((reviewerId) => ({ proofId: proof.id, reviewerId, assignedAt: now, dueAt })),
       });
       await tx.notification.createMany({
-        data: chosen.map((userId) => ({ userId, kind: "review_assigned", refType: "proof", refId: proof.id })),
+        data: chosen.map((userId) => ({ userId, kind: "review_assigned", refType: "proof", refId: proof.id, createdAt: now })),
       });
       if (proof.status === "pending") {
         await tx.proof.update({ where: { id: proof.id }, data: { status: "in_review" } });
@@ -287,6 +335,7 @@ export async function expireOverdueAssignments(
 // ---------------------------------------------------------------------------
 
 export type FinalizeProofResult =
+  | { outcome: "already_decided"; proofId: string; status: "passed" | "failed" }
   | { outcome: "waiting"; proofId: string; votes: number; required: number }
   | {
       outcome: "needs_more_reviewers" | "tie";
@@ -302,11 +351,15 @@ export type FinalizeProofResult =
       xpAwarded: number;
       badges: string[];
       passRatio: number;
+      accountLevelBefore: number;
+      accountLevel: number;
     }
   | { outcome: "failed"; proofId: string; passRatio: number };
 
 /**
- * Chốt kết quả duyệt trong MỘT transaction (khóa hàng proofs FOR UPDATE).
+ * Chốt kết quả duyệt trong MỘT transaction (khóa hàng proofs FOR NO KEY UPDATE).
+ * Idempotent: bằng chứng đã chốt → `already_decided`, không ghi gì thêm.
+ * Chỉ tính phiếu của phân công `done` (vòng cũ trước kháng nghị đã chuyển `recused`, D41).
  * - Thiếu phiếu: còn phân công đang chờ → `waiting`; không còn ai → thêm người uy tín cao (`needs_more_reviewers`).
  * - Hòa: thêm một người duyệt uy tín cao (`tie`).
  * - Đạt khi tỉ lệ phiếu đạt ≥ review_pass_ratio: level = target_level, xp_ledger, total_xp/account_level,
@@ -320,16 +373,19 @@ export async function finalizeProof(
 ): Promise<FinalizeProofResult> {
   const now = p.now ?? new Date();
   return withTx(db, async (tx) => {
-    await tx.$queryRaw`SELECT id FROM proofs WHERE id = ${p.proofId}::uuid FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM proofs WHERE id = ${p.proofId}::uuid FOR NO KEY UPDATE`;
     const proof = await tx.proof.findUnique({
       where: { id: p.proofId },
       include: {
         skill: { select: { id: true, name: true, maxLevel: true, holderCount: true } },
-        reviews: { select: { reviewerId: true, verdict: true } },
+        reviews: { select: { reviewerId: true, verdict: true, assignment: { select: { state: true } } } },
         reviewAssignments: { select: { id: true, state: true } },
       },
     });
     if (!proof) throw new DomainError("NOT_FOUND", "Không tìm thấy bằng chứng.");
+    if (proof.status === "passed" || proof.status === "failed") {
+      return { outcome: "already_decided", proofId: proof.id, status: proof.status };
+    }
     if (proof.status !== "in_review") {
       throw new DomainError("CONFLICT", "Bằng chứng không ở trạng thái đang duyệt.");
     }
@@ -337,8 +393,9 @@ export async function finalizeProof(
       where: { skillId_level: { skillId: proof.skillId, level: proof.targetLevel } },
     });
 
-    const total = proof.reviews.length;
-    const passes = proof.reviews.filter((r) => r.verdict === "pass").length;
+    const reviews = proof.reviews.filter((r) => r.assignment.state === "done");
+    const total = reviews.length;
+    const passes = reviews.filter((r) => r.verdict === "pass").length;
     const outstanding = proof.reviewAssignments.filter((a) => a.state === "assigned").length;
 
     if (total < level.minReviewers) {
@@ -368,9 +425,15 @@ export async function finalizeProof(
 
     // Uy tín người duyệt (DATA_MODEL mục 5).
     const deltas = await getConfig<ReputationDeltas>(tx, "reputation_deltas");
-    for (const r of proof.reviews) {
+    for (const r of reviews) {
       const matched = (r.verdict === "pass") === passed;
-      await applyReputation(tx, r.reviewerId, matched ? deltas.vote_matched : deltas.vote_mismatched, matched ? "vote_matched" : "vote_mismatched", proof.id);
+      await applyReputation(tx, {
+        userId: r.reviewerId,
+        delta: matched ? deltas.vote_matched : deltas.vote_mismatched,
+        reason: matched ? "vote_matched" : "vote_mismatched",
+        refId: proof.id,
+        now,
+      });
     }
 
     if (!passed) {
@@ -390,26 +453,14 @@ export async function finalizeProof(
       update: { level: newLevel, xp: { increment: level.xpReward }, lastProofId: proof.id, updatedAt: now },
       create: { userId: proof.userId, skillId: proof.skillId, level: newLevel, xp: level.xpReward, lastProofId: proof.id, updatedAt: now },
     });
-    await tx.xpLedger.create({
-      data: {
-        userId: proof.userId,
-        skillId: proof.skillId,
-        amount: level.xpReward,
-        reason: "proof_passed",
-        refType: "proof",
-        refId: proof.id,
-        createdAt: now,
-      },
-    });
-    const curve = await getAccountLevelCurve(tx);
-    const u = await tx.user.update({
-      where: { id: proof.userId },
-      data: { totalXp: { increment: level.xpReward } },
-      select: { totalXp: true },
-    });
-    await tx.user.update({
-      where: { id: proof.userId },
-      data: { accountLevel: accountLevelForXp(u.totalXp, curve.step) },
+    const xp = await awardXp(tx, {
+      userId: proof.userId,
+      amount: level.xpReward,
+      reason: "proof_passed",
+      skillId: proof.skillId,
+      refType: "proof",
+      refId: proof.id,
+      now,
     });
 
     // Huy hiệu
@@ -443,7 +494,7 @@ export async function finalizeProof(
         kind: "level_up",
         proofId: proof.id,
         skillId: proof.skillId,
-        body: `Lên cấp ${proof.targetLevel} · ${proof.skill.name}`,
+        body: `${proof.skill.name}: lên cấp ${proof.targetLevel}`,
         createdAt: now,
       },
     });
@@ -459,19 +510,8 @@ export async function finalizeProof(
       xpAwarded: level.xpReward,
       badges: awarded,
       passRatio,
+      accountLevelBefore: xp.accountLevelBefore,
+      accountLevel: xp.accountLevel,
     };
   });
-}
-
-/**
- * Ghi reputation_events (chỉ INSERT) và cập nhật cache users.reputation trong cùng transaction.
- * Cache bị kẹp trong [0, 100] (CHECK của DB); sổ cái ghi delta thực áp dụng để tổng sổ cái = cache.
- */
-async function applyReputation(tx: Tx, userId: string, delta: number, reason: string, refId: string | null) {
-  const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { reputation: true } });
-  const next = Math.min(100, Math.max(0, u.reputation + delta));
-  const applied = next - u.reputation;
-  await tx.reputationEvent.create({ data: { userId, delta: applied, reason, refId } });
-  if (applied !== 0) await tx.user.update({ where: { id: userId }, data: { reputation: next } });
-  return applied;
 }

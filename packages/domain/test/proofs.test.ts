@@ -191,6 +191,7 @@ describe("finalizeProof", () => {
     expect(await levelOf(submitter.id, skill.id)).toBe(2);
     const us = await db.userSkill.findUniqueOrThrow({ where: { userId_skillId: { userId: submitter.id, skillId: skill.id } } });
     expect(us.lastProofId).toBe(proofId);
+    expect(r).toMatchObject({ accountLevelBefore: 1, accountLevel: 2 });
     const ledger = await db.xpLedger.findMany({ where: { userId: submitter.id } });
     expect(ledger).toEqual([expect.objectContaining({ amount: 200, reason: "proof_passed", refId: proofId })]);
     const u = await db.user.findUniqueOrThrow({ where: { id: submitter.id } });
@@ -208,7 +209,10 @@ describe("finalizeProof", () => {
       const ev = await db.reputationEvent.findMany({ where: { userId: rv.reviewerId, refId: proofId } });
       expect(ev).toEqual([expect.objectContaining({ delta: rv.verdict === "pass" ? 1 : -3, reason: rv.verdict === "pass" ? "vote_matched" : "vote_mismatched" })]);
     }
-    await expect(finalizeProof(db, { proofId, now: NOW })).rejects.toMatchObject({ code: "CONFLICT" });
+    // Idempotent: gọi lại không ghi thêm
+    expect(await finalizeProof(db, { proofId, now: NOW })).toEqual({ outcome: "already_decided", proofId, status: "passed" });
+    expect(await db.xpLedger.count({ where: { userId: submitter.id } })).toBe(1);
+    expect((await db.post.findFirstOrThrow({ where: { proofId, kind: "level_up" } })).body).not.toContain("\u00b7");
   });
 
   it("1/3 đạt → failed, level giữ nguyên, không XP", async () => {
@@ -296,7 +300,7 @@ describe("finalizeProof", () => {
     expect((await db.skill.findUniqueOrThrow({ where: { id: skill.id } })).holderCount).toBe(11);
   });
 
-  it("chốt đồng thời hai lần chỉ ghi một lần (khóa FOR UPDATE)", async () => {
+  it("chốt đồng thời hai lần chỉ ghi một lần (khóa hàng proofs)", async () => {
     const { skill, submitter } = await scenario({ level: 2 });
     const { proofId } = await submit(skill, submitter.id, 3);
     await vote(proofId, ["pass", "pass", "pass"]);
@@ -304,9 +308,27 @@ describe("finalizeProof", () => {
       finalizeProof(db, { proofId, now: NOW }),
       finalizeProof(db, { proofId, now: NOW }),
     ]);
-    expect(results.filter((x) => x.status === "fulfilled")).toHaveLength(1);
-    expect(results.filter((x) => x.status === "rejected")).toHaveLength(1);
+    const outcomes = results.map((x) => (x.status === "fulfilled" ? x.value.outcome : "error")).sort();
+    expect(outcomes).toEqual(["already_decided", "passed"]);
     expect(await db.xpLedger.count({ where: { refId: proofId } })).toBe(1);
     expect(await levelOf(submitter.id, skill.id)).toBe(3);
+  });
+});
+
+describe("submitProof — media_limits + ai_precheck giả lập", () => {
+  it("chặn định dạng/dung lượng ngoài media_limits; lưu ai_precheck chỉ tham khảo", async () => {
+    const { skill, submitter } = await scenario();
+    await expect(submit(skill, submitter.id, 1, { contentType: "image/gif" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(submit(skill, submitter.id, 1, { sizeBytes: 61 * 1024 * 1024 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    const r = await submit(skill, submitter.id, 1, { contentType: "video/mp4", sizeBytes: 10 * 1024 * 1024, durationS: 64 });
+    const proof = await db.proof.findUniqueOrThrow({ where: { id: r.proofId } });
+    expect(proof.aiPrecheck).toEqual({
+      advisoryOnly: true,
+      checks: [
+        { key: "duration", ok: true, detail: "64/180 giây" },
+        { key: "format", ok: true, detail: "video/mp4" },
+        { key: "size", ok: true, detail: "10.0/60 MB" },
+      ],
+    });
   });
 });
