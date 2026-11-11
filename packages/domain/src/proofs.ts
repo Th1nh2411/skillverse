@@ -253,13 +253,12 @@ export async function assignReviewers(db: Db, p: AssignReviewersParams): Promise
     ).map((f) => f.fingerprintHash);
     const since = new Date(now.getTime() - exclusionDays * DAY_MS);
 
-    const candidates = await tx.user.findMany({
-      where: {
-        id: { notIn: [submitter, ...proof.reviewAssignments.map((a) => a.reviewerId)] },
+    const excludedIds = [submitter, ...proof.reviewAssignments.map((a) => a.reviewerId)];
+    // Điều kiện chung (DATA_MODEL mục 4) — dùng cho cả người đủ cấp và biên tập viên dự phòng (D68).
+    const eligible: Prisma.UserWhereInput = {
         status: "active",
         deletedAt: null,
         reputation: { gte: minRep },
-        userSkills: { some: { skillId: proof.skillId, level: { gte: level.minReviewerLevel } } },
         sanctionsUser: {
           none: { kind: { in: ["review_ban", "suspension"] }, startsAt: { lte: now }, OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
         },
@@ -269,6 +268,12 @@ export async function assignReviewers(db: Db, p: AssignReviewersParams): Promise
         skillSwapsReceiver: { none: { proposerId: submitter } },
         ...(fingerprints.length > 0 ? { deviceFingerprints: { none: { fingerprintHash: { in: fingerprints } } } } : {}),
         reviewAssignments: { none: { assignedAt: { gte: since }, proof: { userId: submitter } } },
+    };
+    const candidates = await tx.user.findMany({
+      where: {
+        ...eligible,
+        id: { notIn: excludedIds },
+        userSkills: { some: { skillId: proof.skillId, level: { gte: level.minReviewerLevel } } },
       },
       select: { id: true, reputation: true },
     });
@@ -283,6 +288,20 @@ export async function assignReviewers(db: Db, p: AssignReviewersParams): Promise
       pool.sort((a, b) => b.reputation - a.reputation);
     }
     const chosen = pool.slice(0, need).map((c) => c.id);
+
+    // D68: thiếu người đủ cấp → bổ sung biên tập viên (bỏ yêu cầu cấp kỹ năng, giữ mọi loại trừ), uy tín cao trước.
+    if (chosen.length < need && (await getConfig<boolean>(tx, "editor_fallback_reviewers")) === true) {
+      const editors = await tx.user.findMany({
+        where: { ...eligible, isEditor: true, id: { notIn: [...excludedIds, ...chosen] } },
+        select: { id: true, reputation: true },
+      });
+      for (let i = editors.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [editors[i], editors[j]] = [editors[j]!, editors[i]!];
+      }
+      editors.sort((a, b) => b.reputation - a.reputation);
+      chosen.push(...editors.slice(0, need - chosen.length).map((e) => e.id));
+    }
 
     if (chosen.length > 0) {
       const dueAt = new Date(now.getTime() + dueHours * HOUR_MS);

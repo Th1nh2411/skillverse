@@ -20,3 +20,4 @@ export * from "./feed";
 export * from "./challenges";
 export * from "./social";
 export * from "./proposals";
+export * from "./caches";
