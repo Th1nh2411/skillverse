@@ -60,6 +60,9 @@ test.describe("Onboarding người mới", () => {
 
     await expect(page, "Xong onboarding phải tới hồ sơ").toHaveURL(/\/profile/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Người Mới");
+    // D65: thống kê "Kỹ năng" đếm mọi kỹ năng đang theo (kể cả cấp 0) → ≥ 3 sau onboarding
+    const skillStat = page.locator("dl > div").filter({ has: page.getByText(/^Kỹ năng$/) }).locator("dd");
+    expect(Number((await skillStat.first().innerText()).replace(/\D/g, ""))).toBeGreaterThanOrEqual(3);
 
     // Đã onboarding: quay lại /onboarding phải bị chuyển đi
     await page.goto("/onboarding");

@@ -153,7 +153,7 @@ test.describe("Theo dõi, nhắn tin, trao đổi (Q3.3)", () => {
     await loginAs(page, "lanphuong");
     await gotoScreen(page, "/u/thuha", "Hồ sơ người khác");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Thu Hà/);
-    await expect(page.getByRole("button", { name: /^(Theo dõi|Đang theo dõi)$/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^(Theo dõi|Đã theo dõi)$/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /Nhắn tin/ }).or(page.getByRole("link", { name: /Nhắn tin/ })).first()).toBeVisible();
     await expect(page.locator("body")).not.toContainText(/@demo\.skillverse\.local/);
     // Lưu ý gặp mặt chỉ hiện sau khi đề nghị được chấp nhận (SKILL.md)

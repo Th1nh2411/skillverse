@@ -37,6 +37,26 @@ Lead chạy toàn bộ thấy fail không ổn định (discover :14/:24/:37/:48
 - (c) lỗi UI/API thật: không có.
 - Kết quả: 2 lần chạy liên tiếp (lần 1 xóa `.next-e2e`, khởi động lạnh) đều 32/32 pass.
 
+## Giai đoạn 3 — Xã hội và an toàn
+
+### E2E
+| File | Nội dung |
+| --- | --- |
+| revoke.spec.ts (Q3.2) | Chuẩn bị qua API (`helpers/verification.ts`: createUpload → PUT presigned MinIO → proof.submit → 3 người review.task/review.submit Đạt): ngoclan Tung hứng 3 → 4 → quocbao `report.create` (not_self) → minhhoang gọi `admin.reports`/`admin.resolveReport` → 403, level giữ 4 → bientap xác nhận → level 3, proof `removed`, report `confirmed`, `sanctions(level_revoked, proof_id)`, `xp_ledger` dòng `revoked` = −XP đã cộng, `users.total_xp` = tổng sổ cái, mỗi người duyệt Đạt có `reputation_events approved_fraud` = −15 (đọc từ app_config, kẹp [0,100]) và cache khớp, bài level_up ẩn bằng `deleted_at`, số dòng proofs/reviews/review_marks/xp_ledger/reputation_events/user_skills/posts/assignments không giảm → xác nhận lần hai không hạ thêm (already_revoked) → UI `/admin`: biên tập viên vào được, người thường không |
+| social.spec.ts (Q3.1, Q3.3, Q3.4) | `home.quests` = số nhiệm vụ trong app_config.daily_quests; `home.feed` có bài; cheer bật hai lần chỉ 1 dòng, tắt về 0, like_count = tổng reactions · theo dõi theo handle, không tự theo dõi · nhắn tin: người nhận đọc được, người ngoài `message.list/send` 403/404 · trao đổi: người đề nghị không tự chấp nhận, người nhận chấp nhận → accepted · `admin.sanction` post_ban → `post.create` 403; người thường gọi admin.sanction 403 · đấu 1v1: video URL ký, không lộ khóa object, phiếu thứ hai bị chặn, người tham gia không tự bầu, lựa chọn ngoài trận bị chặn · UI: `/home` nhiệm vụ + cheer, `/u/<handle>` theo dõi/nhắn tin, `/challenges` tab Đấu 1v1 "Bầu …" → "Bạn đã bầu" |
+| onboarding.spec.ts | thêm: sau onboarding thống kê "Kỹ năng" ≥ 3 (D65) |
+
+### Rà soát (Q3.5)
+| Quy tắc | Kết quả |
+| --- | --- |
+| Level chỉ ghi trong finalizeProof | Đạt: thu hồi là `revokeInTx` (hàm nội bộ, chỉ gọi từ nhánh `revoke` của `finalizeProof`, proofs.ts:415) — đúng D40. |
+| xp_ledger / reputation_events chỉ INSERT | Đạt (không có update/delete). Các delete còn lại là reactions (bỏ cảm xúc), follows (bỏ theo dõi), phiên đăng nhập — chấp nhận. |
+| Không xóa bản ghi khi thu hồi | Đạt (e2e đếm dòng trước/sau). |
+| Quyền admin.* | Đạt: người thường 403 (e2e). |
+| Không Prisma trong UI | Đạt: `proof/new/page.tsx` đã bỏ import (GĐ2). |
+| Dấu chấm giữa nối thông tin | Vi phạm nhỏ ở 7 chỗ UI → báo ui. |
+| Seed like_count ≠ reactions | Báo lead: lần cheer đầu tiên làm số tụt từ 40 về 1. |
+
 ## Giai đoạn 2 — Vòng lặp xác thực
 
 ### E2E
