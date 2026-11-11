@@ -86,11 +86,11 @@ Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối gi�
 - [~] (domain) D3.6 `weeklyReputationRecovery` (+1 mỗi tuần không vi phạm khi < `reviewer_min_reputation`, idempotent theo tuần) + test
 
 ### api
-- [ ] A3.1 Router: `home.quests`, `home.feed`, `post.react`, `post.comment`, `post.create`
-- [ ] A3.2 Router: `challenge.list`, `challenge.join`, `challenge.pendingProofs`, `duel.get`, `duel.vote`
-- [ ] A3.3 Router `admin.*` (editorProcedure): reports list/resolve, sanctions, hàng đợi trùng hash, appeals resolve
-- [ ] A3.4 Router: `social.follow/unfollow`, `swap.propose/respond/rate`, `message.threads/list/send`, `report.create`
-- [ ] A3.5 Cron: thêm closeDuels, weeklyReputationRecovery thật; test quyền admin (người thường bị chặn)
+- [x] (api) A3.1 Router: `home.quests`, `home.feed`, `post.react`, `post.comment`, `post.create`
+- [x] (api) A3.2 Router: `challenge.list`, `challenge.join`, `challenge.pendingProofs`, `duel.get`, `duel.vote`
+- [x] (api) A3.3 Router `admin.*` (editorProcedure): reports list/resolve, sanctions, hàng đợi trùng hash, appeals resolve
+- [x] (api) A3.4 Router: `social.follow/unfollow`, `swap.propose/respond/rate`, `message.threads/list/send`, `report.create`
+- [x] (api) A3.5 Cron: thêm closeDuels, weeklyReputationRecovery thật; test quyền admin (người thường bị chặn)
 
 ### ui
 - [ ] U3.1 Trang chủ (`/home`): chuỗi ngày, nhiệm vụ hôm nay (tiến độ phân số), feed lên cấp + bài đăng, thả cheer

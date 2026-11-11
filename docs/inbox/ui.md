@@ -65,3 +65,25 @@ Lên cấp: `levelUp.summary({ proofId })`. Chia sẻ (công khai): `share.card(
 2. `proof.limits()` (protected) → `{ maxMb, maxBytes, maxSeconds, allowedTypes }` từ app_config.media_limits. Nhờ bỏ `getConfig(getPrisma(), ...)` trong `app/proof/new/page.tsx` (qa báo theo quy tắc không gọi Prisma từ giao diện) — RSC dùng `(await getServerCaller()).proof.limits()`.
 3. `proxy.ts`: `/share/*` mở cho mọi người, có hay không có phiên (không bị đẩy về `/`).
 4. `category {slug}` + `rarity` trong `skill` của review.queue / review.task / proof.status: thuộc domain — đã chuyển yêu cầu sang hộp thư domain; router trả nguyên output domain nên có ngay khi domain thêm.
+
+## [từ domain → ui] Giai đoạn 3: dữ liệu Trang chủ / Thử thách / Hồ sơ người khác / Tin nhắn / Admin
+Chữ ký đầy đủ ở `docs/inbox/api.md` (tin "Giai đoạn 3"). Điểm cho UI:
+- Trang chủ: `quests[]` có `progress/target` (phân số), `xp`, `done`; `completedCount/total` ("1/3"); `streak` ("7 ngày liên tiếp"; `activeToday=false` nghĩa là hôm nay chưa giữ chuỗi). Feed: `levelUp {level, passVotes, totalVotes}` → "lên cấp N · 3/3 người duyệt" nên dựng bằng câu/khối riêng, không nối chấm giữa; `myReactions` để tô nút cheer; `followed=false` = bài phổ biến; phân trang bằng `nextCursor`.
+- Thử thách: `participantCount`, `xpReward`, `endsAt` ("Còn 3 ngày"), `joined`. Tab Chờ duyệt: `total` cho số trên tab; mỗi mục ẨN DANH (`anonymousCode`, không tên người nộp — khác mockup), `myAssignmentId` có giá trị → nút "Xác thực" mở `/review/[assignmentId]`.
+- Đấu: `sides[0..1]` với `votes`, `canVote`, `myVote`, `closed`, `winnerId`.
+- Hồ sơ người khác: theo dõi (`follow` trả `followerCount`), trao đổi: người đề nghị phải đạt cấp ≥ 1 kỹ năng mình dạy và người kia đạt cấp ≥ 1 kỹ năng muốn học; `scheduledAt` chỉ có sau khi chấp nhận. Báo cáo: `reportReason` + `REPORT_REASON_LABELS`.
+- Tin nhắn: `listMessages.canSend=false` khi người xem bị cấm (ẩn ô nhập + giải thích), tin mới nhất trước. `listThreads[].unread`.
+- Admin: báo cáo có `target.title`, `ownerHandle`, `openReportsOnTarget`; xử phạt dùng `SANCTION_KIND_LABELS`; xác nhận báo cáo bằng chứng đã đạt sẽ tự thu hồi level (kết quả `action: "level_revoked"`).
+- Thông báo: `kind` là mã (vd. review_assigned, proof_passed, proof_failed, level_revoked, appeal_overturned, message, new_follower, swap_proposed, duel_won ...) — UI tự đặt câu tiếng Việt theo `kind`.
+
+## [từ api → ui] Procedure giai đoạn 3 (commit eb73d19) — trả nguyên output domain trừ chỗ ghi chú
+Tất cả cần đăng nhập. Input = schema Zod cùng tên trong `@skillverse/validation`.
+- Trang chủ: `home.quests()` → {date, quests[], completedCount, total, streak, activeToday}; `home.questProgress({questKey})`; `home.feed({cursor?, limit?})` → {items: FeedItem[], nextCursor}.
+- Bài: `post.react({postId, kind: "like"|"cheer", on})`, `post.comment({postId, body})`, `post.comments({postId, cursor?})`, `post.create({body, skillId?})` (FORBIDDEN khi bị post_ban/suspension).
+- Thử thách: `challenge.list()`, `challenge.join({challengeId, proofId})`, `challenge.pendingProofs()` (ẩn danh).
+- Đấu: `duel.list()`, `duel.get({duelId})`, `duel.vote({duelId, choice: userId})`. Mỗi `sides[]` KHÔNG có `mediaKey`, thay bằng `video: {url, expiresAt} | null` (URL ký 10 phút).
+- Xã hội (theo handle, không lộ id trên URL): `social.follow({handle})`, `social.unfollow({handle})`; `swap.list()`, `swap.propose({receiverHandle, teachSkillId, learnSkillId, mode})`, `swap.respond({swapId, action, scheduledAt?})`, `swap.rate({swapId, stars, comment?})`.
+- Nhắn tin: `message.threads()`, `message.open({handle})` (mutation) → {threadId, created}, `message.list({threadId, cursor?})` → {other, canSend, items (mới nhất trước), nextCursor}, `message.send({threadId, body})`.
+- Thông báo: `notification.list({cursor?})` → {items, unreadCount, nextCursor}, `notification.markRead({ids?})`.
+- Báo cáo: `report.create({targetType, targetId, reason, details?})`.
+- Quản trị (chỉ biên tập viên, người khác FORBIDDEN): `admin.reports({status?, cursor?})`, `admin.resolveReport({reportId, decision, outcome?})`, `admin.sanction({userId, kind, reason, durationDays?, reportId?})`, `admin.userSanctions({userId})`, `admin.disputedProofs()` (mỗi mục có `video: {url, expiresAt}` thay cho mediaKey), `admin.resolveDisputedProof({proofId, decision: "clear"|"remove"})`, `admin.appeals()`, `admin.resolveAppeal({appealId, decision})`, `admin.createDuel({...createDuelInput})`. Kiểm tra quyền trang admin ở RSC: `(await getViewer())?.isEditor`.

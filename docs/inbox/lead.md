@@ -63,3 +63,11 @@ Gồm CSP (default 'self'; script/style 'unsafe-inline' (+'unsafe-eval' khi dev)
   `[{"AllowedOrigins":["https://<domain>"],"AllowedMethods":["PUT","GET","HEAD"],"AllowedHeaders":["content-type"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3600}]` (thêm URL preview nếu cần).
 - *GitHub Actions cron*: Settings → Secrets and variables → Actions: secret `CRON_SECRET` (trùng Vercel), variable `APP_URL` = `https://<domain>`. Workflow `.github/workflows/cron.yml` chạy `*/10 * * * *` và có `workflow_dispatch` để bấm chạy thử; thiếu biến thì bỏ qua (exit 0). Lưu ý GitHub có thể trễ lịch vài phút và tự tắt lịch ở repo không hoạt động 60 ngày.
 - *Checklist sau triển khai (phần api)*: `curl -X POST https://<domain>/api/cron` → 401; với `-H "Authorization: Bearer $CRON_SECRET"` → 200 `{ok:true}`; `POST /api/dev/login` → 404; `curl -sI https://<domain>/login` có `content-security-policy`; đăng nhập magic link; tải một video thử (DevTools không báo lỗi CORS/CSP); mở `/og/level-up/<proofId>` của một bằng chứng đã đạt → ảnh PNG.
+
+## [từ domain → lead] GĐ3 domain — cần 1 khóa app_config + đề xuất quyết định
+- Cần migration thêm `xp_rewards.duel_won` (đề xuất 200). `closeDuels` đọc khóa này; thiếu thì người thắng nhận 0 XP (không hard-code).
+- Q-domain-11: Thu hồi (D40) đặt proof `removed` và ẩn bài level_up (`deleted_at`), giữ mọi bản ghi; idempotent bằng kiểm tra sanction level_revoked đã có (`already_revoked`).
+- Q-domain-12: Xác nhận báo cáo đóng luôn mọi báo cáo đang mở khác trên cùng đối tượng. Báo cáo bằng chứng đang duyệt được xác nhận → proof `removed`, phân công treo → `recused`. Báo cáo bài viết → ẩn bài.
+- Q-domain-13: `review_ban` gỡ các lượt duyệt đang chờ của người đó (recused) và gán người khác; `suspension` cũng loại khỏi phân công; `post_ban`/`suspension` chặn đăng bài, bình luận, tin nhắn, đề nghị trao đổi.
+- Q-domain-14: `like_count` = tổng cảm xúc (like + cheer). Bằng chứng chờ duyệt ở tab cộng đồng luôn ẩn danh (khác mockup Feed.html có tên).
+- Q-domain-15: Đấu 1v1: người tạo là một bên đấu hoặc biên tập viên; người đấu không được bỏ phiếu; hòa không ai thắng.
