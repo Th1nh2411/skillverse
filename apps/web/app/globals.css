@@ -1,26 +1,39 @@
 @import "tailwindcss";
 
 /*
- * Design tokens SkillVerse. Vai trò màu theo docs/PRODUCT_BRIEF.md; nền ngả rừng đêm theo
- * .claude/skills/skillverse-ui/SKILL.md. Đồng đội "ui" sở hữu và tinh chỉnh file này.
+ * Design tokens SkillVerse — "sổ tay thực địa, rừng đêm".
+ * Vai trò màu theo docs/PRODUCT_BRIEF.md; nền là dải xanh rêu rất đậm, bề mặt sáng dần theo độ cao.
+ * Mọi cặp chữ/nền dưới đây đạt WCAG AA (≥ 4.5:1), kể cả `muted` trên `surface-3`.
  */
 @theme {
   --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bitter), var(--font-be-vietnam), ui-serif, Georgia, serif;
 
-  --color-bg: #121a15;
-  --color-surface: #1a241d;
-  --color-surface-2: #22302a;
-  --color-border: #33402f;
-  --color-text: #f3f0e7;
-  --color-muted: #b0b4a3;
+  /* Độ cao: bg (đất rừng) → surface → surface-2 → surface-3 */
+  --color-bg: #0e1611;
+  --color-surface: #16211a;
+  --color-surface-2: #1e2b23;
+  --color-surface-3: #27372d;
+  --color-border: #33463a;
+  --color-border-strong: #4a5f50;
+  --color-nav: #0b120e;
+
+  --color-text: #f1eee4;
+  --color-muted: #a9b5a6; /* 5.9:1 trên surface-3 */
+
   --color-accent: #e9a23b;
   --color-on-accent: #1a1406;
   --color-accent-soft: #2a2412;
   --color-accent-line: #5a4520;
   --color-teal: #5cc2b0;
-  --color-teal-soft: #17302c;
+  --color-teal-soft: #16302b;
   --color-danger: #e8735a;
-  --color-nav: #0f1612;
+
+  /* Chỉ thêu theo độ hiếm (LevelPatch) */
+  --color-thread-common: #e9e2cc;
+  --color-thread-rare: #5cc2b0;
+  --color-thread-legendary: #e9a23b;
+  --color-thread-legendary-2: #f6d89a;
 
   --radius-card: 16px;
   --radius-btn: 14px;
@@ -35,6 +48,7 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 :focus-visible {
   outline: 2px solid var(--color-accent);
@@ -42,4 +56,40 @@ body {
 }
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Bottom sheet: chỉ chuyển động khi người dùng mở */
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-sheet-in {
+  animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.animate-fade-in {
+  animation: fade-in 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-in,
+  .animate-fade-in {
+    animation: none;
+  }
 }
