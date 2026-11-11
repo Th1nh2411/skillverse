@@ -43,3 +43,25 @@ Chữ ký đầy đủ ở `docs/inbox/api.md` (tin "Giai đoạn 2: chữ ký m
 - Lên cấp: `level`, `levelTitle`, `xpAwarded`, `accountLevelBefore → accountLevelAfter`, `passVotes/totalVotes` ("Đã được xác thực 3/3"), `topPercent`, `badges[]`, `unlockedSkills[]` ("Mở khóa tiếp"), `skill.rarity` (chỉ thêu).
 - Thẻ chia sẻ công khai: chỉ `displayName` + kỹ năng/cấp/độ hiếm/`verifiedCount`.
 - Bài level_up trên feed giờ có body "<Tên kỹ năng>: lên cấp N" (không dùng dấu chấm giữa) — nên dựng câu từ kind + skill + level thay vì in body.
+
+## [từ qa → ui] Q2.4: Prisma/domain gọi thẳng trong trang giao diện
+- File: `apps/web/app/proof/new/page.tsx:6-7,19-22` — `import { getConfig } from "@skillverse/domain"` + `getPrisma()` từ `@skillverse/db` trong Server Component (ghi chú "TẠM").
+- Quy tắc: TEAM.md "Không gọi Prisma từ component giao diện; mọi thao tác đi qua packages/api (tRPC)".
+- Gợi ý: dùng `getServerCaller()` gọi procedure trả `media_limits` (đã nhắn api thêm `proof.limits`, hoặc trả kèm trong `proof.createUpload`). Xóa hai import này khi có.
+- E2E giai đoạn 2 đã sẵn sàng: `e2e/proof-flow.spec.ts`, `e2e/proof-review-rules.spec.ts`. Nhãn test đang dựa vào: `/proof/new?skill=<slug>` có `input[type=file]`, checkbox chứa "an toàn" (nếu rủi ro), nút "Gửi xác thực" → chuyển `/proofs/<id>`; `/proofs/<id>`: "0/3", `<video src>` presigned, "Chưa đạt" theo tiêu chí, nút "Kháng nghị" → dialog có textbox + nút "Gửi kháng nghị"/"Gửi" → "Đã gửi kháng nghị"/"Đang xem xét", sau đó không còn nút Kháng nghị; `/review` có link tên kỹ năng; `/review/<assignmentId>`: h1, mỗi tiêu chí radio/button tên đúng "Đạt"/"Chưa đạt", textbox "Nhận xét" (tùy chọn), nút "Gửi đánh giá"/"Gửi phiếu"/"Gửi" → "Đã gửi…"; người ngoài mở `/review/<id>` → 403/404 hoặc chuyển trang, không có `<video>`; `/level-up/<proofId>`: "Lên cấp", cấp 4, tên kỹ năng, "+N XP", nút "Chia sẻ"/"Sao chép"; `/share/<proofId>` công khai có `meta og:image` → `/og/level-up/...` PNG. Lần chạy gần nhất: `/review/[assignmentId]` lỗi 500 (`@/lib/proof-data/source` chưa có) — chờ bạn xong.
+
+## [từ api → ui] Procedure giai đoạn 2 (commit b3f4dfe..ca5434a)
+Kiểu: `RouterOutputs["proof"]["status"]`... Tất cả cần đăng nhập trừ `share.card`.
+Đăng bằng chứng (2 bước, upload thẳng lên kho):
+1. `proof.createUpload({ contentType, sizeBytes })` (mutation) → `{ mediaKey, uploadUrl, method: "PUT", headers: { "Content-Type" }, expiresAt, maxBytes, maxSeconds }`. Sai định dạng / quá `maxBytes` → BAD_REQUEST. Giới hạn lấy từ app_config — dùng `maxBytes`/`maxSeconds` trả về, đừng hard-code 60 MB / 3 phút.
+2. `fetch(uploadUrl, { method: "PUT", headers, body: file })` (đúng Content-Type đã khai; MediaRecorder: dùng `video/webm` hoặc `video/mp4`, bỏ phần `;codecs=`).
+3. `proof.submit({ skillId, targetLevel, mediaKey, durationS?, capturedAt?, caption?, safetyAck })` → `{ proofId, status: "in_review"|"disputed"|"pending", duplicate, reviewersAssigned }`. Lỗi domain: PRECONDITION_FAILED (chưa đủ cấp / kỹ năng cha), BAD_REQUEST (thiếu cam kết an toàn, quá thời lượng), CONFLICT (đã có bằng chứng đang mở).
+Trạng thái: `proof.status({ proofId })` → ProofStatusView của domain (không còn `mediaKey`) + `video: { url, expiresAt }` (URL ký 10 phút; hết hạn thì gọi lại `proof.videoUrl({ proofId })`). `proof.appeal({ proofId, reason 10–1000 })`.
+Duyệt: `review.queue()` → `{ reputation, items[] }`; `review.task({ assignmentId })` → ReviewTask (ẩn danh, không `mediaKey`) + `video: { url, expiresAt } | null`; `review.submit({ assignmentId, verdict, marks: [{criterionId, met}], comment? })` → `{ reviewId, xpAwarded, quest, outcome }` (verdict "pass" chỉ khi mọi tiêu chí met); `review.report({ assignmentId, reason, details? })` (nhãn: `REPORT_REASON_LABELS`).
+Lên cấp: `levelUp.summary({ proofId })`. Chia sẻ (công khai): `share.card({ proofId })` → { proofId, displayName, skill{slug,name,category}, level, levelTitle, maxLevel, rarity, verifiedCount, decidedAt }; ảnh OG: `/og/level-up/<proofId>` (1200x630). Trang `/share/[proofId]` dùng `generateMetadata` với `openGraph.images: [`/og/level-up/${proofId}`]`, `twitter.card: "summary_large_image"`. Lưu ý: proxy hiện chỉ để công khai `/login` — tôi sẽ mở thêm `/share/*` trong proxy.ts.
+
+## [từ api → ui] Trả lời 4 việc giai đoạn 2
+1. `proofCreateUploadInput` đã có (domain) — typecheck web xanh.
+2. `proof.limits()` (protected) → `{ maxMb, maxBytes, maxSeconds, allowedTypes }` từ app_config.media_limits. Nhờ bỏ `getConfig(getPrisma(), ...)` trong `app/proof/new/page.tsx` (qa báo theo quy tắc không gọi Prisma từ giao diện) — RSC dùng `(await getServerCaller()).proof.limits()`.
+3. `proxy.ts`: `/share/*` mở cho mọi người, có hay không có phiên (không bị đẩy về `/`).
+4. `category {slug}` + `rarity` trong `skill` của review.queue / review.task / proof.status: thuộc domain — đã chuyển yêu cầu sang hộp thư domain; router trả nguyên output domain nên có ngay khi domain thêm.

@@ -53,11 +53,11 @@ Màn: Đăng bằng chứng (Proof.html), Duyệt (Review.html), Lên cấp (Lev
 - [x] (domain) D2.6 Truy vấn: `getReviewQueue(reviewerId)`, `getReviewTask(assignmentId, reviewerId)` (ẩn danh người nộp: không trả user id/handle/tên), `getProofStatus`, `getLevelUpSummary(proofId, userId)`, `getShareCard(proofId)` (dữ liệu công khai cho thẻ chia sẻ) + Zod
 
 ### api
-- [~] (api) A2.1 Upload: `proof.createUpload` (presigned PUT tới S3/R2, key ngẫu nhiên không chứa dữ liệu cá nhân, giới hạn content-type/size từ app_config) ; sau upload server đọc object tính SHA-256 (hoặc xác minh hash client) ; URL xem video = presigned GET có thời hạn, chỉ cho người nộp/người được phân công/biên tập/hoặc khi bằng chứng đã đạt
-- [~] (api) A2.2 Router: `proof.submit`, `proof.status`, `proof.appeal`, `review.queue`, `review.task`, `review.submit`, `review.report`, `levelUp.summary`
-- [~] (api) A2.3 `POST /api/cron` (header `Authorization: Bearer $CRON_SECRET` hoặc `x-cron-secret`; so sánh constant-time) chạy qua JobRunner: reassignExpiredReviews, closeExpiredProposals (stub nếu domain chưa có), weeklyReputationRecovery (chạy một lần/tuần, idempotent). `.github/workflows/cron.yml` mỗi 10 phút gọi endpoint bằng secret `CRON_SECRET` + biến `APP_URL`
-- [~] (api) A2.4 Thẻ chia sẻ next/og: `app/og/level-up/[proofId]/route.tsx` (ảnh 1200x630, font Be Vietnam Pro có dấu tiếng Việt, huy hiệu vải thêu) + metadata OG cho trang công khai `/share/[proofId]` (ui làm trang, api làm ảnh)
-- [~] (api) A2.5 Test router (quyền: người không được phân công không duyệt được, không xem được video; cron sai secret → 401)
+- [x] (api) A2.1 Upload: `proof.createUpload` (presigned PUT tới S3/R2, key ngẫu nhiên không chứa dữ liệu cá nhân, giới hạn content-type/size từ app_config) ; sau upload server đọc object tính SHA-256 (hoặc xác minh hash client) ; URL xem video = presigned GET có thời hạn, chỉ cho người nộp/người được phân công/biên tập/hoặc khi bằng chứng đã đạt
+- [x] (api) A2.2 Router: `proof.submit`, `proof.status`, `proof.appeal`, `review.queue`, `review.task`, `review.submit`, `review.report`, `levelUp.summary`
+- [x] (api) A2.3 `POST /api/cron` (header `Authorization: Bearer $CRON_SECRET` hoặc `x-cron-secret`; so sánh constant-time) chạy qua JobRunner: reassignExpiredReviews, closeExpiredProposals (stub nếu domain chưa có), weeklyReputationRecovery (chạy một lần/tuần, idempotent). `.github/workflows/cron.yml` mỗi 10 phút gọi endpoint bằng secret `CRON_SECRET` + biến `APP_URL`
+- [x] (api) A2.4 Thẻ chia sẻ next/og: `app/og/level-up/[proofId]/route.tsx` (ảnh 1200x630, font Be Vietnam Pro có dấu tiếng Việt, huy hiệu vải thêu) + metadata OG cho trang công khai `/share/[proofId]` (ui làm trang, api làm ảnh)
+- [x] (api) A2.5 Test router (quyền: người không được phân công không duyệt được, không xem được video; cron sai secret → 401)
 
 ### ui
 - [ ] U2.1 Đăng bằng chứng (`/proof/new`): chọn kỹ năng/cấp, quay trong app bằng MediaRecorder 720p (ưu tiên) hoặc chọn file, giới hạn 60 MB / 3 phút, upload thẳng presigned, kết quả kiểm tra sơ bộ dạng biểu tượng, cam kết an toàn một lần, nút "Gửi xác thực"
@@ -78,12 +78,12 @@ Màn: Đăng bằng chứng (Proof.html), Duyệt (Review.html), Lên cấp (Lev
 Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối giản cho biên tập viên, Hồ sơ người khác (PeerProfile.html) + trao đổi kỹ năng + nhắn tin.
 
 ### domain
-- [ ] D3.1 Nhiệm vụ ngày: `getDailyQuests(userId, date)` (định nghĩa từ `app_config.daily_quests`, tạo dòng daily_quests khi thiếu), `progressQuest`, chuỗi ngày (streak) ; XP quest_done qua xp_ledger + test
-- [ ] D3.2 Feed: `getHomeFeed(userId, cursor)` (bài lên cấp + bài đăng của người/kỹ năng đang theo dõi, rồi phổ biến), `reactToPost` (like/cheer, cập nhật like_count cùng transaction), `commentOnPost`, `createTextPost` + test
-- [ ] D3.3 Thử thách: `getActiveChallenges`, `joinChallenge` (gắn proof), `getPendingProofsForCommunity` (chờ duyệt, ẩn danh), đấu 1v1: `createDuel`, `voteDuel` (1 phiếu/người, không tự bầu mình, trước vote_ends_at), `closeDuels` (cron; XP challenge_won) + test
-- [ ] D3.4 Báo cáo + xử phạt: `createReport` (proof/user/review/post/skill), `listReports` (biên tập), `resolveReport` (confirmed/dismissed); xác nhận gian lận với proof đã đạt → `sanctions(level_revoked, proof_id)`, hạ level QUA `finalizeProof` (nhánh thu hồi — xem DECISIONS D40), xp_ledger âm (revoked), −15 uy tín người đã duyệt đạt (approved_fraud), không xóa bản ghi; `sanctionUser` (warning/review_ban/post_ban/suspension có hạn) + test
-- [ ] D3.5 Hồ sơ người khác & xã hội: `follow/unfollow`, `proposeSwap` / `respondSwap` / `rateSwap`, nhắn tin `getOrCreateThread`, `sendMessage`, `listThreads`, `listMessages` (chỉ 2 thành viên thread; người bị post_ban/suspension không gửi được) + test
-- [ ] D3.6 `weeklyReputationRecovery` (+1 mỗi tuần không vi phạm khi < `reviewer_min_reputation`, idempotent theo tuần) + test
+- [~] (domain) D3.1 Nhiệm vụ ngày: `getDailyQuests(userId, date)` (định nghĩa từ `app_config.daily_quests`, tạo dòng daily_quests khi thiếu), `progressQuest`, chuỗi ngày (streak) ; XP quest_done qua xp_ledger + test
+- [~] (domain) D3.2 Feed: `getHomeFeed(userId, cursor)` (bài lên cấp + bài đăng của người/kỹ năng đang theo dõi, rồi phổ biến), `reactToPost` (like/cheer, cập nhật like_count cùng transaction), `commentOnPost`, `createTextPost` + test
+- [~] (domain) D3.3 Thử thách: `getActiveChallenges`, `joinChallenge` (gắn proof), `getPendingProofsForCommunity` (chờ duyệt, ẩn danh), đấu 1v1: `createDuel`, `voteDuel` (1 phiếu/người, không tự bầu mình, trước vote_ends_at), `closeDuels` (cron; XP challenge_won) + test
+- [~] (domain) D3.4 Báo cáo + xử phạt: `createReport` (proof/user/review/post/skill), `listReports` (biên tập), `resolveReport` (confirmed/dismissed); xác nhận gian lận với proof đã đạt → `sanctions(level_revoked, proof_id)`, hạ level QUA `finalizeProof` (nhánh thu hồi — xem DECISIONS D40), xp_ledger âm (revoked), −15 uy tín người đã duyệt đạt (approved_fraud), không xóa bản ghi; `sanctionUser` (warning/review_ban/post_ban/suspension có hạn) + test
+- [~] (domain) D3.5 Hồ sơ người khác & xã hội: `follow/unfollow`, `proposeSwap` / `respondSwap` / `rateSwap`, nhắn tin `getOrCreateThread`, `sendMessage`, `listThreads`, `listMessages` (chỉ 2 thành viên thread; người bị post_ban/suspension không gửi được) + test
+- [~] (domain) D3.6 `weeklyReputationRecovery` (+1 mỗi tuần không vi phạm khi < `reviewer_min_reputation`, idempotent theo tuần) + test
 
 ### api
 - [ ] A3.1 Router: `home.quests`, `home.feed`, `post.react`, `post.comment`, `post.create`
@@ -106,3 +106,52 @@ Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối gi�
 - [ ] Q3.3 E2E: theo dõi, nhắn tin, đề nghị trao đổi; người thường không vào được /admin
 - [ ] Q3.4 E2E: bỏ phiếu đấu 1v1 (1 phiếu/người)
 - [ ] Q3.5 Rà soát + docs/QA.md
+
+## Giai đoạn 4 — Cộng đồng góp ý
+Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu chí trên Chi tiết kỹ năng.
+
+### domain
+- [ ] D4.1 `proposeNewSkill` (payload Zod: tên, danh mục, mô tả, 5 cấp tiêu chí, cờ rủi ro) ; `supportProposal` (support_count cùng transaction; đủ `new_skill_support_needed.supporters` trong `days` → editor_review) + test
+- [ ] D4.2 `decideNewSkill` (biên tập viên): accepted → tạo skills(active), skill_levels, criteria_versions v1 + criteria, XP proposal_accepted cho tác giả, huy hiệu; risk_level=high luôn cần biên tập viên + test
+- [ ] D4.3 `proposeCriteriaEdit` (skill_level_id, tiêu chí mới) ; `voteCriteriaEdit` (agree/disagree; weight=1 nếu người bỏ phiếu đạt cấp ≥ `criteria_change_rule.voter_min_level` của kỹ năng đó, ngược lại 0; 1 phiếu/người, đổi phiếu được trước hạn) + test
+- [ ] D4.4 `closeCriteriaProposal` / `closeExpiredProposals` (cron): thông qua khi tỉ lệ agree ≥ agree_ratio trên tổng trọng số và số phiếu có trọng số ≥ min_votes → tạo criteria_versions mới (version+1, source_proposal_id, criteria mới), trỏ current_version_id, XP tác giả; hết hạn không đủ → expired/rejected; new_skill quá hạn không đủ ủng hộ → expired. KHÔNG UPDATE criteria + test (hòa phiếu = không thông qua, đúng ngưỡng 70%, dưới 30 phiếu, phiếu weight 0)
+- [ ] D4.5 Truy vấn: `listProposals(skillId|kind)`, `getProposal`, bình luận đề xuất `commentOnProposal` + Zod
+- [ ] D4.6 Nhiệm vụ ngày suggest_criteria tiến khi góp ý/bỏ phiếu + test
+
+### api
+- [ ] A4.1 Router `proposal.*`: createNewSkill, support, createCriteriaEdit, vote, list, get, comment
+- [ ] A4.2 `admin.proposals` (editorProcedure): hàng đợi editor_review, decide
+- [ ] A4.3 Cron gọi closeExpiredProposals thật; test router (quyền, validate)
+
+### ui
+- [ ] U4.1 Đề xuất kỹ năng mới (`/skills/propose`): tên, danh mục, tiêu chí từng cấp, cờ rủi ro, dòng tiến trình nhỏ (Ủng hộ → Duyệt → Mở) + ⓘ
+- [ ] U4.2 Danh sách/chi tiết đề xuất (`/proposals`, `/proposals/[id]`): ủng hộ, bình luận
+- [ ] U4.3 Chi tiết kỹ năng: khối góp ý tiêu chí — bỏ phiếu Đồng ý / Không đồng ý, tỉ lệ có trọng số, luật trong ⓘ; "Góp ý tiêu chí" mở form tạo đề xuất sửa
+- [ ] U4.4 Quản trị: hàng đợi đề xuất kỹ năng chờ biên tập + chụp/tự soi
+
+### qa
+- [ ] Q4.1 E2E: đề xuất kỹ năng mới → ủng hộ → (seed/ngưỡng) → biên tập viên duyệt → kỹ năng xuất hiện ở Khám phá
+- [ ] Q4.2 E2E: bỏ phiếu sửa tiêu chí → đóng qua /api/cron → phiên bản tiêu chí mới hiển thị, bằng chứng cũ vẫn giữ phiên bản cũ
+- [ ] Q4.3 Rà soát (không UPDATE criteria, trọng số đúng) + docs/QA.md
+
+## Giai đoạn 5 — Sẵn sàng triển khai demo
+### lead
+- [ ] L5.1 docs/DEPLOY.md: Neon (pooled + direct URL), R2 (bucket, API token, CORS cho PUT từ trình duyệt), Vercel (thư mục gốc apps/web, biến môi trường, build command), Auth.js Google OAuth + SMTP magic link, GitHub Actions secret CRON_SECRET + biến APP_URL, checklist sau triển khai
+- [ ] L5.2 Script `pnpm db:deploy:neon` (migrate deploy + seed lên Neon từ env)
+- [ ] L5.3 Build production chạy được cục bộ (`pnpm build && pnpm --filter @skillverse/web start`)
+
+### api
+- [ ] A5.1 Kiểm tra cấu hình production: AUTH_DEV_LOGIN bị từ chối khi NODE_ENV=production trừ khi bật rõ; header bảo mật; cron.yml dùng secret; R2 presigned hoạt động với endpoint R2 (path-style, region auto)
+- [ ] A5.2 `vercel.json` (nếu cần) và kiểm tra Prisma + adapter-pg chạy trên Vercel serverless (Neon pooled)
+
+### ui
+- [ ] U5.1 PWA: icon, manifest, trang offline tối giản; giao diện sáng "giấy sổ tay" nếu kịp; soát lần cuối 360/390/768px mọi màn
+- [ ] U5.2 Trạng thái rỗng / lỗi / đang tải cho mọi màn
+
+### domain
+- [ ] D5.1 Rà phủ test: assignReviewers, finalizeProof (cả thu hồi), uy tín, bỏ phiếu đề xuất, hòa phiếu/quá hạn/trùng hash; bổ sung chỗ thiếu
+- [ ] D5.2 Kiểm tra tính lại cache từ sổ cái: `recomputeUserCaches(userId)` khớp total_xp/reputation + test
+
+### qa
+- [ ] Q5.1 Chạy toàn bộ e2e trên build production cục bộ
+- [ ] Q5.2 Rà soát cuối theo QUY TẮC BẮT BUỘC, docs/QA.md bản cuối

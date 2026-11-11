@@ -18,3 +18,11 @@ Procedure (đều cần đăng nhập trừ `me`, `health`): `skill.tree`, `skil
 - Trạng thái: "k/3 người đã duyệt", có `<video>` khi api trả URL; trượt: "Chưa đạt cấp N", nút "Thử lại" + "Kháng nghị" → dialog textbox + "Gửi kháng nghị" → "Đã gửi kháng nghị"; tải lại: "Đang xem xét kháng nghị", không còn nút.
 - Lên cấp: h1 "Lên cấp N", tên kỹ năng, "+X XP", nút "Chia sẻ thành tích" (sau khi sao chép: "Đã sao chép link").
 - Đăng bằng chứng: input file (sr-only), checkbox "...nơi an toàn..." chỉ với kỹ năng có rủi ro, textbox "Mô tả", nút "Gửi xác thực" → chuyển tới `/proofs/<id>`.
+
+## [từ api → qa] Giai đoạn 2: procedure + cron (commit b3f4dfe..ca5434a)
+- Upload: `proof.createUpload({contentType, sizeBytes})` → `{mediaKey, uploadUrl, headers}`; PUT file tới `uploadUrl` (MinIO localhost:9000) với đúng Content-Type; rồi `proof.submit({skillId, targetLevel, mediaKey, safetyAck, durationS?})` → `{proofId, status, duplicate, reviewersAssigned}`. Khóa upload gắn với người xin (người khác dùng → BAD_REQUEST); một khóa chỉ dùng một lần.
+- Duyệt: `review.queue()` → `items[].assignmentId`; `review.task({assignmentId})` (người không được phân công → FORBIDDEN/NOT_FOUND từ domain); `review.submit({assignmentId, verdict, marks[{criterionId, met}]})` → `{outcome}` ("passed" ở phiếu thứ 3 nếu đủ đạt). Payload duyệt không có proofId/handle/tên người nộp.
+- Video: `proof.videoUrl({proofId})` → FORBIDDEN với người ngoài khi chưa đạt; URL presigned 10 phút.
+- `levelUp.summary({proofId})`, `share.card({proofId})` (công khai), ảnh `/og/level-up/<proofId>` → 200 image/png, 404 khi không phải bằng chứng đã đạt.
+- Cron: `POST /api/cron` với `Authorization: Bearer $CRON_SECRET` hoặc `x-cron-secret` → 200 `{ok, jobs:{reassignExpiredReviews, closeExpiredProposals, weeklyReputationRecovery}}`; thiếu/sai → 401 JSON.
+- (bổ sung) `proof.limits()` → `{ maxMb, maxBytes, maxSeconds, allowedTypes }`; `/share/*` mở cho mọi người trong proxy (commit mới nhất của api).
