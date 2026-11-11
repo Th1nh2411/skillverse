@@ -5,6 +5,7 @@ import { profileRouter } from "./routers/profile";
 import { levelUpRouter, proofRouter, shareRouter } from "./routers/proof";
 import { reviewRouter } from "./routers/review";
 import { adminRouter } from "./routers/admin";
+import { proposalRouter } from "./routers/proposal";
 import {
   challengeRouter,
   duelRouter,
@@ -39,6 +40,7 @@ export const appRouter = router({
   message: messageRouter,
   notification: notificationRouter,
   report: reportRouter,
+  proposal: proposalRouter,
   admin: adminRouter,
 });
 

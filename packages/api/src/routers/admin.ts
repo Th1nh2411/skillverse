@@ -4,6 +4,8 @@
  */
 import {
   createDuel,
+  decideNewSkill,
+  listProposals,
   listAppeals,
   listDisputedProofs,
   listReports,
@@ -15,6 +17,7 @@ import {
 } from "@skillverse/domain";
 import {
   createDuelInput,
+  decideNewSkillInput,
   listReportsInput,
   resolveAppealInput,
   resolveDisputedProofInput,
@@ -77,6 +80,21 @@ export const adminRouter = router({
   resolveAppeal: editorProcedure
     .input(resolveAppealInput)
     .mutation(({ ctx, input }) => resolveAppeal(ctx.db, { appealId: input.appealId, editorId: ctx.user.id, decision: input.decision })),
+
+  /** Hàng đợi đề xuất kỹ năng mới đã đủ ủng hộ, chờ biên tập viên duyệt. */
+  proposals: editorProcedure.query(({ ctx }) =>
+    listProposals(ctx.db, { viewerId: ctx.user.id, kind: "new_skill", status: "editor_review" }),
+  ),
+
+  /** Chấp nhận (tạo skill + skill_levels + criteria_versions v1 — domain) hoặc từ chối đề xuất kỹ năng mới. */
+  decideProposal: editorProcedure.input(decideNewSkillInput).mutation(({ ctx, input }) =>
+    decideNewSkill(ctx.db, {
+      proposalId: input.proposalId,
+      editorId: ctx.user.id,
+      decision: input.decision,
+      note: input.note ?? null,
+    }),
+  ),
 
   /** Tạo trận đấu 1v1 (biên tập viên điều phối thử thách). */
   createDuel: editorProcedure.input(createDuelInput).mutation(({ ctx, input }) =>
