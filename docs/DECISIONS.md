@@ -41,6 +41,7 @@ Ghi lại mọi chỗ tài liệu không nói rõ và phương án đã chọn. 
 - **D62 — Xã hội**: `like_count` = tổng cảm xúc (like + cheer). Tab "Chờ duyệt" cộng đồng luôn ẩn danh người nộp (khác mockup Feed.html có tên) để giữ quy tắc người duyệt không biết người nộp.
 - **D63 — Đấu 1v1**: người tạo là một bên đấu hoặc biên tập viên (MVP: chỉ biên tập viên tạo qua trang quản trị); người đấu không được bỏ phiếu; hòa thì không ai thắng; XP người thắng = `app_config.xp_rewards.duel_won` (200, migration 0004).
 - **D64 — Hồi uy tín hằng tuần** idempotent theo cửa sổ 7 ngày trượt cho từng người.
+- **D65 — Thống kê "Kỹ năng" trên hồ sơ** đếm mọi kỹ năng người dùng đang theo (user_skills, kể cả cấp 0 — đang luyện).
 
 ## Auth & API
 - **D50 — Auth.js v5** với adapter tự viết trên Prisma, session lưu database; cùng `session_token` dùng cho cookie (web) và `Authorization: Bearer` (mobile). Google chỉ bật khi có biến môi trường; EMAIL_SERVER trống → link magic in ra console.
