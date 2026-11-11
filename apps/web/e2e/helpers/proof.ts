@@ -39,7 +39,7 @@ export async function submitProofViaUi(page: Page, opts: { handle: SeedHandle; s
   await fileInput.first().setInputFiles(opts.file);
   const safety = page.getByRole("checkbox", { name: /an toàn/i });
   if ((await safety.count()) > 0) await safety.first().check();
-  const caption = page.getByRole("textbox", { name: /mô tả|ghi chú|chú thích/i });
+  const caption = page.getByRole("textbox", { name: /^Mô tả/ });
   if ((await caption.count()) > 0) await caption.first().fill("Bằng chứng e2e");
 
   const send = page.getByRole("button", { name: /^Gửi xác thực$/ });
@@ -80,15 +80,19 @@ export async function reviewViaUi(
     const marks = page.getByRole("radio", { name: mark }).or(page.getByRole("button", { name: mark }));
     const n = await marks.count();
     expect(n, "Không có nút chấm Đạt/Chưa đạt theo tiêu chí").toBeGreaterThan(0);
-    for (let i = 0; i < n; i++) await marks.nth(i).click();
+    // Trước khi chấm đủ, nút gửi bị khóa ("Chấm k/n tiêu chí")
+    await expect(page.getByRole("button", { name: /^Chấm \d+\/\d+ tiêu chí$/ })).toBeDisabled();
+    for (let i = 0; i < n; i++) {
+      await marks.nth(i).click();
+      await expect(marks.nth(i)).toHaveAttribute("aria-pressed", "true");
+    }
 
     const comment = page.getByRole("textbox", { name: /nhận xét/i });
     if ((await comment.count()) > 0) await comment.first().fill(opts.verdict === "pass" ? "Rõ ràng, đạt tiêu chí." : "Chưa đạt thời gian yêu cầu.");
 
-    await page.getByRole("button", { name: /^(Gửi đánh giá|Gửi phiếu|Gửi kết quả|Gửi|Xác nhận)$/ }).first().click();
-    await expect(page.getByText(/Đã gửi|Cảm ơn/).first().or(page.getByRole("heading", { name: /Hàng đợi|Duyệt/ }))).toBeVisible({
-      timeout: 30_000,
-    });
+    const send = opts.verdict === "pass" ? /^Xác nhận đạt cấp \d+$/ : /^Gửi phiếu chưa đạt$/;
+    await page.getByRole("button", { name: send }).click();
+    await expect(page.getByText(/Đã gửi phiếu/).first()).toBeVisible({ timeout: 30_000 });
   } finally {
     await ctx.close();
   }

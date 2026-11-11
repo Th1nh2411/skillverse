@@ -38,7 +38,7 @@ test.describe.serial("Nộp bằng chứng → 3 người duyệt Đạt → Lê
     test.skip(!proofId, "Bước nộp chưa chạy được");
     await loginAs(page, SUBMITTER.handle);
     await gotoScreen(page, `/proofs/${proofId}`, "Trạng thái bằng chứng");
-    await expect(page.getByText(/0\s*\/\s*3/).first()).toBeVisible();
+    await expect(page.getByText(/0\s*\/\s*3 người đã duyệt/).first()).toBeVisible();
     const src = await page.locator("video").first().getAttribute("src").catch(() => null);
     const source = src ?? (await page.locator("video source").first().getAttribute("src").catch(() => null));
     if (source) {
@@ -84,11 +84,15 @@ test.describe.serial("Nộp bằng chứng → 3 người duyệt Đạt → Lê
     test.skip(!proofId, "Bước nộp chưa chạy được");
     await loginAs(page, SUBMITTER.handle);
     await gotoScreen(page, `/level-up/${proofId}`, "Lên cấp");
-    await expect(page.getByText(/Lên cấp/).first()).toBeVisible();
-    await expect(page.getByText(/cấp 4|\b4\b/).first()).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Lên cấp 4/);
     await expect(page.getByText(new RegExp(SKILL.name)).first()).toBeVisible();
     await expect(page.getByText(/\+\s*\d+\s*XP/).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: /Chia sẻ|Sao chép/ }).first()).toBeVisible();
+    const share = page.getByRole("button", { name: /^Chia sẻ thành tích$/ });
+    await expect(share).toBeVisible();
+    // Không có Web Share API trong Chromium headless → fallback sao chép link
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await share.click();
+    await expect(page.getByText(/Đã sao chép link/).first()).toBeVisible();
     await expectBasicA11y(page, "Lên cấp");
   });
 

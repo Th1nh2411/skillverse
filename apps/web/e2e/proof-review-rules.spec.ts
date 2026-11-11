@@ -63,14 +63,23 @@ test.describe.serial("Trượt, kháng nghị và quyền duyệt", () => {
     expect([403, 404], `review.task cho người ngoài: ${task.status}`).toContain(task.status);
     expect(task.raw).not.toMatch(/X-Amz-Signature/);
 
-    const submit = await trpcMutation(request, token, "review.submit", { assignmentId, verdict: "pass", marks: [] });
+    const submit = await trpcMutation(request, token, "review.submit", {
+      assignmentId,
+      verdict: "pass",
+      marks: [{ criterionId: "00000000-0000-4000-8000-000000000000", met: true }],
+    });
     expect(submit.status, "review.submit của người ngoài phải bị chặn").toBeGreaterThanOrEqual(400);
     expect(submit.status).toBeLessThan(500);
 
+    // Video chưa đạt: người ngoài không lấy được URL ký
+    const video = await trpcQuery(request, token, "proof.videoUrl", { proofId });
+    skipIfNoProcedure(video, "proof.videoUrl");
+    expect(video.status, "proof.videoUrl cho người ngoài phải 403").toBe(403);
+    expect(video.raw).not.toMatch(/X-Amz-Signature/);
+
     await loginAs(page, outsider as never);
     const res = await page.goto(`/review/${assignmentId}`);
-    const blocked = (res?.status() ?? 0) >= 400 || !/\/review\//.test(page.url()) || (await page.getByText(/không có quyền|không tìm thấy/i).count()) > 0;
-    expect(blocked, "Người ngoài vẫn mở được trang duyệt").toBeTruthy();
+    expect(res?.status(), "Người ngoài mở trang duyệt phải 404").toBe(404);
     await expect(page.locator("video")).toHaveCount(0);
   });
 
@@ -88,7 +97,7 @@ test.describe.serial("Trượt, kháng nghị và quyền duyệt", () => {
     test.skip(!proofId, "Bước nộp chưa chạy được");
     await loginAs(page, SUBMITTER.handle);
     await gotoScreen(page, `/proofs/${proofId}`, "Trạng thái bằng chứng");
-    await expect(page.getByText(/Chưa đạt/).first()).toBeVisible();
+    await expect(page.getByText(/Chưa đạt cấp 4/).first()).toBeVisible();
     // Kết quả theo tiêu chí, không lộ người duyệt
     await expect(page.locator("body")).not.toContainText(/quocbao|thuha|ducanh|bientap|Quốc Bảo|Thu Hà|Đức Anh/);
 
@@ -97,11 +106,12 @@ test.describe.serial("Trượt, kháng nghị và quyền duyệt", () => {
     await expect(dialog).toBeVisible();
     await dialog.getByRole("textbox").first().fill("Video đã quay đủ thời gian, nhờ xem lại tiêu chí 1.");
     await dialog.getByRole("button", { name: /^(Gửi kháng nghị|Gửi)$/ }).click();
-    await expect(page.getByText(/Đã gửi kháng nghị|Đang xem xét/).first()).toBeVisible();
+    await expect(page.getByText(/Đã gửi kháng nghị/).first()).toBeVisible();
     await expect.poll(async () => (await proofRow(proofId))?.appeal?.status).toBe("open");
 
     // Một lần mỗi bằng chứng
     await page.reload();
+    await expect(page.getByText(/Đang xem xét kháng nghị/).first()).toBeVisible();
     await expect(page.getByRole("button", { name: /^Kháng nghị$/ })).toHaveCount(0);
     // Kháng nghị không tự đổi level
     expect(await userSkillLevel(SUBMITTER.handle, SKILL.slug)).toBe(3);

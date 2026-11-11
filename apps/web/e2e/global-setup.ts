@@ -29,6 +29,9 @@ const WARM_PAGES: Array<[handle: string | null, path: string]> = [
   ["minhhoang", "/skills/tree/sinh-ton"],
   ["minhhoang", "/skills/lua-bang-que"],
   ["minhhoang", "/discover"],
+  // Giai đoạn 2
+  ["minhhoang", "/proof/new?skill=that-nut-day"],
+  ["minhhoang", "/review"],
 ];
 
 const trpc = (p: string, input: unknown) =>
@@ -39,6 +42,7 @@ const WARM_API: string[] = [
   trpc("skill.search", { query: "nút", limit: 5 }),
   trpc("profile.me", undefined),
   trpc("onboarding.options", undefined),
+  trpc("review.queue", undefined),
 ];
 
 async function devLoginCookie(handle: string): Promise<string | null> {
