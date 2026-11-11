@@ -40,3 +40,36 @@ Màn: Onboarding, Hồ sơ (Main.html), Cây kỹ năng, Chi tiết kỹ năng, 
 - [x] (qa) Q1.3 E2E giai đoạn 1: onboarding người mới (chọn 3 kỹ năng → hồ sơ), xem hồ sơ, cây kỹ năng, chi tiết kỹ năng, khám phá/tìm kiếm
 - [x] (qa) Q1.4 Rà soát code theo QUY TẮC BẮT BUỘC + DATA_MODEL.md (grep ghi level ngoài finalizeProof, UPDATE criteria, ngưỡng hard-code, Prisma trong component, emoji, thiếu aria-label, dữ liệu cá nhân trên URL). Báo lỗi vào hộp thư chủ sở hữu; tổng hợp vào `docs/QA.md`.
 - [x] (qa) Q1.5 Kiểm tra a11y cơ bản (axe nếu cài được, hoặc kiểm tra thủ công vùng chạm/aria) các màn giai đoạn 1
+
+## Giai đoạn 2 — Vòng lặp xác thực (quan trọng nhất)
+Màn: Đăng bằng chứng (Proof.html), Duyệt (Review.html), Lên cấp (LevelUp.html) + thẻ chia sẻ. Playwright: nộp → 3 người duyệt → lên cấp.
+
+### domain
+- [ ] D2.1 (phần lớn đã có từ D1.7 — bổ sung chỗ thiếu) `submitProof`: kiểm tra level == target−1, kỹ năng cha đạt required_level, safety_ack cho kỹ năng rủi ro, giới hạn media từ `app_config.media_limits`; lưu criteria_version_id hiện tại; hash SHA-256 (D20); trùng hash → `fraud_signals(duplicate_hash)` + trạng thái chờ biên tập (không phân công); `ai_precheck` giả lập chỉ tham khảo (thời lượng, định dạng) + test
+- [ ] D2.2 (đã có từ D1.7 — bổ sung thông báo + test thiếu) `assignReviewers` (DATA_MODEL mục 4: cấp tối thiểu, review_ban, uy tín ≥ ngưỡng; loại follow 2 chiều, skill_swaps, trùng device fingerprint, đã gặp trong `reviewer_exclusion_days`; ngẫu nhiên, ưu tiên uy tín cao cho cấp cao; hạn `review_due_hours`) + thông báo review_assigned + test
+- [ ] D2.3 `submitReview` (chỉ người được phân công, state assigned, đủ mark cho mọi tiêu chí của đúng criteria_version, verdict nhất quán) + XP review_done + tiến độ daily quest review_2 → khi đủ phiếu gọi `finalizeProof`
+- [ ] D2.4 (đã có từ D1.7 — kiểm tra đủ yêu cầu) `finalizeProof` trong MỘT `$transaction`: tỉ lệ ≥ `review_pass_ratio` → đạt (level, xp_ledger, user_skills.xp, total_xp/account_level cache, holder_count khi đạt max_level, huy hiệu, post level_up, notification); trượt → notification; hòa/thiếu → thêm 1 người duyệt uy tín cao; uy tín người duyệt (vote_matched/mismatched) + test (hòa, quá hạn, trùng hash, idempotent khi gọi 2 lần)
+- [ ] D2.5 `reassignExpiredReviews` (state expired → gán người khác) cho JobRunner; `fileAppeal` (1 lần/bằng chứng, trong `appeal_window_days`) + `resolveAppeal` (biên tập viên; overturned → mở lại vòng duyệt mới với người duyệt khác, KHÔNG ghi level trực tiếp) + `reportProofDuringReview` (tạo reports, reason enum) + test
+- [ ] D2.6 Truy vấn: `getReviewQueue(reviewerId)`, `getReviewTask(assignmentId, reviewerId)` (ẩn danh người nộp: không trả user id/handle/tên), `getProofStatus`, `getLevelUpSummary(proofId, userId)`, `getShareCard(proofId)` (dữ liệu công khai cho thẻ chia sẻ) + Zod
+
+### api
+- [ ] A2.1 Upload: `proof.createUpload` (presigned PUT tới S3/R2, key ngẫu nhiên không chứa dữ liệu cá nhân, giới hạn content-type/size từ app_config) ; sau upload server đọc object tính SHA-256 (hoặc xác minh hash client) ; URL xem video = presigned GET có thời hạn, chỉ cho người nộp/người được phân công/biên tập/hoặc khi bằng chứng đã đạt
+- [ ] A2.2 Router: `proof.submit`, `proof.status`, `proof.appeal`, `review.queue`, `review.task`, `review.submit`, `review.report`, `levelUp.summary`
+- [ ] A2.3 `POST /api/cron` (header `Authorization: Bearer $CRON_SECRET` hoặc `x-cron-secret`; so sánh constant-time) chạy qua JobRunner: reassignExpiredReviews, closeExpiredProposals (stub nếu domain chưa có), weeklyReputationRecovery (chạy một lần/tuần, idempotent). `.github/workflows/cron.yml` mỗi 10 phút gọi endpoint bằng secret `CRON_SECRET` + biến `APP_URL`
+- [ ] A2.4 Thẻ chia sẻ next/og: `app/og/level-up/[proofId]/route.tsx` (ảnh 1200x630, font Be Vietnam Pro có dấu tiếng Việt, huy hiệu vải thêu) + metadata OG cho trang công khai `/share/[proofId]` (ui làm trang, api làm ảnh)
+- [ ] A2.5 Test router (quyền: người không được phân công không duyệt được, không xem được video; cron sai secret → 401)
+
+### ui
+- [ ] U2.1 Đăng bằng chứng (`/proof/new`): chọn kỹ năng/cấp, quay trong app bằng MediaRecorder 720p (ưu tiên) hoặc chọn file, giới hạn 60 MB / 3 phút, upload thẳng presigned, kết quả kiểm tra sơ bộ dạng biểu tượng, cam kết an toàn một lần, nút "Gửi xác thực"
+- [ ] U2.2 Trạng thái bằng chứng của tôi (`/proofs/[id]`): tiến độ 0/3, kết quả từng tiêu chí khi trượt, nút "Kháng nghị"
+- [ ] U2.3 Duyệt (`/review` hàng đợi + `/review/[assignmentId]`): ẩn danh (biểu tượng khiên + ⓘ), chấm từng tiêu chí Đạt/Chưa đạt, nhận xét, "Báo cáo" mở sheet lý do, uy tín kèm ⓘ
+- [ ] U2.4 Lên cấp (`/level-up/[proofId]`): chuyển động "khâu" huy hiệu (tôn trọng prefers-reduced-motion), XP, huy hiệu, nút chia sẻ (Web Share API, fallback sao chép link)
+- [ ] U2.5 Trang công khai `/share/[proofId]` (không cần đăng nhập, không lộ dữ liệu cá nhân ngoài tên hiển thị) dùng ảnh OG của api
+- [ ] U2.6 Chụp màn hình + tự soi từng màn như giai đoạn 1
+
+### qa
+- [ ] Q2.1 E2E chính: người dùng nộp bằng chứng (file video mẫu nhỏ trong e2e/fixtures) → 3 người duyệt (đăng nhập dev từng người được phân công) chấm Đạt → người nộp thấy Lên cấp, level tăng
+- [ ] Q2.2 E2E: trượt + kháng nghị; người duyệt không được phân công bị chặn; người duyệt không thấy tên người nộp
+- [ ] Q2.3 E2E/HTTP: /api/cron sai secret → 401, đúng secret → 200
+- [ ] Q2.4 Rà soát: finalizeProof là nơi duy nhất ghi level; mọi ngưỡng qua app_config; URL video là presigned có hạn; không lộ người nộp trong payload review
+- [ ] Q2.5 Cập nhật docs/QA.md
