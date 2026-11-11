@@ -25,7 +25,7 @@ async function signInEmail(formData: FormData) {
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
-  const sent = sp.sent === "1";
+  const sent = sp.sent === "1" || sp.type === "email";
   const error = Boolean(sp.error);
   const dev = devLoginEnabled();
 
