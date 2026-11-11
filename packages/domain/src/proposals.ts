@@ -446,6 +446,10 @@ export type ProposalSummary = {
   supportCount: number;
   /** Chỉ với new_skill: số ủng hộ cần. */
   supportNeeded: number | null;
+  /** Chỉ với new_skill: luật ủng hộ từ app_config.new_skill_support_needed. */
+  supportRule: SupportRule | null;
+  /** Người xem đã ủng hộ (new_skill). false khi không có viewerId. */
+  mySupport: boolean;
   tally: CriteriaTally | null;
   commentCount: number;
   myVote: VoteValue | null;
@@ -488,6 +492,8 @@ async function toSummaries(
       votingEndsAt: r.votingEndsAt,
       supportCount: r.supportCount,
       supportNeeded: r.kind === "new_skill" ? support.supporters : null,
+      supportRule: r.kind === "new_skill" ? support : null,
+      mySupport: mine.some((m) => m.proposalId === r.id && m.vote === "support"),
       tally: r.kind === "edit_criteria" ? await tallyCriteriaVotes(db, r.id) : null,
       commentCount: r._count.proposalComments,
       myVote: mine.find((m) => m.proposalId === r.id)?.vote ?? null,

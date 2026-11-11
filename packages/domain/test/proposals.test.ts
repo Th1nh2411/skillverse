@@ -105,6 +105,11 @@ describe("đề xuất kỹ năng mới", () => {
     expect(await db.userBadge.count({ where: { userId: author.id, badge: { slug: "proposal-accepted" } } })).toBe(1);
     const detail = await getProposal(db, { proposalId });
     expect(detail.createdSkillSlug).toBe("huyt-sao-bang-la");
+    const asAuthor = await getProposal(db, { proposalId, viewerId: author.id });
+    expect(asAuthor).toMatchObject({ mySupport: true, supportRule: { supporters: 3, days: 14 }, supportNeeded: 3 });
+    expect((await getProposal(db, { proposalId, viewerId: editor.id })).mySupport).toBe(false);
+    const listed = await listProposals(db, { kind: "new_skill", viewerId: author.id });
+    expect(listed.items.find((i) => i.id === proposalId)).toMatchObject({ mySupport: true, supportRule: { supporters: 3, days: 14 } });
   });
 
   it("kỹ năng rủi ro cao cũng phải qua biên tập; từ chối; hết hạn chưa đủ ủng hộ → expired", async () => {
@@ -238,6 +243,8 @@ describe("sửa tiêu chí có trọng số", () => {
       myWeight: 1,
       commentCount: 1,
       rule: { agree_ratio: 0.7, min_votes: 30, voter_min_level: 5 },
+      supportRule: null,
+      mySupport: false,
     });
     expect(detail.currentCriteria?.length).toBeGreaterThan(0);
     const list = await listProposals(db, { skillSlug: skill.slug, kind: "edit_criteria", status: "voting" });

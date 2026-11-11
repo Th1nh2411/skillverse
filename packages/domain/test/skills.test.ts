@@ -98,6 +98,7 @@ describe("getSkillDetail", () => {
   it("5 cấp kèm tiêu chí phiên bản hiện tại, số đang luyện, số đạt cấp ≥ 4", async () => {
     const d = await getSkillDetail(db, { slug: "lua-que-t", userId: me });
     expect(d.levels).toHaveLength(5);
+    expect(d.levels.map((l) => l.skillLevelId)).toEqual([1, 2, 3, 4, 5].map((lv) => friction.levels.get(lv)!.levelId));
     expect(d.levels[0]?.criteriaVersion).toBe(1);
     expect(d.levels[4]?.criteria.map((c) => c.text)).toEqual(["Que cấp 5", "Video liên tục"]);
     expect(d.riskLevel).toBe("high");

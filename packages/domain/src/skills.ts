@@ -13,6 +13,8 @@ export type CriterionView = {
 };
 
 export type LevelView = {
+  /** skill_levels.id — dùng tạo đề xuất sửa tiêu chí cho cấp này. */
+  skillLevelId: string;
   level: number;
   title: string | null;
   xpReward: number;
@@ -33,6 +35,7 @@ const levelInclude = {
 };
 
 type LevelRow = {
+  id: string;
   level: number;
   title: string | null;
   xpReward: number;
@@ -48,6 +51,7 @@ type LevelRow = {
 
 function toLevelView(l: LevelRow): LevelView {
   return {
+    skillLevelId: l.id,
     level: l.level,
     title: l.title,
     xpReward: l.xpReward,
