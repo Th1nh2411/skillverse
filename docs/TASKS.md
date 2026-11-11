@@ -73,3 +73,36 @@ Màn: Đăng bằng chứng (Proof.html), Duyệt (Review.html), Lên cấp (Lev
 - [~] (qa) Q2.3 E2E/HTTP: /api/cron sai secret → 401, đúng secret → 200
 - [~] (qa) Q2.4 Rà soát: finalizeProof là nơi duy nhất ghi level; mọi ngưỡng qua app_config; URL video là presigned có hạn; không lộ người nộp trong payload review
 - [~] (qa) Q2.5 Cập nhật docs/QA.md
+
+## Giai đoạn 3 — Xã hội và an toàn
+Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối giản cho biên tập viên, Hồ sơ người khác (PeerProfile.html) + trao đổi kỹ năng + nhắn tin.
+
+### domain
+- [ ] D3.1 Nhiệm vụ ngày: `getDailyQuests(userId, date)` (định nghĩa từ `app_config.daily_quests`, tạo dòng daily_quests khi thiếu), `progressQuest`, chuỗi ngày (streak) ; XP quest_done qua xp_ledger + test
+- [ ] D3.2 Feed: `getHomeFeed(userId, cursor)` (bài lên cấp + bài đăng của người/kỹ năng đang theo dõi, rồi phổ biến), `reactToPost` (like/cheer, cập nhật like_count cùng transaction), `commentOnPost`, `createTextPost` + test
+- [ ] D3.3 Thử thách: `getActiveChallenges`, `joinChallenge` (gắn proof), `getPendingProofsForCommunity` (chờ duyệt, ẩn danh), đấu 1v1: `createDuel`, `voteDuel` (1 phiếu/người, không tự bầu mình, trước vote_ends_at), `closeDuels` (cron; XP challenge_won) + test
+- [ ] D3.4 Báo cáo + xử phạt: `createReport` (proof/user/review/post/skill), `listReports` (biên tập), `resolveReport` (confirmed/dismissed); xác nhận gian lận với proof đã đạt → `sanctions(level_revoked, proof_id)`, hạ level QUA `finalizeProof` (nhánh thu hồi — xem DECISIONS D40), xp_ledger âm (revoked), −15 uy tín người đã duyệt đạt (approved_fraud), không xóa bản ghi; `sanctionUser` (warning/review_ban/post_ban/suspension có hạn) + test
+- [ ] D3.5 Hồ sơ người khác & xã hội: `follow/unfollow`, `proposeSwap` / `respondSwap` / `rateSwap`, nhắn tin `getOrCreateThread`, `sendMessage`, `listThreads`, `listMessages` (chỉ 2 thành viên thread; người bị post_ban/suspension không gửi được) + test
+- [ ] D3.6 `weeklyReputationRecovery` (+1 mỗi tuần không vi phạm khi < `reviewer_min_reputation`, idempotent theo tuần) + test
+
+### api
+- [ ] A3.1 Router: `home.quests`, `home.feed`, `post.react`, `post.comment`, `post.create`
+- [ ] A3.2 Router: `challenge.list`, `challenge.join`, `challenge.pendingProofs`, `duel.get`, `duel.vote`
+- [ ] A3.3 Router `admin.*` (editorProcedure): reports list/resolve, sanctions, hàng đợi trùng hash, appeals resolve
+- [ ] A3.4 Router: `social.follow/unfollow`, `swap.propose/respond/rate`, `message.threads/list/send`, `report.create`
+- [ ] A3.5 Cron: thêm closeDuels, weeklyReputationRecovery thật; test quyền admin (người thường bị chặn)
+
+### ui
+- [ ] U3.1 Trang chủ (`/home`): chuỗi ngày, nhiệm vụ hôm nay (tiến độ phân số), feed lên cấp + bài đăng, thả cheer
+- [ ] U3.2 Thử thách (`/challenges`): tab Đang diễn ra / Đấu 1v1 / Chờ duyệt, thử thách tuần, bỏ phiếu đấu
+- [ ] U3.3 Hồ sơ người khác (`/u/[handle]`): theo dõi, nhắn tin, báo cáo (sheet), đề nghị trao đổi kỹ năng (lưu ý gặp mặt chỉ hiện sau khi chấp nhận)
+- [ ] U3.4 Tin nhắn (`/messages`, `/messages/[threadId]`) tối giản
+- [ ] U3.5 Quản trị biên tập viên (`/admin`): báo cáo, xử phạt, thu hồi level, trùng hash, kháng nghị — tối giản, chỉ editor thấy
+- [ ] U3.6 Thông báo (chuông trên header) tối giản + chụp/tự soi
+
+### qa
+- [ ] Q3.1 E2E: trang chủ hiển thị nhiệm vụ + feed; thả cheer
+- [ ] Q3.2 E2E: báo cáo bằng chứng đã đạt → biên tập viên xác nhận → level bị hạ, XP âm, người duyệt bị trừ uy tín
+- [ ] Q3.3 E2E: theo dõi, nhắn tin, đề nghị trao đổi; người thường không vào được /admin
+- [ ] Q3.4 E2E: bỏ phiếu đấu 1v1 (1 phiếu/người)
+- [ ] Q3.5 Rà soát + docs/QA.md
