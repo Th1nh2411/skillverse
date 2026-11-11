@@ -39,12 +39,23 @@ test.describe("Onboarding người mới", () => {
     }
 
     // Đi qua các bước (tự đánh giá, thử thách đầu tiên) tới khi rời /onboarding
-    for (let step = 0; step < 6 && /\/onboarding/.test(page.url()); step++) {
+    const onOnboarding = () => /\/onboarding/.test(new URL(page.url()).pathname);
+    for (let step = 0; step < 6; step++) {
+      // Chờ trạng thái ổn định: hoặc đã rời /onboarding (router.push bất đồng bộ), hoặc nút bước kế tiếp đã hiện
+      await expect
+        .poll(async () => !onOnboarding() || (await next.first().isVisible().catch(() => false)), { timeout: 30_000 })
+        .toBe(true);
+      if (!onOnboarding()) break;
       const selfLevel = page.getByRole("radio", { name: /Mới bắt đầu/ }).or(page.getByRole("button", { name: /^Mới bắt đầu$/ }));
       if (await selfLevel.first().isVisible().catch(() => false)) await selfLevel.first().click();
       await expect(next.first()).toBeEnabled();
-      await Promise.all([page.waitForLoadState("domcontentloaded"), next.first().click()]);
-      await page.waitForTimeout(300);
+      const h1 = page.getByRole("heading", { level: 1 });
+      const title = await h1.innerText();
+      await next.first().click();
+      // Bước đã chuyển: tiêu đề đổi hoặc đã rời trang
+      await expect
+        .poll(async () => !onOnboarding() || (await h1.innerText().catch(() => "")) !== title, { timeout: 30_000 })
+        .toBe(true);
     }
 
     await expect(page, "Xong onboarding phải tới hồ sơ").toHaveURL(/\/profile/);
