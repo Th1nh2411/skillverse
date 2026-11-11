@@ -37,6 +37,32 @@ Lead chạy toàn bộ thấy fail không ổn định (discover :14/:24/:37/:48
 - (c) lỗi UI/API thật: không có.
 - Kết quả: 2 lần chạy liên tiếp (lần 1 xóa `.next-e2e`, khởi động lạnh) đều 32/32 pass.
 
+## Giai đoạn 2 — Vòng lặp xác thực
+
+### E2E
+| File | Nội dung |
+| --- | --- |
+| proof-flow.spec.ts (Q2.1) | minhhoang nộp "Thắt nút dây" cấp 4 qua `/proof/new` (video `e2e/fixtures/proof-sample.webm` 21 KB tạo bằng MediaRecorder trong Chromium, mỗi test thêm 32 byte ngẫu nhiên để hash khác nhau) → DB: 3 người được phân công, khóa object không chứa dữ liệu cá nhân → `/proofs/<id>` "0/3 người đã duyệt", `<video>` là presigned (X-Amz-Expires/Signature), bỏ chữ ký → MinIO từ chối → hàng đợi `/review` của người duyệt không có tên người nộp → 3 người đăng nhập dev chấm "Đạt" từng tiêu chí, level giữ 3 cho tới phiếu thứ 3 → proof `passed`, level 4 → `/level-up/<id>` "Lên cấp 4", +XP, "Chia sẻ thành tích" → "Đã sao chép link" → `/share/<id>` công khai, og:image `/og/level-up/...` PNG |
+| proof-review-rules.spec.ts (Q2.2) | maianh nộp → `review.task` không chứa user id/handle/tên người nộp, URL video có hạn → người ngoài: `review.task` 403/404, `review.submit` 4xx, `proof.videoUrl` 403, `/review/<id>` 404, không có video → 3 phiếu "Chưa đạt" → `failed`, level giữ 3 → "Chưa đạt cấp 4", không lộ người duyệt → "Kháng nghị" → "Đã gửi kháng nghị", appeal `open`, tải lại "Đang xem xét kháng nghị", hết nút |
+| cron.spec.ts (Q2.3) | `POST /api/cron` thiếu/sai secret (Bearer, x-cron-secret) → 401; GET không chạy; đúng secret (cả hai header) → 200 hai lần |
+
+- Test chỉ ĐỌC DB e2e (`e2e/helpers/db.ts`) để tra người được phân công / xác nhận level; mọi thay đổi đi qua ứng dụng.
+- Dev server e2e nhận `CRON_SECRET=e2e-cron-secret` (env.ts). Warm-up thêm `/proof/new`, `/review`, `review.queue`.
+- Kết quả 2026-11-11: toàn bộ e2e giai đoạn 1+2 (46 test) xanh 2 lần liên tiếp (46/46 trong 3.2 phút và 1.9 phút). Một lần trước đó bị ngắt giữa chừng vì dev server :3200 mất kết nối (ECONNREFUSED sau 12 phút, máy đang tải nặng), không phải lỗi ứng dụng.
+- Sửa test không ổn định: onboarding chờ tiêu đề bước đổi / router.push xong thay vì chờ cố định 300 ms; webServer timeout 300 s.
+
+### Rà soát (Q2.4)
+| Quy tắc | Kết quả |
+| --- | --- |
+| finalizeProof là nơi duy nhất ghi level | Đạt: chỉ `packages/domain/src/proofs.ts` (upsert trong finalizeProof, gọi từ submitReview trong cùng tx); appeals.ts overturned mở vòng duyệt mới, không ghi level. |
+| Ngưỡng qua app_config | Đạt: review_pass_ratio, reviewer_min_reputation, review_due_hours, reviewer_exclusion_days, media_limits, reputation_deltas. TTL URL ký (15/10 phút) là tham số kỹ thuật trong `packages/api/src/media.ts`. |
+| URL video presigned có hạn, bucket private | Đạt (S3Storage presignGet/presignPut + quyền `canViewProofMedia`); e2e xác nhận bỏ chữ ký → 4xx. |
+| Payload review không lộ người nộp | Đạt: `review.task` bỏ proofId/mediaKey/người nộp (e2e xác nhận). |
+| Cron kiểm secret | Đạt: so sánh SHA-256 + timingSafeEqual, thiếu secret → 401. |
+| Không Prisma trong UI | **Vi phạm**: `apps/web/app/proof/new/page.tsx:6-7,19-22` gọi `getConfig(getPrisma(), "media_limits")` ("TẠM") → báo ui + api (cần `proof.limits`). |
+| Chấm chấm giữa ở bài level_up (GĐ1 #1) | Đã sửa (`${skill}: lên cấp N`). |
+| Quan sát | Sau onboarding 3 kỹ năng, hồ sơ hiện "Kỹ năng 0" (đếm level ≥ 1). Hợp lý nếu chủ ý; ghi lại để lead quyết định. |
+
 ## Rà soát code (Q1.4) — 2026-11-11
 
 Đã kiểm tra (grep + đọc code) packages/domain, packages/api, packages/validation, apps/web/app, components, lib:
