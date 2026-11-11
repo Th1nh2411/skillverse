@@ -101,22 +101,22 @@ Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối gi�
 - [ ] U3.6 Thông báo (chuông trên header) tối giản + chụp/tự soi
 
 ### qa
-- [ ] Q3.1 E2E: trang chủ hiển thị nhiệm vụ + feed; thả cheer
-- [ ] Q3.2 E2E: báo cáo bằng chứng đã đạt → biên tập viên xác nhận → level bị hạ, XP âm, người duyệt bị trừ uy tín
-- [ ] Q3.3 E2E: theo dõi, nhắn tin, đề nghị trao đổi; người thường không vào được /admin
-- [ ] Q3.4 E2E: bỏ phiếu đấu 1v1 (1 phiếu/người)
-- [ ] Q3.5 Rà soát + docs/QA.md
+- [~] (qa) Q3.1 E2E: trang chủ hiển thị nhiệm vụ + feed; thả cheer
+- [~] (qa) Q3.2 E2E: báo cáo bằng chứng đã đạt → biên tập viên xác nhận → level bị hạ, XP âm, người duyệt bị trừ uy tín
+- [~] (qa) Q3.3 E2E: theo dõi, nhắn tin, đề nghị trao đổi; người thường không vào được /admin
+- [~] (qa) Q3.4 E2E: bỏ phiếu đấu 1v1 (1 phiếu/người)
+- [~] (qa) Q3.5 Rà soát + docs/QA.md
 
 ## Giai đoạn 4 — Cộng đồng góp ý
 Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu chí trên Chi tiết kỹ năng.
 
 ### domain
-- [ ] D4.1 `proposeNewSkill` (payload Zod: tên, danh mục, mô tả, 5 cấp tiêu chí, cờ rủi ro) ; `supportProposal` (support_count cùng transaction; đủ `new_skill_support_needed.supporters` trong `days` → editor_review) + test
-- [ ] D4.2 `decideNewSkill` (biên tập viên): accepted → tạo skills(active), skill_levels, criteria_versions v1 + criteria, XP proposal_accepted cho tác giả, huy hiệu; risk_level=high luôn cần biên tập viên + test
-- [ ] D4.3 `proposeCriteriaEdit` (skill_level_id, tiêu chí mới) ; `voteCriteriaEdit` (agree/disagree; weight=1 nếu người bỏ phiếu đạt cấp ≥ `criteria_change_rule.voter_min_level` của kỹ năng đó, ngược lại 0; 1 phiếu/người, đổi phiếu được trước hạn) + test
-- [ ] D4.4 `closeCriteriaProposal` / `closeExpiredProposals` (cron): thông qua khi tỉ lệ agree ≥ agree_ratio trên tổng trọng số và số phiếu có trọng số ≥ min_votes → tạo criteria_versions mới (version+1, source_proposal_id, criteria mới), trỏ current_version_id, XP tác giả; hết hạn không đủ → expired/rejected; new_skill quá hạn không đủ ủng hộ → expired. KHÔNG UPDATE criteria + test (hòa phiếu = không thông qua, đúng ngưỡng 70%, dưới 30 phiếu, phiếu weight 0)
-- [ ] D4.5 Truy vấn: `listProposals(skillId|kind)`, `getProposal`, bình luận đề xuất `commentOnProposal` + Zod
-- [ ] D4.6 Nhiệm vụ ngày suggest_criteria tiến khi góp ý/bỏ phiếu + test
+- [x] (domain) D4.1 `proposeNewSkill` (payload Zod: tên, danh mục, mô tả, 5 cấp tiêu chí, cờ rủi ro) ; `supportProposal` (support_count cùng transaction; đủ `new_skill_support_needed.supporters` trong `days` → editor_review) + test
+- [x] (domain) D4.2 `decideNewSkill` (biên tập viên): accepted → tạo skills(active), skill_levels, criteria_versions v1 + criteria, XP proposal_accepted cho tác giả, huy hiệu; risk_level=high luôn cần biên tập viên + test
+- [x] (domain) D4.3 `proposeCriteriaEdit` (skill_level_id, tiêu chí mới) ; `voteCriteriaEdit` (agree/disagree; weight=1 nếu người bỏ phiếu đạt cấp ≥ `criteria_change_rule.voter_min_level` của kỹ năng đó, ngược lại 0; 1 phiếu/người, đổi phiếu được trước hạn) + test
+- [x] (domain) D4.4 `closeCriteriaProposal` / `closeExpiredProposals` (cron): thông qua khi tỉ lệ agree ≥ agree_ratio trên tổng trọng số và số phiếu có trọng số ≥ min_votes → tạo criteria_versions mới (version+1, source_proposal_id, criteria mới), trỏ current_version_id, XP tác giả; hết hạn không đủ → expired/rejected; new_skill quá hạn không đủ ủng hộ → expired. KHÔNG UPDATE criteria + test (hòa phiếu = không thông qua, đúng ngưỡng 70%, dưới 30 phiếu, phiếu weight 0)
+- [x] (domain) D4.5 Truy vấn: `listProposals(skillId|kind)`, `getProposal`, bình luận đề xuất `commentOnProposal` + Zod
+- [x] (domain) D4.6 Nhiệm vụ ngày suggest_criteria tiến khi góp ý/bỏ phiếu + test
 
 ### api
 - [ ] A4.1 Router `proposal.*`: createNewSkill, support, createCriteriaEdit, vote, list, get, comment
