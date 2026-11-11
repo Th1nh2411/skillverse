@@ -141,8 +141,8 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 - [ ] L5.3 Build production chạy được cục bộ (`pnpm build && pnpm --filter @skillverse/web start`)
 
 ### api
-- [ ] A5.1 Kiểm tra cấu hình production: AUTH_DEV_LOGIN bị từ chối khi NODE_ENV=production trừ khi bật rõ; header bảo mật; cron.yml dùng secret; R2 presigned hoạt động với endpoint R2 (path-style, region auto)
-- [ ] A5.2 `vercel.json` (nếu cần) và kiểm tra Prisma + adapter-pg chạy trên Vercel serverless (Neon pooled)
+- [x] (api) A5.1 Kiểm tra cấu hình production: AUTH_DEV_LOGIN bị từ chối khi NODE_ENV=production trừ khi bật rõ; header bảo mật; cron.yml dùng secret; R2 presigned hoạt động với endpoint R2 (path-style, region auto)
+- [x] (api) A5.2 `vercel.json` (nếu cần) và kiểm tra Prisma + adapter-pg chạy trên Vercel serverless (Neon pooled)
 
 ### ui
 - [ ] U5.1 PWA: icon, manifest, trang offline tối giản; giao diện sáng "giấy sổ tay" nếu kịp; soát lần cuối 360/390/768px mọi màn

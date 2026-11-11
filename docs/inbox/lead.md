@@ -35,8 +35,31 @@ Người khác THÊM tin nhắn vào cuối file (không sửa/xóa tin cũ). Đ
 - Q-domain-10: Huy hiệu khi đạt: `first-proof` (lần đạt đầu), `max-level` + `rare-holder`/`legendary-holder` (theo độ hiếm trước khi tăng holder_count); chỉ cấp nếu slug có trong bảng badges.
 - Nhánh thu hồi D40 (`outcome: "revoked"`) CHƯA làm (thuộc giai đoạn báo cáo); chữ ký `finalizeProof(db, { proofId, ... })` sẽ mở rộng thêm tham số `revoke`.
 
-## [từ ui → lead] Xong U1.1–U1.6
+## [từ ui → lead] Xong U1.1–U1.6 (đã xử lý)
 - Màn: /login, /onboarding (3 bước), /profile, /skills/tree/[category], /skills/[slug], /discover; trang dev /dev/kit (404 khi production). Tất cả dùng tRPC thật (RSC qua getServerCaller, client qua useTRPC), không còn mock.
 - Font tiêu đề Bitter (vietnamese) + Be Vietnam Pro; token rừng đêm trong globals.css; LevelPatch (khiên/lục giác/tròn/vuông theo danh mục, chỉ thêu theo độ hiếm).
 - Liên kết tới route giai đoạn sau (chưa có): /proof/new?skill=<slug>, /skills/new, /u/<handle>, /notifications.
 - Chi tiết kỹ năng chỉ hiển thị kết quả góp ý tiêu chí; chưa có nút Đồng ý/Không đồng ý vì chưa có procedure bỏ phiếu (cần api: `proposal.vote`).
+
+## [từ api → lead] A5.1–A5.2: việc cần lead làm + nội dung cho DEPLOY.md (commit eada683) (đã xử lý)
+**1. next.config.ts (file của lead) — thêm header bảo mật** (đã thử: next.config.ts import được file TS này):
+```ts
+import { securityHeaders } from "./lib/server/security-headers";
+// trong nextConfig:
+async headers() {
+  return [{ source: "/(.*)", headers: securityHeaders() }];
+},
+```
+Gồm CSP (default 'self'; script/style 'unsafe-inline' (+'unsafe-eval' khi dev); connect-src/media-src thêm origin của S3_PUBLIC_ENDPOINT/S3_ENDPOINT cho presigned PUT/GET; img-src googleusercontent; font 'self' (next/font tự host); form-action + accounts.google.com; frame-ancestors 'none'; upgrade-insecure-requests chỉ production), X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin, X-Frame-Options DENY, Permissions-Policy (camera/microphone/geolocation=self cho MediaRecorder + vị trí), COOP same-origin, HSTS (production). CSP đọc S3_PUBLIC_ENDPOINT lúc build/khởi động → đặt biến trên Vercel TRƯỚC khi build.
+
+**2. turbo.json (lead)**: thêm `"globalPassThroughEnv": ["VERCEL", "VERCEL_ENV", "VERCEL_URL", "AUTH_DEV_LOGIN_ALLOW_PRODUCTION", "NEXT_DIST_DIR", "API_TEST_DATABASE_URL"]` (turbo 2 strict env mode lọc biến không khai báo). `.env.example`: thêm `AUTH_DEV_LOGIN_ALLOW_PRODUCTION=""` (chú thích: chỉ để thử đăng nhập dev trên bản build/preview; Vercel production luôn tắt).
+
+**3. packages/db (lead) — Prisma trên Vercel serverless + Neon pooled** (đề xuất): trong `createPrismaClient` dùng pool nhỏ cho serverless: `new PrismaPg({ connectionString: url, max: Number(process.env.DATABASE_POOL_MAX ?? 5), idleTimeoutMillis: 10_000, connectionTimeoutMillis: 10_000 })`. `DATABASE_URL` = chuỗi **pooled** của Neon (host có `-pooler`, `?sslmode=require`), `DIRECT_URL` = chuỗi direct (chỉ cho `prisma migrate deploy`). Prisma 7 + driver adapter không cần Rust engine; `serverExternalPackages: ["pg", "@prisma/adapter-pg"]` đã có. Client sinh ra bị gitignore → build phải chạy `prisma generate` (đã lo bằng vercel.json bên dưới qua turbo `^generate`).
+
+**4. Nội dung cho DEPLOY.md**
+- *Vercel*: Root Directory = `apps/web`. `apps/web/vercel.json` (api tạo) đặt `installCommand: cd ../.. && pnpm install --frozen-lockfile`, `buildCommand: cd ../.. && pnpm turbo run build --filter=@skillverse/web`, region `sin1` (chọn cùng vùng Neon; đổi nếu Neon ở vùng khác). Bật "Include files outside the root directory" (mặc định bật cho monorepo).
+- *Biến môi trường Vercel (Production + Preview)*: `DATABASE_URL` (Neon pooled), `DIRECT_URL` (Neon direct), `AUTH_SECRET` (`openssl rand -base64 32`), `AUTH_URL` = URL production (Preview có thể bỏ trống; trustHost đã bật), `AUTH_GOOGLE_ID/SECRET` (tùy chọn; redirect URI `https://<domain>/api/auth/callback/google`), `EMAIL_SERVER` (SMTP, vd. `smtps://user:pass@smtp.resend.com:465`) + `EMAIL_FROM` — để trống thì magic link chỉ in ra log Vercel, `S3_ENDPOINT` = `S3_PUBLIC_ENDPOINT` = `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`, `S3_REGION=auto`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` (R2 API token quyền Object Read & Write cho bucket), `CRON_SECRET` (chuỗi ngẫu nhiên dài), `NEXT_PUBLIC_APP_URL`. **KHÔNG** đặt `AUTH_DEV_LOGIN` ở Production (dù đặt nhầm, code tắt cứng khi VERCEL_ENV=production; build production khác cần thêm `AUTH_DEV_LOGIN_ALLOW_PRODUCTION=true`).
+- *R2*: bucket private (không bật public access). Code dùng path-style + region `auto` + tắt checksum mặc định trong URL ký (đã kiểm với MinIO). CORS của bucket:
+  `[{"AllowedOrigins":["https://<domain>"],"AllowedMethods":["PUT","GET","HEAD"],"AllowedHeaders":["content-type"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3600}]` (thêm URL preview nếu cần).
+- *GitHub Actions cron*: Settings → Secrets and variables → Actions: secret `CRON_SECRET` (trùng Vercel), variable `APP_URL` = `https://<domain>`. Workflow `.github/workflows/cron.yml` chạy `*/10 * * * *` và có `workflow_dispatch` để bấm chạy thử; thiếu biến thì bỏ qua (exit 0). Lưu ý GitHub có thể trễ lịch vài phút và tự tắt lịch ở repo không hoạt động 60 ngày.
+- *Checklist sau triển khai (phần api)*: `curl -X POST https://<domain>/api/cron` → 401; với `-H "Authorization: Bearer $CRON_SECRET"` → 200 `{ok:true}`; `POST /api/dev/login` → 404; `curl -sI https://<domain>/login` có `content-security-policy`; đăng nhập magic link; tải một video thử (DevTools không báo lỗi CORS/CSP); mở `/og/level-up/<proofId>` của một bằng chứng đã đạt → ảnh PNG.
