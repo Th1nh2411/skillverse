@@ -201,7 +201,7 @@ describe("cron", () => {
 
   it("runCron chạy đủ 3 tác vụ, idempotent, lỗi một tác vụ không chặn tác vụ khác", async () => {
     const r1 = await runCron(db);
-    expect(Object.keys(r1).sort()).toEqual(["closeExpiredProposals", "reassignExpiredReviews", "weeklyReputationRecovery"]);
+    expect(Object.keys(r1).sort()).toEqual(["closeDuels", "closeExpiredProposals", "reassignExpiredReviews", "weeklyReputationRecovery"]);
     expect(Object.values(r1).every((j) => j?.ok)).toBe(true);
     const r2 = await runCron(db, {
       reassignExpiredReviews: async () => {

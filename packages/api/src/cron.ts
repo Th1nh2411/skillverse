@@ -20,7 +20,12 @@ export function verifyCronSecret(headers: Headers, secret: string | undefined): 
   return timingSafeEqual(a, b);
 }
 
-export const CRON_JOBS: JobName[] = ["reassignExpiredReviews", "closeExpiredProposals", "weeklyReputationRecovery"];
+export const CRON_JOBS: JobName[] = [
+  "reassignExpiredReviews",
+  "closeDuels",
+  "closeExpiredProposals",
+  "weeklyReputationRecovery",
+];
 
 export type CronReport = Partial<Record<JobName, { ok: boolean; result?: unknown; error?: string }>>;
 

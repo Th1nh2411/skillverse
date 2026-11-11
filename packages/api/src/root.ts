@@ -4,6 +4,18 @@ import { onboardingRouter } from "./routers/onboarding";
 import { profileRouter } from "./routers/profile";
 import { levelUpRouter, proofRouter, shareRouter } from "./routers/proof";
 import { reviewRouter } from "./routers/review";
+import { adminRouter } from "./routers/admin";
+import {
+  challengeRouter,
+  duelRouter,
+  homeRouter,
+  messageRouter,
+  notificationRouter,
+  postRouter,
+  reportRouter,
+  socialRouter,
+  swapRouter,
+} from "./routers/social";
 import { skillRouter } from "./routers/skill";
 
 export const appRouter = router({
@@ -18,6 +30,16 @@ export const appRouter = router({
   review: reviewRouter,
   levelUp: levelUpRouter,
   share: shareRouter,
+  home: homeRouter,
+  post: postRouter,
+  challenge: challengeRouter,
+  duel: duelRouter,
+  social: socialRouter,
+  swap: swapRouter,
+  message: messageRouter,
+  notification: notificationRouter,
+  report: reportRouter,
+  admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;
