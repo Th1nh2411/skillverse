@@ -82,3 +82,10 @@ export const resolveAppealInput = z.object({
   decision: z.enum(["upheld", "overturned"]),
 });
 export type ResolveAppealInput = z.infer<typeof resolveAppealInput>;
+
+/** proof.createUpload — giới hạn thật kiểm ở server theo app_config.media_limits. */
+export const proofCreateUploadInput = z.object({
+  contentType: z.string().trim().min(1).max(100),
+  sizeBytes: z.number().int().positive(),
+});
+export type ProofCreateUploadInput = z.infer<typeof proofCreateUploadInput>;

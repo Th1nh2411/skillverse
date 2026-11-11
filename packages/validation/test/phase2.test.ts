@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   REPORT_REASON_LABELS,
   fileAppealInput,
+  proofCreateUploadInput,
   reportDuringReviewInput,
   reportReason,
   resolveAppealInput,
@@ -39,5 +40,13 @@ describe("báo cáo / kháng nghị", () => {
     expect(fileAppealInput.safeParse({ proofId: A, reason: "ngắn" }).success).toBe(false);
     expect(fileAppealInput.safeParse({ proofId: A, reason: "Góc quay khác cho thấy rõ" }).success).toBe(true);
     expect(resolveAppealInput.safeParse({ appealId: A, decision: "open" }).success).toBe(false);
+  });
+});
+
+describe("proofCreateUploadInput", () => {
+  it("contentType + sizeBytes > 0", () => {
+    expect(proofCreateUploadInput.safeParse({ contentType: "video/mp4", sizeBytes: 1024 }).success).toBe(true);
+    expect(proofCreateUploadInput.safeParse({ contentType: "", sizeBytes: 1024 }).success).toBe(false);
+    expect(proofCreateUploadInput.safeParse({ contentType: "video/mp4", sizeBytes: 0 }).success).toBe(false);
   });
 });

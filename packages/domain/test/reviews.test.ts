@@ -325,7 +325,7 @@ describe("lên cấp + thẻ chia sẻ", () => {
     await expect(getLevelUpSummary(db, { proofId, userId: reviewers[0]!.id })).rejects.toMatchObject({ code: "FORBIDDEN" });
 
     const card = await getShareCard(db, { proofId });
-    expect(card).toMatchObject({ displayName: "Nguyễn Bí Mật", level: 2, maxLevel: 5, verifiedCount: 3 });
+    expect(card).toMatchObject({ displayName: "Nguyễn Bí Mật", level: 2, levelTitle: "Cấp 2", maxLevel: 5, verifiedCount: 3 });
     expect(JSON.stringify(card)).not.toContain(submitter.handle);
     expect(JSON.stringify(card)).not.toContain(submitter.id);
   });

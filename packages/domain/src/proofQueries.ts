@@ -217,6 +217,8 @@ export type ShareCard = {
   displayName: string;
   skill: { slug: string; name: string; category: { slug: string; name: string } };
   level: number;
+  /** skill_levels.title của cấp đạt (vd. "Thành thạo"). */
+  levelTitle: string | null;
   maxLevel: number;
   rarity: Rarity;
   verifiedCount: number;
@@ -229,6 +231,7 @@ export async function getShareCard(db: Db, p: { proofId: string }): Promise<Shar
     where: { id: p.proofId, status: "passed", deletedAt: null, user: { deletedAt: null, status: { not: "banned" } } },
     select: {
       id: true,
+      skillId: true,
       targetLevel: true,
       decidedAt: true,
       user: { select: { displayName: true } },
@@ -238,11 +241,16 @@ export async function getShareCard(db: Db, p: { proofId: string }): Promise<Shar
   });
   if (!proof) throw new DomainError("NOT_FOUND", "Không tìm thấy thành tích.");
   const thresholds = await getRarityThresholds(db);
+  const level = await db.skillLevel.findUnique({
+    where: { skillId_level: { skillId: proof.skillId, level: proof.targetLevel } },
+    select: { title: true },
+  });
   return {
     proofId: proof.id,
     displayName: proof.user.displayName,
     skill: { slug: proof.skill.slug, name: proof.skill.name, category: proof.skill.category },
     level: proof.targetLevel,
+    levelTitle: level?.title ?? null,
     maxLevel: proof.skill.maxLevel,
     rarity: rarityOf(proof.skill.holderCount, thresholds),
     verifiedCount: proof.reviews.length,
