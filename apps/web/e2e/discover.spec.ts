@@ -9,6 +9,8 @@ test.describe("Khám phá", () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, "minhhoang");
     await gotoScreen(page, "/discover", "Khám phá");
+    // Màn render phía client: chờ dữ liệu discover.home (đồng thời bảo đảm đã hydrate trước khi gõ tìm kiếm)
+    await expect(page.getByRole("heading", { name: /Hiếm nhất/ })).toBeVisible({ timeout: 30_000 });
   });
 
   test("các mục chính và lọc danh mục", async ({ page }) => {
@@ -22,7 +24,9 @@ test.describe("Khám phá", () => {
   });
 
   test("hiếm nhất sắp theo holder_count tăng dần", async ({ page }) => {
-    const section = page.locator("section").filter({ has: page.getByRole("heading", { name: /Hiếm nhất/ }) });
+    const section = page.getByRole("region", { name: /Hiếm nhất/ }).or(
+      page.locator("section").filter({ has: page.getByRole("heading", { name: /Hiếm nhất/ }) }),
+    );
     // Seed: Thổi thủy tinh 12, Sống sót 72 giờ 18, Viết chữ ngược gương 27
     const text = (await section.first().innerText()).replace(/\s+/g, " ");
     const a = text.indexOf("Thổi thủy tinh");
@@ -49,7 +53,9 @@ test.describe("Khám phá", () => {
     const box = page.getByRole("searchbox").or(page.getByRole("textbox", { name: /Tìm/ }));
     test.skip((await box.count()) === 0, "Chưa có ô tìm kiếm trên màn Khám phá");
     await box.first().fill("zzzkhongcokynangnay");
-    await expect(page.getByText(/Không tìm thấy|Chưa có|Đề xuất kỹ năng/).first()).toBeVisible();
+    // Màn trống là lời mời hành động (SKILL.md): có nút/liên kết đề xuất kỹ năng mới
+    await expect(page.getByText(/Không tìm thấy|Chưa có/).first()).toBeVisible({ timeout: 15_000 });
+    await expect(clickable(page, /Đề xuất/).first()).toBeVisible();
   });
 
   test("gần bạn không lộ vị trí", async ({ page }) => {

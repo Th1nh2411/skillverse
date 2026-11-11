@@ -11,6 +11,8 @@ export async function gotoScreen(page: Page, path: string, screenName: string): 
     test.skip(true, `Màn "${screenName}" (${path}) chưa có (404) — chờ ui`);
   }
   expect(status, `${path} trả về lỗi máy chủ`).toBeLessThan(500);
+  // Chờ hydrate + truy vấn tRPC đầu tiên xong: thao tác trước khi React hydrate sẽ bị mất (input điều khiển).
+  await page.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => undefined);
   return page.url();
 }
 

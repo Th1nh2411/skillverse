@@ -17,8 +17,8 @@ export default defineConfig({
   workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  timeout: 60_000,
-  expect: { timeout: 10_000 },
+  timeout: 90_000,
+  expect: { timeout: 15_000 },
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
   outputDir: "./e2e/.results",
   use: {
@@ -26,6 +26,8 @@ export default defineConfig({
     locale: "vi-VN",
     timezoneId: "Asia/Ho_Chi_Minh",
     trace: "retain-on-failure",
+    navigationTimeout: 60_000,
+    actionTimeout: 20_000,
     screenshot: "only-on-failure",
   },
   projects: [

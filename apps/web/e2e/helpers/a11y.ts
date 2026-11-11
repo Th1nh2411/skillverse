@@ -42,8 +42,8 @@ export async function collectA11yIssues(page: Page): Promise<A11yIssue[]> {
       if (!accName(el)) issues.push({ rule: "ten-truy-cap (aria-label cho nút chỉ có icon)", target: el.outerHTML.slice(0, 120) });
       const inText = el.tagName === "A" && el.closest("p, li > span, span") !== null && !el.closest("nav");
       if (inText) continue;
-      // Ô checkbox/radio ẩn bên trong label lớn: đo label
-      const target = (el instanceof HTMLInputElement && ["checkbox", "radio"].includes(el.type) && el.closest("label")) || el;
+      // Ô nhập nằm trong <label> lớn (bấm vào label là focus ô): vùng chạm là label
+      const target = ((el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) && el.closest("label")) || el;
       const r = target.getBoundingClientRect();
       if (r.width < 44 - 0.5 || r.height < 44 - 0.5) {
         issues.push({ rule: "vung-cham-44px", target: `${describe(el)} (${Math.round(r.width)}x${Math.round(r.height)})` });

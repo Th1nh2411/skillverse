@@ -27,7 +27,15 @@ E2E_SERVER_LOG=1 pnpm e2e                  # in log của next dev
 | profile.spec.ts | tên/handle/thống kê/progressbar, kỹ năng nổi bật + Huyền thoại, không chữ HOA, sang cây kỹ năng, a11y | pass |
 | skills.spec.ts (cây) | nút danh mục Sinh tồn + chú giải, tên truy cập có cấp/"chưa mở", yêu cầu cấp 4 + "Gửi xác thực", 404, a11y | pass |
 | skills.spec.ts (chi tiết) | 5 cấp + tiêu chí, Hiếm, số liệu, CTA, "Rủi ro cao", ⓘ mở dialog, 404, a11y | pass |
-| discover.spec.ts | mục Hiếm nhất/Thịnh hành, bộ lọc danh mục, thứ tự hiếm nhất, tìm kiếm → chi tiết, không kết quả, không lộ vị trí, a11y | fail/skip — màn Khám phá (U1.6) chưa dựng, chờ ui |
+| discover.spec.ts | mục Hiếm nhất/Thịnh hành, bộ lọc danh mục, thứ tự hiếm nhất, tìm kiếm → chi tiết, không kết quả, không lộ vị trí, a11y | pass |
+
+## Ổn định e2e (cổng Giai đoạn 1)
+
+Lead chạy toàn bộ thấy fail không ổn định (discover :14/:24/:37/:48/:60, onboarding :14, skills :88). Phân loại:
+- (b) flaky — `next dev` biên dịch route/tRPC lần đầu > 10 s, và test thao tác trước khi React hydrate (gõ ô tìm kiếm, bấm chip/ⓘ bị mất): discover :14/:24/:37/:48, onboarding :14, skills :88. Sửa: global-setup warm-up mọi màn + procedure giai đoạn 1 (webServer chạy trước globalSetup); `gotoScreen` chờ `networkidle`; discover chờ heading "Hiếm nhất" (dữ liệu client) trước khi thao tác; timeout test 90 s, expect 15 s, navigation 60 s, action 20 s.
+- (a) test sai — discover :60: ô tìm kiếm cao 23px nhưng nằm trong `<label>` 52px (vùng chạm thật là label) → helper a11y đo label. discover :48: màn trống ghi "Chưa có kỹ năng …" + nút "Đề xuất kỹ năng" — test bám ý nghĩa.
+- (c) lỗi UI/API thật: không có.
+- Kết quả: 2 lần chạy liên tiếp (lần 1 xóa `.next-e2e`, khởi động lạnh) đều 32/32 pass.
 
 ## Rà soát code (Q1.4) — 2026-11-11
 
@@ -51,4 +59,4 @@ E2E_SERVER_LOG=1 pnpm e2e                  # in log của next dev
 | --- | --- | --- | --- | --- |
 | 1 | nhỏ | packages/domain/src/proofs.ts:446 | Bài level_up `body: "Lên cấp N · <tên>"` dùng chuỗi nối bằng dấu chấm giữa (SKILL.md "Những thứ cần sửa") — nội dung này hiện ở Feed | domain |
 | 2 | nhỏ | apps/web/app/(main)/profile/page.tsx (IconLink "Thông báo") | Liên kết tới `/notifications` hiện 404 (chưa có route) | ui |
-| 3 | thông tin | apps/web/app/(main)/discover | Màn Khám phá chưa dựng nên discover.spec.ts fail/skip | ui |
+| 3 | đã xong | apps/web/app/(main)/discover | Màn Khám phá đã dựng; discover.spec.ts pass | ui |
