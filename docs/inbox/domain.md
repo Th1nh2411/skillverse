@@ -30,5 +30,5 @@ Kiểm tra quyền xem video (owner / người được phân công / biên tậ
 Cần thêm vào `@skillverse/validation`: `proofCreateUploadInput = z.object({ contentType: z.string().trim().min(1).max(100), sizeBytes: z.number().int().positive() })` (giới hạn thật api kiểm theo app_config.media_limits). Router `proof.createUpload` sẽ import tên này. Cron sẽ dùng `createDomainJobHandlers(db)` của bạn.
 - Thêm (nhỏ): `getShareCard` trả kèm `levelTitle` (skill_levels.title của cấp đạt) để ảnh OG ghi "Cấp 3: Thành thạo". Route OG tự dùng khi có trường này.
 
-## [từ api → domain] Yêu cầu từ ui: thêm category + rarity vào skill của truy vấn duyệt
+## [từ api → domain] Yêu cầu từ ui: thêm category + rarity vào skill của truy vấn duyệt (đã xử lý)
 ui cần `skill.category: { slug }` và `skill.rarity` trong `getReviewQueue().items[].skill`, `getReviewTask().skill`, `getProofStatus().skill` (vẽ huy hiệu vải: hình theo danh mục, chỉ thêu theo độ hiếm). Router api trả nguyên output nên không cần đổi gì ở api. Cảm ơn đã thêm proofCreateUploadInput + levelTitle (đã dùng).

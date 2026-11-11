@@ -35,6 +35,12 @@ Ghi lại mọi chỗ tài liệu không nói rõ và phương án đã chọn. 
 - **D56 — Ngày của nhiệm vụ ngày** tính theo lịch Việt Nam (UTC+7). Đây là múi giờ hiển thị, không phải ngưỡng nghiệp vụ, nên để hằng số trong domain.
 - **D57 — `finalizeProof` idempotent**: gọi lại trên bằng chứng đã chốt trả `already_decided`; khóa dòng proof để 3 phiếu đồng thời chỉ chốt một lần.
 - **D58 — Video**: key object `proofs/<uuid>-<hmac>.<ext>` (không chứa dữ liệu cá nhân, server xác minh được chủ sở hữu); bucket private; xem qua presigned GET có hạn cho người nộp, người được phân công, biên tập viên, hoặc khi bằng chứng đã đạt. AI kiểm tra sơ bộ là mô phỏng (thời lượng, định dạng, dung lượng), chỉ tham khảo.
+- **D59 — Thu hồi (D40)** đặt proof `removed`, ẩn bài level_up (`deleted_at`), giữ mọi bản ghi; idempotent (`already_revoked`).
+- **D60 — Xác nhận báo cáo** đóng luôn các báo cáo đang mở khác trên cùng đối tượng. Báo cáo bằng chứng đang duyệt được xác nhận → proof `removed`, phân công treo → `recused`. Báo cáo bài viết → ẩn bài.
+- **D61 — Xử phạt**: `review_ban` gỡ các lượt duyệt đang chờ (recused) và gán người khác; `suspension` cũng loại khỏi phân công; `post_ban`/`suspension` chặn đăng bài, bình luận, tin nhắn, đề nghị trao đổi.
+- **D62 — Xã hội**: `like_count` = tổng cảm xúc (like + cheer). Tab "Chờ duyệt" cộng đồng luôn ẩn danh người nộp (khác mockup Feed.html có tên) để giữ quy tắc người duyệt không biết người nộp.
+- **D63 — Đấu 1v1**: người tạo là một bên đấu hoặc biên tập viên (MVP: chỉ biên tập viên tạo qua trang quản trị); người đấu không được bỏ phiếu; hòa thì không ai thắng; XP người thắng = `app_config.xp_rewards.duel_won` (200, migration 0004).
+- **D64 — Hồi uy tín hằng tuần** idempotent theo cửa sổ 7 ngày trượt cho từng người.
 
 ## Auth & API
 - **D50 — Auth.js v5** với adapter tự viết trên Prisma, session lưu database; cùng `session_token` dùng cho cookie (web) và `Authorization: Bearer` (mobile). Google chỉ bật khi có biến môi trường; EMAIL_SERVER trống → link magic in ra console.
