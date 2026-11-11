@@ -13,7 +13,7 @@ export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
     globalSetup: ["./test/global-setup.ts"],
-    env: { TEST_DATABASE_URL, AUTH_DEV_LOGIN: "false" },
+    env: { TEST_DATABASE_URL, AUTH_DEV_LOGIN: "false", AUTH_SECRET: "test-only-secret" },
     testTimeout: 30000,
     hookTimeout: 120000,
     fileParallelism: false,
