@@ -46,6 +46,8 @@ Ghi lại mọi chỗ tài liệu không nói rõ và phương án đã chọn. 
 - **D67 — Sửa tiêu chí** chỉ chốt sau hạn `criteria_vote_days`: số phiếu có trọng số < min_votes → `expired`; tỉ lệ < agree_ratio (kể cả hòa) → `rejected`; thông qua → criteria_versions mới (version+1, source_proposal_id), trỏ current_version_id, XP/huy hiệu tác giả. Trọng số tính tại thời điểm bỏ phiếu. Nhiệm vụ suggest_criteria tiến khi tạo đề xuất sửa, phiếu đầu tiên, hoặc bình luận đề xuất sửa.
 - **D68 — Người duyệt dự phòng là biên tập viên**: kỹ năng mới chưa ai đạt cấp nên không đủ người duyệt. Khi `app_config.editor_fallback_reviewers = true` và không đủ người hợp lệ, `assignReviewers` bổ sung biên tập viên (bỏ yêu cầu cấp kỹ năng, vẫn áp dụng loại trừ, uy tín, review_ban).
 - **D69 — Uy tín khởi điểm = 50** lấy theo DEFAULT của cột `users.reputation` trong schema.sql (hằng `INITIAL_REPUTATION` trong domain phải khớp cột). Đây là giá trị mặc định của schema chứ không phải ngưỡng, nên không đưa vào app_config. `recomputeUserCaches` tính lại total_xp/account_level/reputation/user_skills.xp từ sổ cái.
+- **D70 — Ngoại lệ vùng sở hữu**: sau khi domain xong việc, api được phép sửa packages/domain cho các thay đổi nhỏ phục vụ router (giữ test domain xanh, báo domain + ui).
+- **D71 — Trao đổi kỹ năng**: thêm màn `/swaps` để người nhận chấp nhận/từ chối, hẹn giờ, đánh dấu xong và đánh giá (mockup không có màn này).
 
 ## Auth & API
 - **D50 — Auth.js v5** với adapter tự viết trên Prisma, session lưu database; cùng `session_token` dùng cho cookie (web) và `Authorization: Bearer` (mobile). Google chỉ bật khi có biến môi trường; EMAIL_SERVER trống → link magic in ra console.
