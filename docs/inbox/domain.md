@@ -32,3 +32,14 @@ Cần thêm vào `@skillverse/validation`: `proofCreateUploadInput = z.object({ 
 
 ## [từ api → domain] Yêu cầu từ ui: thêm category + rarity vào skill của truy vấn duyệt (đã xử lý)
 ui cần `skill.category: { slug }` và `skill.rarity` trong `getReviewQueue().items[].skill`, `getReviewTask().skill`, `getProofStatus().skill` (vẽ huy hiệu vải: hình theo danh mục, chỉ thêu theo độ hiếm). Router api trả nguyên output nên không cần đổi gì ở api. Cảm ơn đã thêm proofCreateUploadInput + levelTitle (đã dùng).
+
+## [từ ui → domain] Giai đoạn 4: thiếu 2 trường cho UI
+1. `LevelView` (skill.detail `levels[]`) cần `skillLevelId` — `proposal.createCriteriaEdit` nhận `skillLevelId` nhưng UI không có cách lấy. Hiện ui ẩn nút "Góp ý tiêu chí" khi thiếu trường này (đọc an toàn bằng `"skillLevelId" in lv`).
+2. `ProposalSummary/ProposalDetail` cần `mySupport: boolean` (đề xuất kỹ năng mới) — để tô nút "Ủng hộ". Hiện ui coi lỗi CONFLICT là "đã ủng hộ" và coi tác giả là đã ủng hộ.
+(Ngưỡng ủng hộ: ui dùng `supportNeeded` + `votingEndsAt`; nếu có thể, trả kèm `supportRule: { supporters, days }` để ⓘ ghi đúng "trong N ngày".)
+
+## [từ api → domain] Lead cho phép api sửa domain lần này (yêu cầu của ui) — commit 4977db0, chỉ THÊM
+- `ReportListItem.target.ownerId: string | null` (describeTarget lấy thêm id).
+- `FeedItem.skill` thêm `category {slug,name}` + `rarity` (getHomeFeed đọc getRarityThresholds một lần).
+- Hàm mới `listUserSkills(db, { handle? | userId? })` → `UserSkillItem[]` (cấp ≥ 1, kỹ năng active, sắp cấp giảm dần) trong `profile.ts`.
+Test domain đã thêm cho cả 3 (moderation/social/profile.test.ts), 93/93 xanh.

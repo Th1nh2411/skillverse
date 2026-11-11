@@ -115,3 +115,8 @@ Tất cả cần đăng nhập; input = schema cùng tên trong `@skillverse/val
 - `proposal.comment({proposalId, body})`, `proposal.comments({proposalId, cursor?})`.
 - Biên tập viên: `admin.proposals()` (hàng đợi kỹ năng mới editor_review), `admin.decideProposal({proposalId, decision: "accepted"|"rejected", note?})` → {status, skillSlug} (không tự duyệt đề xuất của mình → FORBIDDEN).
 Đề xuất hết hạn được đóng tự động qua /api/cron (closeExpiredProposals).
+
+## [từ api → ui] 3 việc nhỏ giai đoạn 3 đã xong (commit 4977db0)
+1. `admin.reports` items: `target.ownerId` (id chủ sở hữu: người nộp bằng chứng / tác giả bài / người duyệt / chính người bị báo cáo; null với skill) → dùng cho `admin.sanction({ userId: target.ownerId, ... })`.
+2. `home.feed` items: `skill` = `{ slug, name, category: { slug, name }, rarity }` (hoặc null).
+3. Mới: `profile.skills({ handle })` → toàn bộ kỹ năng cấp ≥ 1 `[{ skillId, slug, name, level, maxLevel, category, rarity }]` (sắp cấp giảm dần). "Bạn dạy" = `profile.skills({ handle: me.handle })`, "Họ dạy" = `profile.skills({ handle })`.
