@@ -2,7 +2,12 @@ import { expect, test, type APIRequestContext, type APIResponse } from "@playwri
 
 /** Gọi tRPC qua HTTP (giả lập mobile: Bearer token từ /api/dev/login). Dữ liệu bọc superjson `{ json }`. */
 export async function devToken(request: APIRequestContext, handle: string): Promise<string> {
-  const res = await request.post("/api/dev/login", { data: { handle }, failOnStatusCode: false });
+  let res = await request.post("/api/dev/login", { data: { handle }, failOnStatusCode: false });
+  // next dev có thể trả 500 thoáng qua khi đang biên dịch lại file người khác vừa sửa → thử lại.
+  for (let i = 0; i < 4 && res.status() >= 500; i++) {
+    await new Promise((r) => setTimeout(r, 3000));
+    res = await request.post("/api/dev/login", { data: { handle }, failOnStatusCode: false });
+  }
   test.skip(res.status() === 404 && !(res.headers()["content-type"] ?? "").includes("json"), "Chưa có đăng nhập dev");
   expect(res.ok(), `Đăng nhập dev ${handle}: ${res.status()}`).toBeTruthy();
   return ((await res.json()) as { sessionToken: string }).sessionToken;
