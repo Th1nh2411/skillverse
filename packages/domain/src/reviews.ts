@@ -4,7 +4,8 @@
  */
 import { createHash } from "node:crypto";
 import type { CriterionKind, ReportReason, ReviewVerdict, RiskLevel } from "@skillverse/db";
-import { getConfig } from "./config";
+import { getConfig, getRarityThresholds, type RarityThresholds } from "./config";
+import { rarityOf, type Rarity } from "./rarity";
 import { withTx, type Db } from "./db";
 import { DomainError } from "./errors";
 import { awardXp, bumpDailyQuest } from "./ledger";
@@ -16,6 +17,22 @@ export function anonymousCode(proofId: string): string {
 }
 
 const REVIEW_QUEST_KEY = "review_2";
+
+/** Kỹ năng trong màn duyệt: kèm danh mục + độ hiếm để vẽ huy hiệu vải. */
+export type ReviewSkill = {
+  slug: string;
+  name: string;
+  riskLevel: RiskLevel;
+  category: { slug: string; name: string };
+  rarity: Rarity;
+};
+
+function toReviewSkill(
+  s: { slug: string; name: string; riskLevel: RiskLevel; holderCount: number; category: { slug: string; name: string } },
+  t: RarityThresholds,
+): ReviewSkill {
+  return { slug: s.slug, name: s.name, riskLevel: s.riskLevel, category: s.category, rarity: rarityOf(s.holderCount, t) };
+}
 
 // ---------------------------------------------------------------------------
 // submitReview
@@ -155,7 +172,7 @@ export async function reportProofDuringReview(
 export type ReviewQueueItem = {
   assignmentId: string;
   anonymousCode: string;
-  skill: { slug: string; name: string; riskLevel: RiskLevel };
+  skill: ReviewSkill;
   targetLevel: number;
   durationS: number | null;
   assignedAt: Date;
@@ -185,7 +202,7 @@ export async function getReviewQueue(db: Db, p: { reviewerId: string; now?: Date
           targetLevel: true,
           durationS: true,
           skillId: true,
-          skill: { select: { slug: true, name: true, riskLevel: true } },
+          skill: { select: { slug: true, name: true, riskLevel: true, holderCount: true, category: { select: { slug: true, name: true } } } },
           criteriaVersion: { select: { _count: { select: { criteria: true } } } },
           reviewAssignments: { where: { state: "done" }, select: { id: true } },
         },
@@ -200,12 +217,13 @@ export async function getReviewQueue(db: Db, p: { reviewerId: string; now?: Date
     : [];
   const minRev = (skillId: string, level: number) =>
     levels.find((l) => l.skillId === skillId && l.level === level)?.minReviewers ?? 0;
+  const thresholds = await getRarityThresholds(db);
   return {
     reputation: me.reputation,
     items: rows.map((r) => ({
       assignmentId: r.id,
       anonymousCode: anonymousCode(r.proof.id),
-      skill: r.proof.skill,
+      skill: toReviewSkill(r.proof.skill, thresholds),
       targetLevel: r.proof.targetLevel,
       durationS: r.proof.durationS,
       assignedAt: r.assignedAt,
@@ -225,7 +243,7 @@ export type ReviewTask = {
   dueAt: Date;
   anonymousCode: string;
   reviewerReputation: number;
-  skill: { slug: string; name: string; riskLevel: RiskLevel };
+  skill: ReviewSkill;
   targetLevel: number;
   levelTitle: string | null;
   votes: number;
@@ -272,7 +290,7 @@ export async function getReviewTask(
           caption: true,
           safetyAck: true,
           aiPrecheck: true,
-          skill: { select: { slug: true, name: true, riskLevel: true } },
+          skill: { select: { slug: true, name: true, riskLevel: true, holderCount: true, category: { select: { slug: true, name: true } } } },
           criteriaVersion: { select: { criteria: { orderBy: { position: "asc" } } } },
           reviewAssignments: { where: { state: "done" }, select: { id: true } },
         },
@@ -294,7 +312,7 @@ export async function getReviewTask(
     dueAt: a.dueAt,
     anonymousCode: anonymousCode(a.proof.id),
     reviewerReputation: a.reviewer.reputation,
-    skill: a.proof.skill,
+    skill: toReviewSkill(a.proof.skill, await getRarityThresholds(db)),
     targetLevel: a.proof.targetLevel,
     levelTitle: level?.title ?? null,
     votes: a.proof.reviewAssignments.length,

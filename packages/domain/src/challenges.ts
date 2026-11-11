@@ -1,7 +1,8 @@
 /**
  * Thử thách tuần, bằng chứng chờ duyệt (ẩn danh) cho cộng đồng, đấu 1v1.
  */
-import { getConfig } from "./config";
+import { getConfig, getRarityThresholds } from "./config";
+import { rarityOf, type Rarity } from "./rarity";
 import { withTx, type Db } from "./db";
 import { DomainError } from "./errors";
 import { awardXp } from "./ledger";
@@ -87,7 +88,7 @@ export async function joinChallenge(
 
 export type CommunityPendingProof = {
   anonymousCode: string;
-  skill: { slug: string; name: string };
+  skill: { slug: string; name: string; category: { slug: string; name: string }; rarity: Rarity };
   targetLevel: number;
   durationS: number | null;
   caption: string | null;
@@ -120,7 +121,7 @@ export async function getPendingProofsForCommunity(
         durationS: true,
         caption: true,
         createdAt: true,
-        skill: { select: { slug: true, name: true } },
+        skill: { select: { slug: true, name: true, holderCount: true, category: { select: { slug: true, name: true } } } },
         reviewAssignments: { select: { id: true, reviewerId: true, state: true, dueAt: true } },
       },
     }),
@@ -131,6 +132,7 @@ export async function getPendingProofsForCommunity(
         select: { skillId: true, level: true, minReviewers: true },
       })
     : [];
+  const thresholds = await getRarityThresholds(db);
   return {
     total,
     items: rows.map((r) => {
@@ -139,7 +141,7 @@ export async function getPendingProofsForCommunity(
         : undefined;
       return {
         anonymousCode: anonymousCode(r.id),
-        skill: r.skill,
+        skill: { slug: r.skill.slug, name: r.skill.name, category: r.skill.category, rarity: rarityOf(r.skill.holderCount, thresholds) },
         targetLevel: r.targetLevel,
         durationS: r.durationS,
         caption: r.caption,

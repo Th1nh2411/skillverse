@@ -186,6 +186,7 @@ describe("hàng đợi + màn duyệt ẩn danh", () => {
     const item = queue.items.find((i) => i.assignmentId === byReviewer.get(r1.id))!;
     expect(item).toMatchObject({ targetLevel: 2, votes: 0, required: 3, criteriaCount: 2 });
     expect(item.anonymousCode).toMatch(/^#[0-9A-F]{4}$/);
+    expect(item.skill).toMatchObject({ category: { slug: expect.any(String) }, rarity: "legendary" });
     const task = await getReviewTask(db, { assignmentId: item.assignmentId, reviewerId: r1.id, now: NOW });
     expect(task).toMatchObject({ canSubmit: true, anonymousCode: item.anonymousCode, myReview: null, reported: false });
     for (const payload of [JSON.stringify(queue), JSON.stringify(task)]) {

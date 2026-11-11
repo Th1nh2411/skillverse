@@ -15,7 +15,7 @@ export type ProofStatusView = {
   status: ProofStatus;
   /** disputed = đang chờ biên tập viên (vd. video trùng). */
   underEditorReview: boolean;
-  skill: { slug: string; name: string; maxLevel: number };
+  skill: { slug: string; name: string; maxLevel: number; category: { slug: string; name: string }; rarity: Rarity };
   targetLevel: number;
   levelTitle: string | null;
   mediaKey: string;
@@ -43,7 +43,7 @@ export async function getProofStatus(
   const proof = await db.proof.findFirst({
     where: { id: p.proofId, deletedAt: null },
     include: {
-      skill: { select: { slug: true, name: true, maxLevel: true } },
+      skill: { select: { slug: true, name: true, maxLevel: true, holderCount: true, category: { select: { slug: true, name: true } } } },
       appeal: { select: { status: true, createdAt: true } },
       criteriaVersion: { select: { criteria: { orderBy: { position: "asc" } } } },
       reviews: {
@@ -70,7 +70,13 @@ export async function getProofStatus(
     proofId: proof.id,
     status: proof.status,
     underEditorReview: proof.status === "disputed",
-    skill: proof.skill,
+    skill: {
+      slug: proof.skill.slug,
+      name: proof.skill.name,
+      maxLevel: proof.skill.maxLevel,
+      category: proof.skill.category,
+      rarity: rarityOf(proof.skill.holderCount, await getRarityThresholds(db)),
+    },
     targetLevel: proof.targetLevel,
     levelTitle: level?.title ?? null,
     mediaKey: proof.mediaUrl,
