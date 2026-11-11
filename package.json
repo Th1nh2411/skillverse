@@ -1,0 +1,29 @@
+{
+  "name": "skillverse",
+  "private": true,
+  "packageManager": "pnpm@10.20.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "e2e": "pnpm --filter @skillverse/web e2e",
+    "db:up": "docker compose up -d",
+    "db:migrate": "pnpm --filter @skillverse/db migrate:dev",
+    "db:deploy": "pnpm --filter @skillverse/db migrate:deploy",
+    "db:seed": "pnpm --filter @skillverse/db seed",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.10",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  }
+}

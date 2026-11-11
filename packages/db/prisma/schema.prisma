@@ -1,0 +1,886 @@
+// SkillVerse — Prisma schema, chuyển từ db/schema.sql (nguồn sự thật: prisma/migrations).
+// Tên bảng/cột giữ nguyên qua @@map/@map. CHECK constraint và partial index nằm trong migration SQL.
+// QUY TẮC: UserSkill.level chỉ ghi trong finalizeProof() (packages/domain); XpLedger, ReputationEvent chỉ INSERT;
+// Criterion/CriteriaVersion bất biến; ngưỡng đọc từ AppConfig.
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+  moduleFormat    = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AppConfig {
+  key   String @id
+  value Json
+
+  @@map("app_config")
+}
+
+model Appeal {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  proofId        String       @unique @map("proof_id") @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  reason         String
+  status         AppealStatus @default(open)
+  resolvedBy     String?      @map("resolved_by") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  proof          Proof        @relation(fields: [proofId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resolvedByUser User?        @relation("appeals_resolved_byTousers", fields: [resolvedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user           User         @relation("appeals_user_idTousers", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("appeals")
+}
+
+model AuthAccount {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String  @map("user_id") @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refreshToken      String? @map("refresh_token")
+  accessToken       String? @map("access_token")
+  expiresAt         Int?    @map("expires_at")
+  tokenType         String? @map("token_type")
+  scope             String?
+  idToken           String? @map("id_token")
+  sessionState      String? @map("session_state")
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider, providerAccountId])
+  @@map("auth_accounts")
+}
+
+model AuthSession {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id") @db.Uuid
+  expires      DateTime @db.Timestamptz(6)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("auth_sessions")
+}
+
+model AuthVerificationToken {
+  identifier String
+  token      String
+  expires    DateTime @db.Timestamptz(6)
+
+  @@id([identifier, token])
+  @@map("auth_verification_tokens")
+}
+
+model Badge {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String      @unique
+  name        String
+  description String?
+  userBadges  UserBadge[]
+
+  @@map("badges")
+}
+
+model Category {
+  id                   String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                 String     @unique
+  name                 String
+  parentId             String?    @map("parent_id") @db.Uuid
+  parent               Category?  @relation("categoriesTocategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  categoriesCategories Category[] @relation("categoriesTocategories")
+  skills               Skill[]
+
+  @@map("categories")
+}
+
+model ChallengeEntry {
+  challengeId String    @map("challenge_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  proofId     String    @map("proof_id") @db.Uuid
+  rank        Int?
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proof       Proof     @relation(fields: [proofId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([challengeId, userId])
+  @@map("challenge_entries")
+}
+
+model Challenge {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title            String
+  skillId          String           @map("skill_id") @db.Uuid
+  criteria         Json
+  startsAt         DateTime         @map("starts_at") @db.Timestamptz(6)
+  endsAt           DateTime         @map("ends_at") @db.Timestamptz(6)
+  xpReward         Int              @default(200) @map("xp_reward")
+  sponsorId        String?          @map("sponsor_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  challengeEntries ChallengeEntry[]
+  skill            Skill            @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("challenges")
+}
+
+model Comment {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId    String    @map("post_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  body      String
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("comments")
+}
+
+model Criterion {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  criteriaVersionId String          @map("criteria_version_id") @db.Uuid
+  position          Int
+  text              String
+  kind              CriterionKind   @default(checklist)
+  threshold         Decimal?        @db.Decimal
+  criteriaVersion   CriteriaVersion @relation(fields: [criteriaVersionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reviewMarks       ReviewMark[]
+
+  @@unique([criteriaVersionId, position])
+  @@map("criteria")
+}
+
+model CriteriaVersion {
+  id                        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  skillLevelId              String       @map("skill_level_id") @db.Uuid
+  version                   Int
+  sourceProposalId          String?      @map("source_proposal_id") @db.Uuid
+  createdAt                 DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  criteria                  Criterion[]
+  skillLevel                SkillLevel   @relation("criteria_versions_skill_level_idToskill_levels", fields: [skillLevelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sourceProposal            Proposal?    @relation(fields: [sourceProposalId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_source_proposal")
+  proofs                    Proof[]
+  skillLevelsCurrentVersion SkillLevel[] @relation("skill_levels_current_version_idTocriteria_versions")
+
+  @@unique([skillLevelId, version])
+  @@map("criteria_versions")
+}
+
+model DailyQuest {
+  userId   String    @map("user_id") @db.Uuid
+  date     DateTime  @db.Date
+  questKey String    @map("quest_key")
+  progress Int       @default(0)
+  doneAt   DateTime? @map("done_at") @db.Timestamptz(6)
+  user     User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, date, questKey])
+  @@map("daily_quests")
+}
+
+model DeviceFingerprint {
+  userId          String   @map("user_id") @db.Uuid
+  fingerprintHash String   @map("fingerprint_hash")
+  firstSeen       DateTime @default(now()) @map("first_seen") @db.Timestamptz(6)
+  lastSeen        DateTime @default(now()) @map("last_seen") @db.Timestamptz(6)
+  user            User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, fingerprintHash])
+  @@index([fingerprintHash], map: "device_fp_hash_idx")
+  @@map("device_fingerprints")
+}
+
+model DuelVote {
+  duelId     String   @map("duel_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  choice     String   @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  choiceUser User     @relation("duel_votes_choiceTousers", fields: [choice], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  duel       Duel     @relation(fields: [duelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user       User     @relation("duel_votes_user_idTousers", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([duelId, userId])
+  @@map("duel_votes")
+}
+
+model Duel {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  skillId     String     @map("skill_id") @db.Uuid
+  metric      String
+  userA       String     @map("user_a") @db.Uuid
+  userB       String     @map("user_b") @db.Uuid
+  proofA      String?    @map("proof_a") @db.Uuid
+  proofB      String?    @map("proof_b") @db.Uuid
+  voteEndsAt  DateTime   @map("vote_ends_at") @db.Timestamptz(6)
+  winnerId    String?    @map("winner_id") @db.Uuid
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  duelVotes   DuelVote[]
+  proofAProof Proof?     @relation("duels_proof_aToproofs", fields: [proofA], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proofBProof Proof?     @relation("duels_proof_bToproofs", fields: [proofB], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  skill       Skill      @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userAUser   User       @relation("duels_user_aTousers", fields: [userA], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userBUser   User       @relation("duels_user_bTousers", fields: [userB], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  winner      User?      @relation("duels_winner_idTousers", fields: [winnerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("duels")
+}
+
+model Follow {
+  followerId String   @map("follower_id") @db.Uuid
+  followeeId String   @map("followee_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  followee   User     @relation("follows_followee_idTousers", fields: [followeeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  follower   User     @relation("follows_follower_idTousers", fields: [followerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([followerId, followeeId])
+  @@map("follows")
+}
+
+model FraudSignal {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  proofId   String?  @map("proof_id") @db.Uuid
+  signal    String
+  score     Decimal  @default(1) @db.Decimal
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  proof     Proof?   @relation(fields: [proofId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("fraud_signals")
+}
+
+model MessageThread {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userA     String    @map("user_a") @db.Uuid
+  userB     String    @map("user_b") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  userAUser User      @relation("message_threads_user_aTousers", fields: [userA], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userBUser User      @relation("message_threads_user_bTousers", fields: [userB], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  messages  Message[]
+
+  @@map("message_threads")
+}
+
+model Message {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  threadId  String        @map("thread_id") @db.Uuid
+  senderId  String        @map("sender_id") @db.Uuid
+  body      String
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  sender    User          @relation(fields: [senderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  kind      String
+  refType   String?   @map("ref_type")
+  refId     String?   @map("ref_id") @db.Uuid
+  readAt    DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userId], map: "notifications_user_unread_idx", where: raw("(read_at IS NULL)"))
+  @@map("notifications")
+}
+
+model Post {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId     String     @map("author_id") @db.Uuid
+  kind         PostKind
+  proofId      String?    @map("proof_id") @db.Uuid
+  skillId      String?    @map("skill_id") @db.Uuid
+  body         String?
+  mediaUrl     String?    @map("media_url")
+  likeCount    Int        @default(0) @map("like_count")
+  commentCount Int        @default(0) @map("comment_count")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt    DateTime?  @map("deleted_at") @db.Timestamptz(6)
+  comments     Comment[]
+  author       User       @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proof        Proof?     @relation(fields: [proofId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  skill        Skill?     @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reactions    Reaction[]
+
+  @@index([authorId, createdAt(sort: Desc)], map: "posts_author_created_idx")
+  @@map("posts")
+}
+
+model Proof {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String             @map("user_id") @db.Uuid
+  skillId           String             @map("skill_id") @db.Uuid
+  targetLevel       Int                @map("target_level")
+  criteriaVersionId String             @map("criteria_version_id") @db.Uuid
+  mediaUrl          String             @map("media_url")
+  mediaHash         String             @map("media_hash")
+  durationS         Int?               @map("duration_s")
+  capturedAt        DateTime?          @map("captured_at") @db.Timestamptz(6)
+  caption           String?
+  safetyAck         Boolean            @default(false) @map("safety_ack")
+  aiPrecheck        Json?              @map("ai_precheck")
+  status            ProofStatus        @default(pending)
+  decidedAt         DateTime?          @map("decided_at") @db.Timestamptz(6)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt         DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  appeal            Appeal?
+  challengeEntries  ChallengeEntry[]
+  duelsProofA       Duel[]             @relation("duels_proof_aToproofs")
+  duelsProofB       Duel[]             @relation("duels_proof_bToproofs")
+  fraudSignals      FraudSignal[]
+  posts             Post[]
+  criteriaVersion   CriteriaVersion    @relation(fields: [criteriaVersionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  skill             Skill              @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user              User               @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reviewAssignments ReviewAssignment[]
+  reviews           Review[]
+  sanctions         Sanction[]
+  userBadges        UserBadge[]
+  userSkills        UserSkill[]
+
+  @@index([mediaHash])
+  @@index([status])
+  @@map("proofs")
+}
+
+model ProposalComment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  proposalId String   @map("proposal_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  body       String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("proposal_comments")
+}
+
+model ProposalVote {
+  proposalId String    @map("proposal_id") @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  vote       VoteValue
+  weight     Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  proposal   Proposal  @relation(fields: [proposalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user       User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([proposalId, userId])
+  @@map("proposal_votes")
+}
+
+model Proposal {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind             ProposalKind
+  authorId         String            @map("author_id") @db.Uuid
+  skillId          String?           @map("skill_id") @db.Uuid
+  skillLevelId     String?           @map("skill_level_id") @db.Uuid
+  payload          Json
+  rationale        String?
+  status           ProposalStatus    @default(gathering)
+  supportCount     Int               @default(0) @map("support_count")
+  votingEndsAt     DateTime?         @map("voting_ends_at") @db.Timestamptz(6)
+  decidedBy        String?           @map("decided_by") @db.Uuid
+  decidedAt        DateTime?         @map("decided_at") @db.Timestamptz(6)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  criteriaVersions CriteriaVersion[]
+  proposalComments ProposalComment[]
+  proposalVotes    ProposalVote[]
+  author           User              @relation("proposals_author_idTousers", fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  decidedByUser    User?             @relation("proposals_decided_byTousers", fields: [decidedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  skill            Skill?            @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  skillLevel       SkillLevel?       @relation(fields: [skillLevelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("proposals")
+}
+
+model Reaction {
+  postId    String   @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  kind      String   @default("like")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([postId, userId, kind])
+  @@map("reactions")
+}
+
+model Report {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporterId    String       @map("reporter_id") @db.Uuid
+  targetType    ReportTarget @map("target_type")
+  targetId      String       @map("target_id") @db.Uuid
+  reason        ReportReason
+  details       String?
+  evidenceUrl   String?      @map("evidence_url")
+  status        ReportStatus @default(open)
+  handledBy     String?      @map("handled_by") @db.Uuid
+  outcome       String?
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  handledByUser User?        @relation("reports_handled_byTousers", fields: [handledBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reporter      User         @relation("reports_reporter_idTousers", fields: [reporterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sanctions     Sanction[]
+
+  @@map("reports")
+}
+
+model ReputationEvent {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  delta     Int
+  reason    String
+  refId     String?  @map("ref_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("reputation_events")
+}
+
+model ReviewAssignment {
+  id         String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  proofId    String          @map("proof_id") @db.Uuid
+  reviewerId String          @map("reviewer_id") @db.Uuid
+  assignedAt DateTime        @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  dueAt      DateTime        @map("due_at") @db.Timestamptz(6)
+  state      AssignmentState @default(assigned)
+  proof      Proof           @relation(fields: [proofId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reviewer   User            @relation(fields: [reviewerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  review     Review?
+
+  @@unique([proofId, reviewerId])
+  @@map("review_assignments")
+}
+
+model ReviewMark {
+  reviewId    String    @map("review_id") @db.Uuid
+  criterionId String    @map("criterion_id") @db.Uuid
+  met         Boolean
+  criterion   Criterion @relation(fields: [criterionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  review      Review    @relation(fields: [reviewId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([reviewId, criterionId])
+  @@map("review_marks")
+}
+
+model Review {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assignmentId String           @unique @map("assignment_id") @db.Uuid
+  proofId      String           @map("proof_id") @db.Uuid
+  reviewerId   String           @map("reviewer_id") @db.Uuid
+  verdict      ReviewVerdict
+  comment      String?
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  reviewMarks  ReviewMark[]
+  assignment   ReviewAssignment @relation(fields: [assignmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proof        Proof            @relation(fields: [proofId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reviewer     User             @relation(fields: [reviewerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([proofId, reviewerId])
+  @@map("reviews")
+}
+
+model Sanction {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String       @map("user_id") @db.Uuid
+  kind          SanctionKind
+  reason        String
+  reportId      String?      @map("report_id") @db.Uuid
+  proofId       String?      @map("proof_id") @db.Uuid
+  startsAt      DateTime     @default(now()) @map("starts_at") @db.Timestamptz(6)
+  endsAt        DateTime?    @map("ends_at") @db.Timestamptz(6)
+  createdBy     String?      @map("created_by") @db.Uuid
+  createdByUser User?        @relation("sanctions_created_byTousers", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proof         Proof?       @relation(fields: [proofId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  report        Report?      @relation(fields: [reportId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user          User         @relation("sanctions_user_idTousers", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("sanctions")
+}
+
+model SkillEdge {
+  parentSkillId String @map("parent_skill_id") @db.Uuid
+  childSkillId  String @map("child_skill_id") @db.Uuid
+  requiredLevel Int    @default(1) @map("required_level")
+  childSkill    Skill  @relation("skill_edges_child_skill_idToskills", fields: [childSkillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentSkill   Skill  @relation("skill_edges_parent_skill_idToskills", fields: [parentSkillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([parentSkillId, childSkillId])
+  @@map("skill_edges")
+}
+
+model SkillFollow {
+  userId    String   @map("user_id") @db.Uuid
+  skillId   String   @map("skill_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, skillId])
+  @@map("skill_follows")
+}
+
+model SkillLevel {
+  id                         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  skillId                    String            @map("skill_id") @db.Uuid
+  level                      Int
+  title                      String?
+  xpReward                   Int               @default(100) @map("xp_reward")
+  minReviewers               Int               @default(3) @map("min_reviewers")
+  minReviewerLevel           Int               @default(1) @map("min_reviewer_level")
+  currentVersionId           String?           @map("current_version_id") @db.Uuid
+  criteriaVersionsSkillLevel CriteriaVersion[] @relation("criteria_versions_skill_level_idToskill_levels")
+  proposals                  Proposal[]
+  currentVersion             CriteriaVersion?  @relation("skill_levels_current_version_idTocriteria_versions", fields: [currentVersionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_current_version")
+  skill                      Skill             @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([skillId, level])
+  @@map("skill_levels")
+}
+
+model SkillSwap {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  proposerId   String       @map("proposer_id") @db.Uuid
+  receiverId   String       @map("receiver_id") @db.Uuid
+  teachSkillId String       @map("teach_skill_id") @db.Uuid
+  learnSkillId String       @map("learn_skill_id") @db.Uuid
+  mode         SwapMode
+  status       SwapStatus   @default(proposed)
+  scheduledAt  DateTime?    @map("scheduled_at") @db.Timestamptz(6)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  learnSkill   Skill        @relation("skill_swaps_learn_skill_idToskills", fields: [learnSkillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proposer     User         @relation("skill_swaps_proposer_idTousers", fields: [proposerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  receiver     User         @relation("skill_swaps_receiver_idTousers", fields: [receiverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  teachSkill   Skill        @relation("skill_swaps_teach_skill_idToskills", fields: [teachSkillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  swapRatings  SwapRating[]
+
+  @@map("skill_swaps")
+}
+
+model Skill {
+  id                    String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                  String        @unique
+  name                  String
+  categoryId            String        @map("category_id") @db.Uuid
+  description           String?
+  riskLevel             RiskLevel     @default(none) @map("risk_level")
+  status                SkillStatus   @default(proposed)
+  maxLevel              Int           @default(5) @map("max_level")
+  holderCount           Int           @default(0) @map("holder_count")
+  createdBy             String?       @map("created_by") @db.Uuid
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  challenges            Challenge[]
+  duels                 Duel[]
+  posts                 Post[]
+  proofs                Proof[]
+  proposals             Proposal[]
+  skillEdgesChildSkill  SkillEdge[]   @relation("skill_edges_child_skill_idToskills")
+  skillEdgesParentSkill SkillEdge[]   @relation("skill_edges_parent_skill_idToskills")
+  skillFollows          SkillFollow[]
+  skillLevels           SkillLevel[]
+  skillSwapsLearnSkill  SkillSwap[]   @relation("skill_swaps_learn_skill_idToskills")
+  skillSwapsTeachSkill  SkillSwap[]   @relation("skill_swaps_teach_skill_idToskills")
+  category              Category      @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdByUser         User?         @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userSkills            UserSkill[]
+  xpLedger              XpLedger[]
+
+  @@map("skills")
+}
+
+model SwapRating {
+  swapId    String    @map("swap_id") @db.Uuid
+  raterId   String    @map("rater_id") @db.Uuid
+  stars     Int
+  comment   String?
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  rater     User      @relation(fields: [raterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  swap      SkillSwap @relation(fields: [swapId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([swapId, raterId])
+  @@map("swap_ratings")
+}
+
+model UserBadge {
+  userId   String   @map("user_id") @db.Uuid
+  badgeId  String   @map("badge_id") @db.Uuid
+  proofId  String?  @map("proof_id") @db.Uuid
+  earnedAt DateTime @default(now()) @map("earned_at") @db.Timestamptz(6)
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proof    Proof?   @relation(fields: [proofId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user     User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, badgeId])
+  @@map("user_badges")
+}
+
+model UserSkill {
+  userId        String   @map("user_id") @db.Uuid
+  skillId       String   @map("skill_id") @db.Uuid
+  level         Int      @default(0)
+  xp            Int      @default(0)
+  currentStreak Int      @default(0) @map("current_streak")
+  lastProofId   String?  @map("last_proof_id") @db.Uuid
+  updatedAt     DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  lastProof     Proof?   @relation(fields: [lastProofId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_last_proof")
+  skill         Skill    @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user          User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, skillId])
+  @@map("user_skills")
+}
+
+model User {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  handle              String              @unique
+  displayName         String              @map("display_name")
+  email               String              @unique
+  avatarUrl           String?             @map("avatar_url")
+  homeCell            String?             @map("home_cell")
+  shareLocation       Boolean             @default(false) @map("share_location")
+  totalXp             Int                 @default(0) @map("total_xp")
+  accountLevel        Int                 @default(1) @map("account_level")
+  reputation          Int                 @default(50)
+  isEditor            Boolean             @default(false) @map("is_editor")
+  status              UserStatus          @default(active)
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt           DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  emailVerified       DateTime?           @map("email_verified") @db.Timestamptz(6)
+  onboardedAt         DateTime?           @map("onboarded_at") @db.Timestamptz(6)
+  appealsResolvedBy   Appeal[]            @relation("appeals_resolved_byTousers")
+  appealsUser         Appeal[]            @relation("appeals_user_idTousers")
+  authAccounts        AuthAccount[]
+  authSessions        AuthSession[]
+  challengeEntries    ChallengeEntry[]
+  comments            Comment[]
+  dailyQuests         DailyQuest[]
+  deviceFingerprints  DeviceFingerprint[]
+  duelVotesChoice     DuelVote[]          @relation("duel_votes_choiceTousers")
+  duelVotesUser       DuelVote[]          @relation("duel_votes_user_idTousers")
+  duelsUserA          Duel[]              @relation("duels_user_aTousers")
+  duelsUserB          Duel[]              @relation("duels_user_bTousers")
+  duelsWinner         Duel[]              @relation("duels_winner_idTousers")
+  followsFollowee     Follow[]            @relation("follows_followee_idTousers")
+  followsFollower     Follow[]            @relation("follows_follower_idTousers")
+  fraudSignals        FraudSignal[]
+  messageThreadsUserA MessageThread[]     @relation("message_threads_user_aTousers")
+  messageThreadsUserB MessageThread[]     @relation("message_threads_user_bTousers")
+  messages            Message[]
+  notifications       Notification[]
+  posts               Post[]
+  proofs              Proof[]
+  proposalComments    ProposalComment[]
+  proposalVotes       ProposalVote[]
+  proposalsAuthor     Proposal[]          @relation("proposals_author_idTousers")
+  proposalsDecidedBy  Proposal[]          @relation("proposals_decided_byTousers")
+  reactions           Reaction[]
+  reportsHandledBy    Report[]            @relation("reports_handled_byTousers")
+  reportsReporter     Report[]            @relation("reports_reporter_idTousers")
+  reputationEvents    ReputationEvent[]
+  reviewAssignments   ReviewAssignment[]
+  reviews             Review[]
+  sanctionsCreatedBy  Sanction[]          @relation("sanctions_created_byTousers")
+  sanctionsUser       Sanction[]          @relation("sanctions_user_idTousers")
+  skillFollows        SkillFollow[]
+  skillSwapsProposer  SkillSwap[]         @relation("skill_swaps_proposer_idTousers")
+  skillSwapsReceiver  SkillSwap[]         @relation("skill_swaps_receiver_idTousers")
+  skills              Skill[]
+  swapRatings         SwapRating[]
+  userBadges          UserBadge[]
+  userSkills          UserSkill[]
+  xpLedger            XpLedger[]
+
+  @@map("users")
+}
+
+model XpLedger {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  skillId   String?  @map("skill_id") @db.Uuid
+  amount    Int
+  reason    XpReason
+  refType   String?  @map("ref_type")
+  refId     String?  @map("ref_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  skill     Skill?   @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userId], map: "xp_ledger_user_idx")
+  @@map("xp_ledger")
+}
+
+enum AppealStatus {
+  open
+  upheld
+  overturned
+
+  @@map("appeal_status")
+}
+
+enum AssignmentState {
+  assigned
+  done
+  expired
+  recused
+
+  @@map("assignment_state")
+}
+
+enum CriterionKind {
+  checklist
+  time_limit
+  count
+
+  @@map("criterion_kind")
+}
+
+enum PostKind {
+  proof
+  level_up
+  text
+
+  @@map("post_kind")
+}
+
+enum ProofStatus {
+  pending
+  in_review
+  passed
+  failed
+  disputed
+  removed
+
+  @@map("proof_status")
+}
+
+enum ProposalKind {
+  new_skill
+  edit_criteria
+  add_level
+  merge_skills
+
+  @@map("proposal_kind")
+}
+
+enum ProposalStatus {
+  gathering
+  voting
+  editor_review
+  accepted
+  rejected
+  expired
+
+  @@map("proposal_status")
+}
+
+enum ReportReason {
+  reused_video
+  not_self
+  edited
+  collusion
+  unsafe
+  harassment
+  other
+
+  @@map("report_reason")
+}
+
+enum ReportStatus {
+  open
+  investigating
+  confirmed
+  dismissed
+
+  @@map("report_status")
+}
+
+enum ReportTarget {
+  proof
+  user
+  review
+  post
+  skill
+
+  @@map("report_target")
+}
+
+enum ReviewVerdict {
+  pass
+  fail
+
+  @@map("review_verdict")
+}
+
+enum RiskLevel {
+  none
+  low
+  high
+
+  @@map("risk_level")
+}
+
+enum SanctionKind {
+  warning
+  review_ban
+  post_ban
+  suspension
+  level_revoked
+
+  @@map("sanction_kind")
+}
+
+enum SkillStatus {
+  proposed
+  active
+  archived
+
+  @@map("skill_status")
+}
+
+enum SwapMode {
+  in_person
+  video
+
+  @@map("swap_mode")
+}
+
+enum SwapStatus {
+  proposed
+  accepted
+  done
+  cancelled
+
+  @@map("swap_status")
+}
+
+enum UserStatus {
+  active
+  restricted
+  banned
+
+  @@map("user_status")
+}
+
+enum VoteValue {
+  support
+  agree
+  disagree
+
+  @@map("vote_value")
+}
+
+enum XpReason {
+  proof_passed
+  review_done
+  proposal_accepted
+  challenge_won
+  quest_done
+  penalty
+  revoked
+
+  @@map("xp_reason")
+}

@@ -1,4 +1,3 @@
-
 # SkillVerse — Prompt cho Claude Code (tự chạy, nhiều agent song song)
 
 Gồm 2 phần: **A. Chuẩn bị một lần** (bạn tự làm) và **B. Prompt** (dán cho Claude Code).
@@ -52,6 +51,18 @@ Mọi agent đồng đội tự thừa hưởng chế độ này từ agent trư
 
 **Chi phí:** mỗi agent đồng đội là một phiên Claude riêng, nên lượng token dùng tăng theo số agent.
 
+### A4. Cài skill thiết kế giao diện
+
+Trong phiên Claude Code, cài skill thiết kế chính thức của Anthropic:
+
+```
+/plugin install frontend-design@claude-plugins-official
+```
+
+Nếu báo không tìm thấy, gõ `/plugin`, vào tab **Discover**, tìm "frontend-design".
+
+Chép file `skillverse-ui/SKILL.md` vào `.claude/skills/skillverse-ui/SKILL.md` ở gốc dự án. Đây là skill riêng ghi bản sắc giao diện của SkillVerse; agent tự nạp khi làm giao diện.
+
 ---
 
 ## B. Prompt — dán nguyên khối dưới đây cho Claude Code
@@ -71,7 +82,8 @@ Bạn là agent trưởng (tech lead) của một nhóm agent. Nhiệm vụ: xâ
 1. docs/PRODUCT_BRIEF.md — ý tưởng, 12 màn hình, design tokens
 2. docs/DATA_MODEL.md — quy tắc nghiệp vụ BẮT BUỘC
 3. db/schema.sql — schema PostgreSQL
-4. design/screens/*.html — mockup từng màn hình (390px, tông tối). Bám sát bố cục, màu, font, chữ tiếng Việt.
+4. design/screens/*.html — mockup từng màn hình (390px, tông tối). Đây là bản phác bố cục và luồng: giữ cấu trúc thông tin và luồng chuyển màn hình.
+5. .claude/skills/skillverse-ui/SKILL.md — bản sắc giao diện, ưu tiên hơn mockup về thẩm mỹ. Mọi việc giao diện dùng skill này cùng skill frontend-design.
 
 ## KIẾN TRÚC: MONOREPO SẴN SÀNG CHO APP DI ĐỘNG
 pnpm workspaces + Turborepo:
@@ -105,7 +117,7 @@ Bước 0 — bạn tự làm một mình (không chia việc, vì các phần k
 Sau Bước 0, tạo agent team gồm 4 đồng đội, mỗi người SỞ HỮU một vùng thư mục riêng để không ghi đè file của nhau:
 1. "domain" — packages/domain + packages/validation + toàn bộ test Vitest. Viết logic nghiệp vụ trước, giao diện gọi vào sau.
 2. "api" — packages/api (tRPC router), auth, upload presigned, /api/cron, GitHub Actions cron, next/og cho thẻ chia sẻ.
-3. "ui" — apps/web/app và apps/web/components: dựng 12 màn hình bám mockup, nối với router của "api". Khi API chưa xong, dùng dữ liệu giả có kiểu đúng rồi thay sau.
+3. "ui" — apps/web/app và apps/web/components: dựng 12 màn hình theo bố cục mockup và bản sắc trong skill skillverse-ui (dùng cùng skill frontend-design), nối với router của "api". Mỗi màn hình xong phải chụp màn hình bằng Playwright và tự soi theo danh sách "Những thứ cần sửa" trong skill. Khi API chưa xong, dùng dữ liệu giả có kiểu đúng rồi thay sau.
 4. "qa" — Playwright e2e, rà soát code theo QUY TẮC BẮT BUỘC và DATA_MODEL.md, báo lỗi cho người sở hữu file thay vì tự sửa file của người khác.
 
 Quy tắc phối hợp:

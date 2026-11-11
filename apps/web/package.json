@@ -1,0 +1,45 @@
+{
+  "name": "@skillverse/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'web: unit test nằm trong packages/*; e2e chạy bằng pnpm e2e'",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@skillverse/api": "workspace:*",
+    "@skillverse/db": "workspace:*",
+    "@skillverse/domain": "workspace:*",
+    "@skillverse/validation": "workspace:*",
+    "@tanstack/react-query": "^5.107.1",
+    "@trpc/client": "^11.28.0",
+    "@trpc/server": "^11.28.0",
+    "@trpc/tanstack-react-query": "^11.28.0",
+    "lucide-react": "^1.72.0",
+    "next": "^16.4.6",
+    "next-auth": "5.0.0-beta.32",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "superjson": "^2.2.6",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^4.3.5",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.2"
+  }
+}

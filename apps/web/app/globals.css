@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens SkillVerse. Vai trò màu theo docs/PRODUCT_BRIEF.md; nền ngả rừng đêm theo
+ * .claude/skills/skillverse-ui/SKILL.md. Đồng đội "ui" sở hữu và tinh chỉnh file này.
+ */
+@theme {
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: #121a15;
+  --color-surface: #1a241d;
+  --color-surface-2: #22302a;
+  --color-border: #33402f;
+  --color-text: #f3f0e7;
+  --color-muted: #b0b4a3;
+  --color-accent: #e9a23b;
+  --color-on-accent: #1a1406;
+  --color-accent-soft: #2a2412;
+  --color-accent-line: #5a4520;
+  --color-teal: #5cc2b0;
+  --color-teal-soft: #17302c;
+  --color-danger: #e8735a;
+  --color-nav: #0f1612;
+
+  --radius-card: 16px;
+  --radius-btn: 14px;
+}
+
+html {
+  background: var(--color-bg);
+  color-scheme: dark;
+}
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
