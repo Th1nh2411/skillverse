@@ -70,6 +70,13 @@ describe("quyền: chưa đăng nhập", () => {
 });
 
 describe("upload video", () => {
+  it("proof.limits đọc từ app_config.media_limits", async () => {
+    const l = await (await caller(submitter)).proof.limits();
+    expect(l).toMatchObject({ maxMb: 60, maxBytes: 60 * 1024 * 1024, maxSeconds: 180 });
+    expect(l.allowedTypes).toContain("video/mp4");
+    await expectCode((await caller(null)).proof.limits(), "UNAUTHORIZED");
+  });
+
   it("chặn định dạng / dung lượng ngoài app_config.media_limits", async () => {
     const c = await caller(submitter);
     await expectCode(c.proof.createUpload({ contentType: "image/png", sizeBytes: 1000 }), "BAD_REQUEST");

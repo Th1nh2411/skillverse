@@ -9,14 +9,19 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSessionUser, sessionTokenFromCookies } from "@skillverse/api";
 import { getPrisma } from "@skillverse/db";
 
+/** Chỉ dành cho người CHƯA đăng nhập (đã đăng nhập thì về trang chính). */
 const PUBLIC_PREFIXES = ["/login"];
+/** Mở cho mọi người, có hay không có phiên (trang chia sẻ thành tích). */
+const OPEN_PREFIXES = ["/share"];
 
-function isPublic(pathname: string): boolean {
-  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+function matches(prefixes: string[], pathname: string): boolean {
+  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
+const isPublic = (pathname: string) => matches(PUBLIC_PREFIXES, pathname);
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  if (matches(OPEN_PREFIXES, pathname)) return NextResponse.next();
   const token = sessionTokenFromCookies((name) => req.cookies.get(name)?.value);
   const user = token ? await getSessionUser(getPrisma(), token) : null;
 

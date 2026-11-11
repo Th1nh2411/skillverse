@@ -1,9 +1,15 @@
 import { fileAppeal, getLevelUpSummary, getProofStatus, getShareCard, submitProof } from "@skillverse/domain";
 import { fileAppealInput, proofCreateUploadInput, proofIdInput, submitProofInput } from "@skillverse/validation";
-import { createProofUpload, proofMediaUrl, verifyUploadedProofMedia } from "../media";
+import { createProofUpload, getMediaLimits, proofMediaUrl, verifyUploadedProofMedia } from "../media";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 export const proofRouter = router({
+  /** Giới hạn video từ app_config.media_limits (cần trước khi quay: tự dừng ở maxSeconds). */
+  limits: protectedProcedure.query(async ({ ctx }) => {
+    const l = await getMediaLimits(ctx.db);
+    return { maxMb: l.max_mb, maxBytes: l.max_mb * 1024 * 1024, maxSeconds: l.max_seconds, allowedTypes: l.allowed_types };
+  }),
+
   /** Bước 1: xin URL PUT có thời hạn để tải video thẳng lên kho. */
   createUpload: protectedProcedure
     .input(proofCreateUploadInput)
