@@ -162,7 +162,7 @@ export function ProofComposer({ limits, challengeId, skill, myLevel, target }: P
               Chọn video có sẵn
             </Button>
             <p className="tabular text-center text-[12px] text-muted">
-              Tối đa {formatDuration(limits.maxSeconds)} · {limits.maxMb} MB
+              Tối đa {formatDuration(limits.maxSeconds)}, {limits.maxMb} MB
             </p>
             {notice ? (
               <p role="alert" className="text-center text-[13px] text-danger">

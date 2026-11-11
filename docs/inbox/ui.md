@@ -94,18 +94,18 @@ Dùng để vẽ huy hiệu vải (hình theo `category.slug`, chỉ thêu theo 
 ## [từ domain → ui] getProfile: stats.skillCount giờ đếm mọi kỹ năng đang theo (D65) (đã xử lý)
 `profile.me` / `profile.byHandle` → `stats.skillCount` = số user_skills của người dùng (kể cả cấp 0 — đang luyện), không còn chỉ cấp ≥ 1. Ví dụ seed `nguoimoi` sau onboarding 3 kỹ năng → 3. Cập nhật kỳ vọng e2e/nhãn nếu có.
 
-## [từ domain → ui] Giai đoạn 4: dữ liệu đề xuất
+## [từ domain → ui] Giai đoạn 4: dữ liệu đề xuất (đã xử lý)
 Chữ ký ở `docs/inbox/api.md` (tin "Giai đoạn 4"). Điểm cho UI:
 - Form kỹ năng mới: `newSkillProposalInput` — `levels` là mảng cấp (tối thiểu `NEW_SKILL_MIN_LEVELS` = 3, tối đa 10), mỗi cấp mảng tiêu chí `{text}`; `riskLevel` none/low/high. Trùng tên → lỗi CONFLICT "Đã có kỹ năng hoặc đề xuất trùng tên." (khớp gợi ý "Không trùng với kỹ năng nào đã có").
 - Tiến trình: `status` gathering (Ủng hộ: `supportCount/supportNeeded`, hạn `votingEndsAt`) → editor_review (Duyệt) → accepted (Mở; `createdSkillSlug` để dẫn tới kỹ năng) / rejected / expired.
 - Sửa tiêu chí: `tally.agreeRatio` (0..1, có trọng số), `tally.weightedVoteCount` so với `rule.min_votes`, `rule.agree_ratio`, `rule.voter_min_level` (cho ⓘ). `myWeight = 0` → hiện ghi chú "phiếu của bạn chưa được tính vì chưa đạt cấp N" (vẫn cho bỏ phiếu). `myVote` để tô nút; đổi phiếu được trước hạn. `getProposal.currentCriteria` vs `payload.criteria` để hiển thị so sánh cũ/mới.
 
-## [từ qa → ui] Q3.5: chuỗi nối bằng dấu chấm giữa (SKILL.md "Những thứ cần sửa") + nhãn e2e giai đoạn 3
+## [từ qa → ui] Q3.5: chuỗi nối bằng dấu chấm giữa (SKILL.md "Những thứ cần sửa") + nhãn e2e giai đoạn 3 (đã xử lý)
 - Mức nhỏ, quy tắc SKILL.md: không nối thông tin bằng "·"; viết thành câu hoặc tách hai dòng có thứ bậc. Vị trí:
   `app/(main)/challenges/challenges-view.tsx:219` ("42% · 3 phiếu"), `:285-286` ("Ẩn danh X · cấp 4 · 0:07"); `app/review/page.tsx:54` ("Lên cấp 4 · 1/3 phiếu"); `app/review/[assignmentId]/review-form.tsx:58`; `app/u/[handle]/page.tsx:98`; `app/u/[handle]/swap-panel.tsx:54,56`; `app/proof/new/proof-composer.tsx:165`. (`app/layout.tsx:23` tiêu đề tab "%s · SkillVerse" thì chấp nhận được.) Gợi ý: số phiếu dùng phân số + biểu tượng (Users 3), cấp tách dòng phụ.
 - E2E giai đoạn 3 (`e2e/social.spec.ts`, `e2e/revoke.spec.ts`) đang dựa vào: `/home` hiện tiêu đề nhiệm vụ từ app_config.daily_quests + phân số tiến độ + nút cheer có `aria-pressed` tên chứa "Cổ vũ"; `/challenges` tab role=tab "Đấu 1v1", nút "Bầu <tên>" → "Bạn đã bầu" (đã pass); `/u/<handle>`: h1 tên hiển thị, nút "Theo dõi"/"Đang theo dõi", "Nhắn tin" (button/link), không hiện lưu ý gặp mặt trước khi chấp nhận; `/admin`: biên tập viên 200 + h1, người thường 404/chuyển hướng.
 
-## [từ api → ui] Procedure giai đoạn 4 (commit mới nhất của api) — trả nguyên output domain
+## [từ api → ui] Procedure giai đoạn 4 (commit mới nhất của api) — trả nguyên output domain (đã xử lý)
 Tất cả cần đăng nhập; input = schema cùng tên trong `@skillverse/validation`.
 - `proposal.list({kind?, skillSlug?, status?, cursor?})` → {items: ProposalSummary[], nextCursor}; `proposal.get({proposalId})` → ProposalDetail (rule, myWeight, currentCriteria, createdSkillSlug...).
 - `proposal.createNewSkill({name, categorySlug, description?, riskLevel, levels: [{text, kind, threshold?}][] (≥ NEW_SKILL_MIN_LEVELS), rationale?})` → {proposalId, votingEndsAt}. Tác giả tự động là người ủng hộ đầu tiên.
@@ -120,3 +120,7 @@ Tất cả cần đăng nhập; input = schema cùng tên trong `@skillverse/val
 1. `admin.reports` items: `target.ownerId` (id chủ sở hữu: người nộp bằng chứng / tác giả bài / người duyệt / chính người bị báo cáo; null với skill) → dùng cho `admin.sanction({ userId: target.ownerId, ... })`.
 2. `home.feed` items: `skill` = `{ slug, name, category: { slug, name }, rarity }` (hoặc null).
 3. Mới: `profile.skills({ handle })` → toàn bộ kỹ năng cấp ≥ 1 `[{ skillId, slug, name, level, maxLevel, category, rarity }]` (sắp cấp giảm dần). "Bạn dạy" = `profile.skills({ handle: me.handle })`, "Họ dạy" = `profile.skills({ handle })`.
+
+## [từ qa → ui] A11y: vùng chạm < 44px ở khối góp ý tiêu chí (Chi tiết kỹ năng)
+- File: `apps/web/app/skills/[slug]/page.tsx:187` — `<Link href={/proposals/${p.id}}>` cao 39px (e2e `skills.spec.ts` "a11y cơ bản": `a "Cấp 4: yêu cầu gỗ phải tự kiếm" (350x39)`); dòng 206 cũng nên kiểm.
+- Quy tắc: SKILL.md "Mức chất lượng tối thiểu" — vùng chạm ≥ 44px. Gợi ý: thêm `min-h-11 items-center` (hoặc py) cho liên kết.

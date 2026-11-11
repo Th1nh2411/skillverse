@@ -44,9 +44,9 @@ export function SwapCard({ swap }: { swap: Swap }) {
         <span className="shrink-0 text-[12px] font-semibold text-muted">{STATUS[swap.status]}</span>
       </div>
       <p className="text-[14px] leading-snug">
-        {proposer ? "Bạn dạy" : "Bạn học"} <b className="font-semibold">{swap.teachSkill.name}</b> · {proposer ? "học" : "dạy"}{" "}
-        <b className="font-semibold">{swap.learnSkill.name}</b>
-        <span className="text-muted"> · {MODE_LABEL[swap.mode]}</span>
+        {proposer ? "Bạn dạy" : "Bạn học"} <b className="font-semibold">{swap.teachSkill.name}</b>, {proposer ? "học" : "dạy"}{" "}
+        <b className="font-semibold">{swap.learnSkill.name}</b>.
+        <span className="block text-[13px] text-muted">{MODE_LABEL[swap.mode]}</span>
       </p>
 
       {swap.status === "accepted" ? (

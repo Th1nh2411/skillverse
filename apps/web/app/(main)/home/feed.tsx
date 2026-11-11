@@ -130,15 +130,15 @@ function PostItem({ it }: { it: Item }) {
             <Link href={`/u/${it.author.handle}`} className="font-bold hover:underline">
               {it.author.displayName}
             </Link>{" "}
-            <span className="tabular text-[13px] text-muted">· Cấp {it.author.accountLevel}</span>
+            <span className="tabular text-[13px] text-muted">cấp {it.author.accountLevel}</span>
           </p>
           <p className="truncate text-[13px] text-muted">
             {it.skill ? (
               <>
                 <Link href={`/skills/${it.skill.slug}`} className="hover:underline">
                   {it.skill.name}
-                </Link>{" "}
-                ·{" "}
+                </Link>
+                {", "}
               </>
             ) : null}
             <time dateTime={it.createdAt.toISOString()}>{timeAgo(it.createdAt)}</time>

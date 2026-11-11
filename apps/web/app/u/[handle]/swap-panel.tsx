@@ -51,9 +51,9 @@ function ExistingSwap({ swap }: { swap: NonNullable<Existing> }) {
   const line = (
     <p className="text-[14px] leading-snug">
       {swap.role === "proposer" ? "Bạn dạy" : "Bạn học"} <b className="font-semibold">{swap.teach}</b>
-      {" · "}
+      {", "}
       {swap.role === "proposer" ? "học" : "dạy"} <b className="font-semibold">{swap.learn}</b>
-      <span className="text-muted"> · {MODE_LABEL[swap.mode]}</span>
+      .<span className="block text-[13px] text-muted">{MODE_LABEL[swap.mode]}</span>
     </p>
   );
   if (swap.status === "proposed") {

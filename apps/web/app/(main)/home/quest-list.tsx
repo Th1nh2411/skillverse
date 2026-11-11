@@ -11,7 +11,7 @@ type Quest = RouterOutputs["home"]["quests"]["quests"][number];
 /** Nhiệm vụ nào dẫn tới đâu; nhiệm vụ tự báo (luyện tập) có nút "Xong". */
 const QUEST_HREF: Record<string, string> = {
   review_2: "/review",
-  suggest_criteria: "/discover",
+  suggest_criteria: "/proposals?kind=edit_criteria",
 };
 const SELF_REPORTED = new Set(["practice_10min"]);
 

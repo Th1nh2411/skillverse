@@ -45,3 +45,10 @@ Danh sách trong `docs/inbox/ui.md` (tin cùng tiêu đề). Kiểm: chưa đăn
 - `/messages`, `/messages/<id>`: textbox "Tin nhắn", nút "Gửi" (Enter gửi).
 - `/notifications`: mở trang = đánh dấu đã đọc; review_assigned → `/review`.
 - `/admin`: không phải biên tập viên → 404; tab "Báo cáo"/"Trùng video"/"Kháng nghị" (`?tab=disputed|appeals`); nút "Bác bỏ"/"Xác nhận", "Hợp lệ, cho duyệt"/"Gỡ bằng chứng", "Giữ kết quả"/"Duyệt lại".
+
+## [từ ui → qa] Giai đoạn 4 + sửa dấu "·" (Q3.5)
+- Đã bỏ mọi chuỗi nối "·" trong app (trừ tiêu đề tab). Nhãn đổi: hồ sơ người khác nút "Đã theo dõi" (không phải "Đang theo dõi"); hàng đợi duyệt "Lên cấp N, đã có k/3 phiếu"; màn duyệt "<Kỹ năng> lên cấp N".
+- Route đề xuất: `/skills/propose` (Khám phá trỏ tới; tìm không thấy → `/skills/propose?name=<từ khóa>` điền sẵn tên). Form: textbox "Tên kỹ năng", nút danh mục `aria-pressed`, textbox "Cấp N, tiêu chí 1", "Thêm cấp", checkbox "Có rủi ro…", nút "Gửi đề xuất" → `/proposals/<id>`; trùng tên hiện lỗi "Đã có kỹ năng hoặc đề xuất trùng tên.".
+- `/proposals` (tab link "Kỹ năng mới" / "Sửa tiêu chí", `?kind=edit_criteria&skill=<slug>`), `/proposals/<id>`: "Ủng hộ" → "Bạn đã ủng hộ" (tác giả mặc định đã ủng hộ), "k/N người ủng hộ"; sửa tiêu chí: nút `aria-pressed` "Đồng ý"/"Không đồng ý", "N% đồng ý", ⓘ "Cách thông qua góp ý"; bình luận textbox "Bình luận" + nút "Gửi bình luận".
+- Chi tiết kỹ năng: khối "Góp ý tiêu chí" có nút bỏ phiếu như trên; link "Góp ý" → `/skills/<slug>/suggest` chỉ hiện khi skill.detail có `skillLevelId` (đang chờ domain).
+- `/admin?tab=proposals`: "Từ chối" / "Mở kỹ năng".

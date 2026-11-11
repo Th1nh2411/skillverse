@@ -11,7 +11,6 @@ import { InfoSheet } from "@/components/ui/sheet";
 import { formatNumber } from "@/lib/skill-visual";
 import { clockTime, timeLeft } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
-import { formatDuration } from "@/lib/video";
 
 type Tab = "active" | "duels" | "pending";
 type Challenge = RouterOutputs["challenge"]["list"][number];
@@ -216,7 +215,7 @@ function DuelCard({ d }: { d: Duel }) {
               {s.caption ? <p className="line-clamp-2 text-[13px] text-muted">{s.caption}</p> : null}
               {d.myVote || d.closed ? (
                 <p className="tabular text-[13px] font-semibold">
-                  {pct}% <span className="font-normal text-muted">· {s.votes} phiếu</span>
+                  {pct}% <span className="font-normal text-muted">({s.votes} phiếu)</span>
                 </p>
               ) : null}
               {d.canVote && !d.myVote ? (
@@ -282,8 +281,7 @@ function PendingRow({ p }: { p: Pending }) {
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-[15px] font-semibold">{p.skill.name}</span>
         <span className="tabular truncate text-[13px] text-muted">
-          {p.isMine ? "Của bạn" : `Ẩn danh ${p.anonymousCode}`} · cấp {p.targetLevel}
-          {p.durationS ? ` · ${formatDuration(p.durationS)}` : ""}
+          {p.isMine ? "Của bạn" : `Ẩn danh ${p.anonymousCode}`}, lên cấp {p.targetLevel}
         </span>
         <span className="tabular text-[12px] text-muted">
           {p.votes}/{p.required} đã duyệt

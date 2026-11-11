@@ -4,6 +4,7 @@ import {
   Bell,
   CircleX,
   Flag,
+  Lightbulb,
   MessageCircle,
   PartyPopper,
   Scale,
@@ -74,7 +75,14 @@ export function notificationCopy(n: N): Copy {
     case "warning":
       return { text: "Bạn nhận một cảnh cáo từ biên tập viên.", href: null, icon: ShieldAlert, tone: "danger" };
     default:
-      if (n.kind.startsWith("proposal_")) return { text: "Có cập nhật về đề xuất của bạn.", href: null, icon: Bell, tone: "muted" };
+      if (n.kind === "proposal_accepted")
+        return { text: "Đề xuất của bạn đã được thông qua.", href: n.refId ? `/proposals/${n.refId}` : null, icon: Lightbulb, tone: "teal" };
+      if (n.kind === "proposal_comment")
+        return { text: "Có bình luận mới trên đề xuất của bạn.", href: n.refId ? `/proposals/${n.refId}` : null, icon: MessageCircle, tone: "accent" };
+      if (n.kind.startsWith("proposal_"))
+        return { text: "Có cập nhật về đề xuất của bạn.", href: n.refId ? `/proposals/${n.refId}` : null, icon: Lightbulb, tone: "muted" };
+      if (n.kind === "new_skill" || n.kind === "edit_criteria")
+        return { text: "Có đề xuất cần biên tập viên xem.", href: "/admin?tab=proposals", icon: Lightbulb, tone: "muted" };
       return { text: "Bạn có thông báo mới.", href: proof, icon: Bell, tone: "muted" };
   }
 }

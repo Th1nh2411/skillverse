@@ -55,7 +55,8 @@ export function ReviewForm({ task }: { task: Task }) {
       <section className="flex items-start gap-3 px-5 pt-3">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <h2 className="text-[18px] font-bold leading-snug">
-            {task.skill.name} <span className="tabular whitespace-nowrap text-muted">· cấp {task.targetLevel}</span>
+            {task.skill.name}{" "}
+            <span className="tabular whitespace-nowrap font-semibold text-muted">lên cấp {task.targetLevel}</span>
           </h2>
           <div className="flex items-center gap-1.5 text-[13px] text-muted">
             <ShieldCheck size={15} className="text-teal" aria-hidden />

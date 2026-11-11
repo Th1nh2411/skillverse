@@ -34,7 +34,7 @@ export function DiscoverView() {
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-display text-[28px] font-extrabold leading-tight">Khám phá</h1>
           <Link
-            href="/skills/new"
+            href="/skills/propose"
             className="-mr-2 inline-flex min-h-11 items-center gap-1 rounded-[12px] px-2 text-[14px] font-semibold text-accent hover:bg-surface-2"
           >
             <Plus size={18} aria-hidden />
@@ -246,7 +246,7 @@ function SearchResults({ results, pending, q }: { results: Summary[] | undefined
           icon={SearchX}
           title={`Chưa có kỹ năng "${q}"`}
           action={
-            <ButtonLink href="/skills/new" size="md">
+            <ButtonLink href={`/skills/propose?name=${encodeURIComponent(q)}`} size="md">
               Đề xuất kỹ năng
             </ButtonLink>
           }

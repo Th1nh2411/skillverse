@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Hourglass, Lock, ShieldAlert, TriangleAlert, TrendingUp, Users } from "lucide-react";
+import { ChevronRight, Hourglass, Lock, Plus, ShieldAlert, TriangleAlert, TrendingUp, Users } from "lucide-react";
 import type { RouterOutputs } from "@skillverse/api";
 import { getServerCaller } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { BackButton } from "@/components/ui/back-button";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
-import { ProgressBar } from "@/components/ui/misc";
+import { CriteriaVote } from "@/components/criteria-vote";
 import { InfoSheet } from "@/components/ui/sheet";
 import { formatNumber, skillIcon } from "@/lib/skill-visual";
 import { SkillTabs } from "./skill-tabs";
@@ -88,7 +88,9 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
         }
       />
 
-      {d.openProposals.length > 0 ? <Proposals proposals={d.openProposals} /> : null}
+      {d.openProposals.length > 0 || d.levels.some((l) => levelIdOf(l)) ? (
+        <Proposals slug={d.slug} proposals={d.openProposals} canSuggest={d.levels.some((l) => levelIdOf(l))} />
+      ) : null}
 
       <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-[560px] border-t border-border bg-bg px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3">
         {d.myPendingProof ? (
@@ -154,39 +156,57 @@ function LevelRow({ lv, myLevel, next }: { lv: Detail["levels"][number]; myLevel
   );
 }
 
-function Proposals({ proposals }: { proposals: Proposal[] }) {
-  const p = proposals[0]!;
-  const ratio = p.agreeRatio ?? 0;
+/** skill.detail chưa có skillLevelId (đã nhờ domain thêm) → đọc an toàn; thiếu thì ẩn nút góp ý. */
+function levelIdOf(lv: Detail["levels"][number]): string | null {
+  return "skillLevelId" in lv && typeof lv.skillLevelId === "string" ? lv.skillLevelId : null;
+}
+
+function Proposals({ slug, proposals, canSuggest }: { slug: string; proposals: Proposal[]; canSuggest: boolean }) {
   return (
-    <section aria-labelledby="proposals" className="mx-5 mt-6 flex flex-col gap-3 border-t border-border pt-5">
+    <section aria-labelledby="proposals" className="mx-5 mt-6 flex flex-col gap-4 border-t border-border pt-5">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
-          <h2 id="proposals" className="text-[16px] font-bold">
-            Góp ý tiêu chí
-          </h2>
-          <InfoSheet title="Sửa tiêu chí" label="Cách thông qua góp ý">
-            Góp ý được thông qua khi đạt {Math.round(p.rule.agree_ratio * 100)}% đồng ý, tối thiểu {p.rule.min_votes} phiếu. Chỉ
-            phiếu của người đạt cấp {p.rule.voter_min_level} trở lên được tính. Tiêu chí mới áp dụng cho bằng chứng nộp sau đó.
-          </InfoSheet>
-        </div>
-        {proposals.length > 1 ? (
-          <span className="tabular text-[13px] text-muted">{proposals.length} đang mở</span>
+        <h2 id="proposals" className="text-[16px] font-bold">
+          Góp ý tiêu chí
+        </h2>
+        {canSuggest ? (
+          <Link
+            href={`/skills/${slug}/suggest`}
+            className="-mr-2 inline-flex min-h-11 items-center gap-1 rounded-[12px] px-2 text-[14px] font-semibold text-accent hover:bg-surface-2"
+          >
+            <Plus size={16} aria-hidden />
+            Góp ý
+          </Link>
         ) : null}
       </div>
-      <p className="text-[14px] leading-snug">
-        {p.targetLevel ? <b className="font-semibold">Cấp {p.targetLevel}: </b> : null}
-        {(p.summary ?? p.proposedCriteria[0]?.text ?? "").replace(/^Cấp\s*\d+\s*:\s*/i, "")}
-      </p>
-      <ProgressBar value={Math.round(ratio * 100)} max={100} tone="teal" label="Tỉ lệ đồng ý" />
-      <div className="tabular flex items-center justify-between text-[13px] text-muted">
-        <span>
-          <b className="font-bold text-teal">{Math.round(ratio * 100)}%</b> đồng ý
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Users size={13} aria-hidden />
-          {formatNumber(p.voteCount)} phiếu
-        </span>
-      </div>
+      {proposals.length === 0 ? (
+        <p className="text-[14px] text-muted">Chưa có góp ý nào đang mở.</p>
+      ) : (
+        <ul className="flex flex-col gap-5">
+          {proposals.slice(0, 3).map((p) => (
+            <li key={p.id} className="flex flex-col gap-2.5">
+              <Link href={`/proposals/${p.id}`} className="flex items-start gap-2 text-[14px] leading-snug hover:underline">
+                <span className="flex-1">
+                  {p.targetLevel ? <b className="font-semibold">Cấp {p.targetLevel}: </b> : null}
+                  {(p.summary ?? p.proposedCriteria[0]?.text ?? "").replace(/^Cấp\s*\d+\s*:\s*/i, "")}
+                </span>
+                <ChevronRight size={16} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+              </Link>
+              <CriteriaVote
+                proposalId={p.id}
+                rule={p.rule}
+                tally={{ agreeRatio: p.agreeRatio, weightedVoteCount: p.weightedVoteCount, voteCount: p.voteCount }}
+                myVote={p.myVote}
+                open={p.status === "voting" || p.status === "gathering"}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      {proposals.length > 3 ? (
+        <Link href={`/proposals?kind=edit_criteria&skill=${slug}`} className="text-[14px] font-semibold text-accent hover:underline">
+          Xem tất cả {proposals.length} góp ý
+        </Link>
+      ) : null}
     </section>
   );
 }

@@ -9,7 +9,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { Avatar } from "@/components/ui/misc";
 import { InfoSheet } from "@/components/ui/sheet";
-import { formatNumber, RARITY_LABEL, threadOf } from "@/lib/skill-visual";
+import { formatNumber } from "@/lib/skill-visual";
 import { FollowButton, MessageButton } from "./actions";
 import { SwapPanel } from "./swap-panel";
 
@@ -44,9 +44,8 @@ export default async function PeerProfilePage({ params }: Params) {
         <Avatar name={p.displayName} size={72} />
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="truncate font-display text-[24px] font-extrabold leading-tight">{p.displayName}</h1>
-          <div className="tabular flex flex-wrap items-center gap-x-2 text-[14px] text-muted">
+          <div className="tabular flex flex-wrap items-center gap-x-3 text-[14px] text-muted">
             <span>Cấp {p.xp.level}</span>
-            <span aria-hidden>·</span>
             <span className="inline-flex items-center gap-1 text-teal">
               <ShieldCheck size={14} aria-hidden />
               Uy tín {p.reputation}
@@ -95,7 +94,6 @@ export default async function PeerProfilePage({ params }: Params) {
                 <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{s.name}</span>
                 <span className="tabular shrink-0 text-[13px] text-muted">
                   Cấp {s.level}
-                  {s.rarity ? ` · ${RARITY_LABEL[threadOf(s.rarity)]}` : ""}
                 </span>
               </Link>
             </li>

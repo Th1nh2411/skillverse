@@ -51,7 +51,7 @@ export default async function ReviewQueuePage() {
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="truncate text-[15px] font-semibold">{it.skill.name}</span>
                     <span className="tabular truncate text-[13px] text-muted">
-                      Lên cấp {it.targetLevel} · {it.votes}/{it.required} phiếu
+                      Lên cấp {it.targetLevel}, đã có {it.votes}/{it.required} phiếu
                     </span>
                   </span>
                   <span

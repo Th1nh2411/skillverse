@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Flag, Inbox, Scale } from "lucide-react";
+import { ChevronRight, Copy, Flag, Inbox, Lightbulb, Scale } from "lucide-react";
 import { useId, useState } from "react";
 import type { RouterOutputs } from "@skillverse/api";
 import { REPORT_REASON_LABELS, SANCTION_KIND_LABELS, sanctionKindInput } from "@skillverse/validation";
@@ -11,10 +11,11 @@ import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { timeAgo } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
 
-type Tab = "reports" | "disputed" | "appeals";
+type Tab = "reports" | "disputed" | "appeals" | "proposals";
 type Report = RouterOutputs["admin"]["reports"]["items"][number];
 type Disputed = RouterOutputs["admin"]["disputedProofs"][number];
 type Appeal = RouterOutputs["admin"]["appeals"][number];
+type SkillProposal = RouterOutputs["admin"]["proposals"]["items"][number];
 
 const TARGET_LABEL: Record<Report["targetType"], string> = {
   proof: "Bằng chứng",
@@ -41,6 +42,7 @@ export function AdminView({ initialTab }: { initialTab: Tab }) {
     { key: "reports", label: "Báo cáo" },
     { key: "disputed", label: "Trùng video" },
     { key: "appeals", label: "Kháng nghị" },
+    { key: "proposals", label: "Đề xuất" },
   ];
   return (
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-10">
@@ -48,7 +50,7 @@ export function AdminView({ initialTab }: { initialTab: Tab }) {
         <BackButton fallback="/profile" />
         <h1 className="font-display text-[22px] font-extrabold">Quản trị</h1>
       </header>
-      <div role="tablist" aria-label="Hàng đợi" className="mx-5 mt-2 grid grid-cols-3 border-b border-border">
+      <div role="tablist" aria-label="Hàng đợi" className="no-scrollbar mx-5 mt-2 flex gap-1 overflow-x-auto border-b border-border">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -58,7 +60,7 @@ export function AdminView({ initialTab }: { initialTab: Tab }) {
             aria-selected={tab === t.key}
             aria-controls={`${id}-panel`}
             onClick={() => setTab(t.key)}
-            className={`-mb-px min-h-12 border-b-2 text-[14px] font-semibold ${
+            className={`-mb-px min-h-12 shrink-0 whitespace-nowrap border-b-2 px-3 text-[14px] font-semibold ${
               tab === t.key ? "border-accent text-text" : "border-transparent text-muted hover:text-text"
             }`}
           >
@@ -67,7 +69,7 @@ export function AdminView({ initialTab }: { initialTab: Tab }) {
         ))}
       </div>
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="flex flex-col gap-3 px-5 pt-4">
-        {tab === "reports" ? <Reports /> : tab === "disputed" ? <DisputedList /> : <Appeals />}
+        {tab === "reports" ? <Reports /> : tab === "disputed" ? <DisputedList /> : tab === "appeals" ? <Appeals /> : <SkillProposals />}
       </div>
     </main>
   );
@@ -109,7 +111,7 @@ function ReportCard({ r }: { r: Report }) {
       <li className={card}>
         <p className="text-[14px] font-semibold">
           {resolve.data.status === "confirmed" ? "Đã xác nhận" : "Đã bác bỏ"}
-          {resolve.data.action ? ` · ${ACTION_LABEL[resolve.data.action]}` : ""}
+          {resolve.data.action ? `, ${ACTION_LABEL[resolve.data.action].toLowerCase()}` : ""}
         </p>
         <Button size="sm" variant="ghost" className="self-start border border-border" onClick={refresh}>
           Làm mới danh sách
@@ -126,7 +128,7 @@ function ReportCard({ r }: { r: Report }) {
             {TARGET_LABEL[r.targetType]}
             {r.target.ownerHandle ? (
               <>
-                {" · "}
+                {" của "}
                 <Link href={`/u/${r.target.ownerHandle}`} className="hover:underline">
                   @{r.target.ownerHandle}
                 </Link>
@@ -142,8 +144,8 @@ function ReportCard({ r }: { r: Report }) {
       </div>
       {r.details ? <p className="text-[14px] leading-snug">{r.details}</p> : null}
       <p className="tabular text-[12px] text-muted">
-        @{r.reporter.handle} · {timeAgo(r.createdAt)}
-        {r.openReportsOnTarget > 1 ? ` · ${r.openReportsOnTarget} báo cáo cùng đối tượng` : ""}
+        @{r.reporter.handle} báo cáo {timeAgo(r.createdAt)}
+        {r.openReportsOnTarget > 1 ? `, cùng ${r.openReportsOnTarget - 1} báo cáo khác` : ""}
       </p>
       <input
         aria-label="Kết luận (ghi chú)"
@@ -267,13 +269,13 @@ function DisputedCard({ d }: { d: Disputed }) {
     <li className={card}>
       <div className="flex flex-col gap-0.5">
         <h2 className="text-[15px] font-bold">
-          {d.skill.name} <span className="tabular text-muted">· cấp {d.targetLevel}</span>
+          {d.skill.name} <span className="tabular text-muted">cấp {d.targetLevel}</span>
         </h2>
         <p className="text-[13px] text-muted">
           <Link href={`/u/${d.user.handle}`} className="hover:underline">
             {d.user.displayName}
           </Link>{" "}
-          · {timeAgo(d.createdAt)}
+          nộp {timeAgo(d.createdAt)}
         </p>
       </div>
       <video src={d.video.url} controls playsInline preload="metadata" className="aspect-video w-full rounded-[12px] bg-black" />
@@ -283,7 +285,7 @@ function DisputedCard({ d }: { d: Disputed }) {
           <ul className="flex flex-col gap-0.5 text-[13px]">
             {d.matches.map((m) => (
               <li key={m.proofId}>
-                @{m.userHandle} · {m.skillName} · <span className="text-muted">{m.status}</span>
+                @{m.userHandle}, {m.skillName} <span className="text-muted">({m.status})</span>
               </li>
             ))}
           </ul>
@@ -331,13 +333,13 @@ function AppealCard({ a }: { a: Appeal }) {
     <li className={card}>
       <div className="flex flex-col gap-0.5">
         <h2 className="text-[15px] font-bold">
-          {a.proof.skill.name} <span className="tabular text-muted">· cấp {a.proof.targetLevel}</span>
+          {a.proof.skill.name} <span className="tabular text-muted">cấp {a.proof.targetLevel}</span>
         </h2>
         <p className="tabular text-[13px] text-muted">
           <Link href={`/u/${a.user.handle}`} className="hover:underline">
             {a.user.displayName}
           </Link>{" "}
-          · {a.proof.passVotes}/{a.proof.totalVotes} phiếu đạt · {timeAgo(a.createdAt)}
+          kháng nghị {timeAgo(a.createdAt)}, {a.proof.passVotes}/{a.proof.totalVotes} phiếu đạt
         </p>
       </div>
       <p className="rounded-[12px] bg-bg px-3 py-2.5 text-[14px] leading-snug">{a.reason}</p>
@@ -358,6 +360,84 @@ function AppealCard({ a }: { a: Appeal }) {
       {resolve.error ? (
         <p role="alert" className="text-[13px] text-danger">
           {resolve.error.message}
+        </p>
+      ) : null}
+    </li>
+  );
+}
+
+function SkillProposals() {
+  const trpc = useTRPC();
+  const q = useQuery(trpc.admin.proposals.queryOptions());
+  if (q.isPending) return <Loading />;
+  if (!q.data?.items.length) return <EmptyState icon={Lightbulb} title="Không có đề xuất kỹ năng nào chờ biên tập" />;
+  return (
+    <ul className="flex flex-col gap-3">
+      {q.data.items.map((p) => (
+        <ProposalCard key={p.id} p={p} />
+      ))}
+    </ul>
+  );
+}
+
+function ProposalCard({ p }: { p: SkillProposal }) {
+  const trpc = useTRPC();
+  const [note, setNote] = useState("");
+  const decide = useMutation(trpc.admin.decideProposal.mutationOptions());
+  return (
+    <li className={card}>
+      <Link href={`/proposals/${p.id}`} className="flex items-start gap-2 hover:underline">
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h2 className="text-[15px] font-bold leading-snug">{p.title}</h2>
+          <span className="tabular text-[13px] font-normal text-muted">
+            {p.author.displayName}, {p.supportCount} người ủng hộ
+          </span>
+        </span>
+        <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+      </Link>
+      {decide.data ? (
+        <p className="text-[14px] font-semibold text-teal">
+          {decide.data.status === "accepted" ? "Đã mở kỹ năng" : "Đã từ chối"}
+          {decide.data.skillSlug ? (
+            <>
+              {" "}
+              <Link href={`/skills/${decide.data.skillSlug}`} className="text-accent underline">
+                Xem
+              </Link>
+            </>
+          ) : null}
+        </p>
+      ) : (
+        <>
+          <input
+            aria-label="Ghi chú cho người đề xuất"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Ghi chú (không bắt buộc)"
+            className={input}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="md"
+              variant="secondary"
+              disabled={decide.isPending}
+              onClick={() => decide.mutate({ proposalId: p.id, decision: "rejected", note: note.trim() || undefined })}
+            >
+              Từ chối
+            </Button>
+            <Button
+              size="md"
+              disabled={decide.isPending}
+              onClick={() => decide.mutate({ proposalId: p.id, decision: "accepted", note: note.trim() || undefined })}
+            >
+              Mở kỹ năng
+            </Button>
+          </div>
+        </>
+      )}
+      {decide.error ? (
+        <p role="alert" className="text-[13px] text-danger">
+          {decide.error.message}
         </p>
       ) : null}
     </li>

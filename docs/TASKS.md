@@ -124,10 +124,10 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 - [x] (api) A4.3 Cron gọi closeExpiredProposals thật; test router (quyền, validate)
 
 ### ui
-- [ ] U4.1 Đề xuất kỹ năng mới (`/skills/propose`): tên, danh mục, tiêu chí từng cấp, cờ rủi ro, dòng tiến trình nhỏ (Ủng hộ → Duyệt → Mở) + ⓘ
-- [ ] U4.2 Danh sách/chi tiết đề xuất (`/proposals`, `/proposals/[id]`): ủng hộ, bình luận
-- [ ] U4.3 Chi tiết kỹ năng: khối góp ý tiêu chí — bỏ phiếu Đồng ý / Không đồng ý, tỉ lệ có trọng số, luật trong ⓘ; "Góp ý tiêu chí" mở form tạo đề xuất sửa
-- [ ] U4.4 Quản trị: hàng đợi đề xuất kỹ năng chờ biên tập + chụp/tự soi
+- [x] (ui) U4.1 Đề xuất kỹ năng mới (`/skills/propose`): tên, danh mục, tiêu chí từng cấp, cờ rủi ro, dòng tiến trình nhỏ (Ủng hộ → Duyệt → Mở) + ⓘ
+- [x] (ui) U4.2 Danh sách/chi tiết đề xuất (`/proposals`, `/proposals/[id]`): ủng hộ, bình luận
+- [x] (ui) U4.3 Chi tiết kỹ năng: khối góp ý tiêu chí — bỏ phiếu Đồng ý / Không đồng ý, tỉ lệ có trọng số, luật trong ⓘ; "Góp ý tiêu chí" mở form tạo đề xuất sửa
+- [x] (ui) U4.4 Quản trị: hàng đợi đề xuất kỹ năng chờ biên tập + chụp/tự soi
 
 ### qa
 - [ ] Q4.1 E2E: đề xuất kỹ năng mới → ủng hộ → (seed/ngưỡng) → biên tập viên duyệt → kỹ năng xuất hiện ở Khám phá
