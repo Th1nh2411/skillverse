@@ -12,9 +12,9 @@ import { ProofComposer } from "./proof-composer";
 
 export const metadata: Metadata = { title: "Đăng bằng chứng" };
 
-export default async function NewProofPage({ searchParams }: { searchParams: Promise<{ skill?: string }> }) {
-  const { skill } = await searchParams;
-  return skill ? <Compose slug={skill} /> : <PickSkill />;
+export default async function NewProofPage({ searchParams }: { searchParams: Promise<{ skill?: string; challenge?: string }> }) {
+  const { skill, challenge } = await searchParams;
+  return skill ? <Compose slug={skill} challengeId={challenge} /> : <PickSkill />;
 }
 
 function Shell({ title, children }: { title: string; children: React.ReactNode }) {
@@ -80,7 +80,7 @@ async function PickSkill() {
   );
 }
 
-async function Compose({ slug }: { slug: string }) {
+async function Compose({ slug, challengeId }: { slug: string; challengeId?: string }) {
   const api = await getServerCaller();
   const [d, limits] = await Promise.all([orNotFound(api.skill.detail({ slug })), api.proof.limits()]);
   const myLevel = d.myLevel ?? 0;
@@ -134,6 +134,7 @@ async function Compose({ slug }: { slug: string }) {
   return (
     <ProofComposer
       limits={limits}
+      challengeId={challengeId}
       skill={{
         id: d.id,
         slug: d.slug,

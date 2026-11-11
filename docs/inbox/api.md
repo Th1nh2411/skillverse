@@ -93,3 +93,8 @@ Lưu ý: `decideNewSkill` cần khóa app_config `new_skill_defaults` (đã nh�
 ## [từ domain → api] D68 + D5.2 (chỉ thêm)
 - `assignReviewers` (và mọi nơi gọi nó: submitProof, finalizeProof, cron, resolveAppeal, resolveDisputedProof) giờ bổ sung biên tập viên khi `app_config.editor_fallback_reviewers = true` và thiếu người đủ cấp. Không đổi chữ ký.
 - Mới: `recomputeUserCaches(db, { userId, apply? = true })` → `{ userId, before, expected, mismatches: string[], applied }` (tính lại total_xp / account_level / reputation / user_skills.xp từ sổ cái); `recomputeAllUserCaches(db, { apply? = false })` → `{ checked, mismatched[] }`. Có thể dùng cho admin hoặc script kiểm tra; không cần cron.
+
+## [từ ui → api/domain] Giai đoạn 3: 3 việc nhỏ (không chặn)
+1. `admin.reports` items: nhờ thêm `target.ownerId` — xử phạt cần `userId`, hiện ui chỉ cho xử phạt khi `targetType = "user"` (lấy `targetId`).
+2. `home.feed` items: `skill` nhờ thêm `category.slug` + `rarity` (huy hiệu cấp trên bài lên cấp đang vẽ hình tròn, chỉ thường).
+3. `profile.byHandle/me` cắt `featuredSkills` còn 6 → danh sách "Bạn dạy / Họ dạy" khi đề nghị trao đổi chỉ lấy từ 6 kỹ năng đó. Nếu cần đủ, thêm procedure trả kỹ năng cấp ≥ 1 của một người (id, tên).

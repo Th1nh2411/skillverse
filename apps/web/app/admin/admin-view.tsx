@@ -1,0 +1,365 @@
+"use client";
+import Link from "next/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Copy, Flag, Inbox, Scale } from "lucide-react";
+import { useId, useState } from "react";
+import type { RouterOutputs } from "@skillverse/api";
+import { REPORT_REASON_LABELS, SANCTION_KIND_LABELS, sanctionKindInput } from "@skillverse/validation";
+import { BackButton } from "@/components/ui/back-button";
+import { Button } from "@/components/ui/button";
+import { EmptyState, Skeleton } from "@/components/ui/misc";
+import { timeAgo } from "@/lib/time";
+import { useTRPC } from "@/lib/trpc";
+
+type Tab = "reports" | "disputed" | "appeals";
+type Report = RouterOutputs["admin"]["reports"]["items"][number];
+type Disputed = RouterOutputs["admin"]["disputedProofs"][number];
+type Appeal = RouterOutputs["admin"]["appeals"][number];
+
+const TARGET_LABEL: Record<Report["targetType"], string> = {
+  proof: "Bằng chứng",
+  user: "Người dùng",
+  review: "Phiếu duyệt",
+  post: "Bài viết",
+  skill: "Kỹ năng",
+};
+
+const ACTION_LABEL = {
+  level_revoked: "Đã thu hồi cấp",
+  proof_removed: "Đã gỡ bằng chứng",
+  post_hidden: "Đã ẩn bài viết",
+} as const;
+
+const card = "flex flex-col gap-3 rounded-[var(--radius-card)] bg-surface p-4";
+const input =
+  "w-full rounded-[var(--radius-btn)] border border-border bg-bg px-3 py-2.5 text-[15px] text-text placeholder:text-muted/70 focus:border-accent focus:outline-none";
+
+export function AdminView({ initialTab }: { initialTab: Tab }) {
+  const id = useId();
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "reports", label: "Báo cáo" },
+    { key: "disputed", label: "Trùng video" },
+    { key: "appeals", label: "Kháng nghị" },
+  ];
+  return (
+    <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-10">
+      <header className="flex items-center gap-1 px-3 pt-3">
+        <BackButton fallback="/profile" />
+        <h1 className="font-display text-[22px] font-extrabold">Quản trị</h1>
+      </header>
+      <div role="tablist" aria-label="Hàng đợi" className="mx-5 mt-2 grid grid-cols-3 border-b border-border">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            role="tab"
+            type="button"
+            id={`${id}-${t.key}`}
+            aria-selected={tab === t.key}
+            aria-controls={`${id}-panel`}
+            onClick={() => setTab(t.key)}
+            className={`-mb-px min-h-12 border-b-2 text-[14px] font-semibold ${
+              tab === t.key ? "border-accent text-text" : "border-transparent text-muted hover:text-text"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="flex flex-col gap-3 px-5 pt-4">
+        {tab === "reports" ? <Reports /> : tab === "disputed" ? <DisputedList /> : <Appeals />}
+      </div>
+    </main>
+  );
+}
+
+function Loading() {
+  return (
+    <>
+      <Skeleton className="h-32" />
+      <Skeleton className="h-32" />
+    </>
+  );
+}
+
+function Reports() {
+  const trpc = useTRPC();
+  const q = useQuery(trpc.admin.reports.queryOptions({}));
+  if (q.isPending) return <Loading />;
+  if (!q.data?.items.length) return <EmptyState icon={Inbox} title="Không có báo cáo nào đang mở" />;
+  return (
+    <ul className="flex flex-col gap-3">
+      {q.data.items.map((r) => (
+        <ReportCard key={r.id} r={r} />
+      ))}
+    </ul>
+  );
+}
+
+function ReportCard({ r }: { r: Report }) {
+  const trpc = useTRPC();
+  const qc = useQueryClient();
+  const [outcome, setOutcome] = useState("");
+  const refresh = () => qc.invalidateQueries({ queryKey: trpc.admin.reports.queryKey() });
+  const resolve = useMutation(trpc.admin.resolveReport.mutationOptions());
+  const revokes = r.targetType === "proof" && r.target.proofStatus === "passed";
+
+  if (resolve.data) {
+    return (
+      <li className={card}>
+        <p className="text-[14px] font-semibold">
+          {resolve.data.status === "confirmed" ? "Đã xác nhận" : "Đã bác bỏ"}
+          {resolve.data.action ? ` · ${ACTION_LABEL[resolve.data.action]}` : ""}
+        </p>
+        <Button size="sm" variant="ghost" className="self-start border border-border" onClick={refresh}>
+          Làm mới danh sách
+        </Button>
+      </li>
+    );
+  }
+
+  return (
+    <li className={card}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="text-[12px] font-semibold text-muted">
+            {TARGET_LABEL[r.targetType]}
+            {r.target.ownerHandle ? (
+              <>
+                {" · "}
+                <Link href={`/u/${r.target.ownerHandle}`} className="hover:underline">
+                  @{r.target.ownerHandle}
+                </Link>
+              </>
+            ) : null}
+          </p>
+          <h2 className="text-[15px] font-bold leading-snug">{r.target.title}</h2>
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-danger/15 px-2 py-0.5 text-[12px] font-bold text-danger">
+          <Flag size={12} aria-hidden />
+          {REPORT_REASON_LABELS[r.reason]}
+        </span>
+      </div>
+      {r.details ? <p className="text-[14px] leading-snug">{r.details}</p> : null}
+      <p className="tabular text-[12px] text-muted">
+        @{r.reporter.handle} · {timeAgo(r.createdAt)}
+        {r.openReportsOnTarget > 1 ? ` · ${r.openReportsOnTarget} báo cáo cùng đối tượng` : ""}
+      </p>
+      <input
+        aria-label="Kết luận (ghi chú)"
+        value={outcome}
+        onChange={(e) => setOutcome(e.target.value)}
+        placeholder="Kết luận (không bắt buộc)"
+        className={input}
+      />
+      {revokes ? <p className="text-[13px] text-accent">Xác nhận sẽ thu hồi cấp của bằng chứng này.</p> : null}
+      {resolve.error ? (
+        <p role="alert" className="text-[13px] text-danger">
+          {resolve.error.message}
+        </p>
+      ) : null}
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          size="md"
+          variant="secondary"
+          disabled={resolve.isPending}
+          onClick={() => resolve.mutate({ reportId: r.id, decision: "dismissed", outcome: outcome.trim() || undefined })}
+        >
+          Bác bỏ
+        </Button>
+        <Button
+          size="md"
+          variant="danger"
+          disabled={resolve.isPending}
+          onClick={() => resolve.mutate({ reportId: r.id, decision: "confirmed", outcome: outcome.trim() || undefined })}
+        >
+          Xác nhận
+        </Button>
+      </div>
+      {r.targetType === "user" ? <SanctionForm userId={r.targetId} reportId={r.id} /> : null}
+    </li>
+  );
+}
+
+function SanctionForm({ userId, reportId }: { userId: string; reportId: string }) {
+  const trpc = useTRPC();
+  const id = useId();
+  const [kind, setKind] = useState<(typeof sanctionKindInput.options)[number]>("warning");
+  const [reason, setReason] = useState("");
+  const [days, setDays] = useState("7");
+  const sanction = useMutation(trpc.admin.sanction.mutationOptions());
+  if (sanction.isSuccess) return <p className="text-[13px] font-semibold text-teal">Đã áp dụng: {SANCTION_KIND_LABELS[kind]}</p>;
+  return (
+    <details className="rounded-[12px] border border-border px-3 py-1">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center text-[14px] font-semibold [&::-webkit-details-marker]:hidden">
+        Xử phạt người dùng
+      </summary>
+      <div className="flex flex-col gap-2 pb-3">
+        <div className="grid grid-cols-[1fr_96px] gap-2">
+          <select aria-label="Hình thức" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className={input}>
+            {sanctionKindInput.options.map((k) => (
+              <option key={k} value={k}>
+                {SANCTION_KIND_LABELS[k]}
+              </option>
+            ))}
+          </select>
+          {kind !== "warning" ? (
+            <label htmlFor={`${id}-d`} className="relative">
+              <span className="sr-only">Số ngày</span>
+              <input
+                id={`${id}-d`}
+                type="number"
+                min={1}
+                max={365}
+                value={days}
+                onChange={(e) => setDays(e.target.value)}
+                className={`${input} pr-10`}
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted">ngày</span>
+            </label>
+          ) : null}
+        </div>
+        <input aria-label="Lý do xử phạt" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Lý do" className={input} />
+        {sanction.error ? (
+          <p role="alert" className="text-[13px] text-danger">
+            {sanction.error.message}
+          </p>
+        ) : null}
+        <Button
+          size="md"
+          variant="danger"
+          disabled={reason.trim().length < 3 || sanction.isPending}
+          onClick={() =>
+            sanction.mutate({
+              userId,
+              kind,
+              reason: reason.trim(),
+              durationDays: kind === "warning" ? undefined : Number(days) || undefined,
+              reportId,
+            })
+          }
+        >
+          Áp dụng
+        </Button>
+      </div>
+    </details>
+  );
+}
+
+function DisputedList() {
+  const trpc = useTRPC();
+  const q = useQuery(trpc.admin.disputedProofs.queryOptions());
+  if (q.isPending) return <Loading />;
+  if (!q.data?.length) return <EmptyState icon={Copy} title="Không có video trùng nào cần xem" />;
+  return (
+    <ul className="flex flex-col gap-3">
+      {q.data.map((d) => (
+        <DisputedCard key={d.proofId} d={d} />
+      ))}
+    </ul>
+  );
+}
+
+function DisputedCard({ d }: { d: Disputed }) {
+  const trpc = useTRPC();
+  const resolve = useMutation(trpc.admin.resolveDisputedProof.mutationOptions());
+  return (
+    <li className={card}>
+      <div className="flex flex-col gap-0.5">
+        <h2 className="text-[15px] font-bold">
+          {d.skill.name} <span className="tabular text-muted">· cấp {d.targetLevel}</span>
+        </h2>
+        <p className="text-[13px] text-muted">
+          <Link href={`/u/${d.user.handle}`} className="hover:underline">
+            {d.user.displayName}
+          </Link>{" "}
+          · {timeAgo(d.createdAt)}
+        </p>
+      </div>
+      <video src={d.video.url} controls playsInline preload="metadata" className="aspect-video w-full rounded-[12px] bg-black" />
+      {d.matches.length > 0 ? (
+        <div className="flex flex-col gap-1">
+          <p className="text-[13px] font-semibold text-muted">Trùng với</p>
+          <ul className="flex flex-col gap-0.5 text-[13px]">
+            {d.matches.map((m) => (
+              <li key={m.proofId}>
+                @{m.userHandle} · {m.skillName} · <span className="text-muted">{m.status}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {resolve.isSuccess ? (
+        <p className="text-[14px] font-semibold text-teal">Đã xử lý</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="md" variant="secondary" disabled={resolve.isPending} onClick={() => resolve.mutate({ proofId: d.proofId, decision: "clear" })}>
+            Hợp lệ, cho duyệt
+          </Button>
+          <Button size="md" variant="danger" disabled={resolve.isPending} onClick={() => resolve.mutate({ proofId: d.proofId, decision: "remove" })}>
+            Gỡ bằng chứng
+          </Button>
+        </div>
+      )}
+      {resolve.error ? (
+        <p role="alert" className="text-[13px] text-danger">
+          {resolve.error.message}
+        </p>
+      ) : null}
+    </li>
+  );
+}
+
+function Appeals() {
+  const trpc = useTRPC();
+  const q = useQuery(trpc.admin.appeals.queryOptions());
+  if (q.isPending) return <Loading />;
+  if (!q.data?.length) return <EmptyState icon={Scale} title="Không có kháng nghị nào đang mở" />;
+  return (
+    <ul className="flex flex-col gap-3">
+      {q.data.map((a) => (
+        <AppealCard key={a.appealId} a={a} />
+      ))}
+    </ul>
+  );
+}
+
+function AppealCard({ a }: { a: Appeal }) {
+  const trpc = useTRPC();
+  const resolve = useMutation(trpc.admin.resolveAppeal.mutationOptions());
+  return (
+    <li className={card}>
+      <div className="flex flex-col gap-0.5">
+        <h2 className="text-[15px] font-bold">
+          {a.proof.skill.name} <span className="tabular text-muted">· cấp {a.proof.targetLevel}</span>
+        </h2>
+        <p className="tabular text-[13px] text-muted">
+          <Link href={`/u/${a.user.handle}`} className="hover:underline">
+            {a.user.displayName}
+          </Link>{" "}
+          · {a.proof.passVotes}/{a.proof.totalVotes} phiếu đạt · {timeAgo(a.createdAt)}
+        </p>
+      </div>
+      <p className="rounded-[12px] bg-bg px-3 py-2.5 text-[14px] leading-snug">{a.reason}</p>
+      {resolve.data ? (
+        <p className="text-[14px] font-semibold text-teal">
+          {resolve.data.status === "overturned" ? "Đã chấp nhận, mở vòng duyệt mới" : "Đã giữ nguyên kết quả"}
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="md" variant="secondary" disabled={resolve.isPending} onClick={() => resolve.mutate({ appealId: a.appealId, decision: "upheld" })}>
+            Giữ kết quả
+          </Button>
+          <Button size="md" disabled={resolve.isPending} onClick={() => resolve.mutate({ appealId: a.appealId, decision: "overturned" })}>
+            Duyệt lại
+          </Button>
+        </div>
+      )}
+      {resolve.error ? (
+        <p role="alert" className="text-[13px] text-danger">
+          {resolve.error.message}
+        </p>
+      ) : null}
+    </li>
+  );
+}

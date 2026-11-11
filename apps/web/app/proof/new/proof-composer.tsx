@@ -15,6 +15,8 @@ import { formatDuration, precheck, readVideoMeta, type CheckItem, type MediaLimi
 
 type Props = {
   limits: MediaLimits;
+  /** Đến từ "Tham gia" thử thách: nộp xong thì tham gia bằng bằng chứng này. */
+  challengeId?: string;
   skill: { id: string; slug: string; name: string; categorySlug: string; rarity: Rarity; riskLevel: "none" | "low" | "high" };
   myLevel: number;
   target: { level: number; criteria: { id: string; text: string }[]; minReviewers: number; minReviewerLevel: number };
@@ -22,11 +24,12 @@ type Props = {
 
 type Phase = { kind: "idle" } | { kind: "uploading"; pct: number } | { kind: "submitting" };
 
-export function ProofComposer({ limits, skill, myLevel, target }: Props) {
+export function ProofComposer({ limits, challengeId, skill, myLevel, target }: Props) {
   const router = useRouter();
   const trpc = useTRPC();
   const createUpload = useMutation(trpc.proof.createUpload.mutationOptions());
   const submitProof = useMutation(trpc.proof.submit.mutationOptions());
+  const joinChallenge = useMutation(trpc.challenge.join.mutationOptions());
   const fileRef = useRef<HTMLInputElement>(null);
   const [camera, setCamera] = useState(false);
   const [clip, setClip] = useState<VideoClip | null>(null);
@@ -80,6 +83,10 @@ export function ProofComposer({ limits, skill, myLevel, target }: Props) {
         caption: caption.trim() || undefined,
         safetyAck: risky ? ack : false,
       });
+      if (challengeId) {
+        // Không chặn luồng nộp nếu tham gia lỗi (vd. thử thách vừa kết thúc).
+        await joinChallenge.mutateAsync({ challengeId, proofId: res.proofId }).catch(() => undefined);
+      }
       router.replace(`/proofs/${res.proofId}`);
     } catch (e) {
       setPhase({ kind: "idle" });

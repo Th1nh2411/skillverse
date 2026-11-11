@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, ChevronRight, Hourglass, ShieldCheck, Sprout } from "lucide-react";
+import { ChevronRight, Hourglass, ShieldCheck, Sprout } from "lucide-react";
 import type { RouterOutputs } from "@skillverse/api";
 import { signOut } from "@/auth";
 import { getServerCaller } from "@/lib/server/trpc";
 import { ButtonLink } from "@/components/ui/button";
-import { IconLink } from "@/components/ui/icon-button";
+import { AppHeader } from "@/components/app-header";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { Avatar, EmptyState, ProgressBar } from "@/components/ui/misc";
 import { formatNumber, skillIcon } from "@/lib/skill-visual";
@@ -28,13 +28,7 @@ export default async function ProfilePage() {
 
   return (
     <main className="flex flex-col">
-      <header className="flex items-center justify-between px-5 pb-1 pt-4">
-        <span className="font-display text-[21px] font-extrabold tracking-[-0.01em]">SkillVerse</span>
-        <div className="-mr-2 flex">
-          <IconLink href="/notifications" label="Thông báo" icon={Bell} />
-          <SettingsButton logout={logout} />
-        </div>
-      </header>
+      <AppHeader extra={<SettingsButton logout={logout} isEditor={p.isEditor} />} />
 
       <section className="flex items-center gap-4 px-5 pt-4">
         <div className="relative shrink-0">

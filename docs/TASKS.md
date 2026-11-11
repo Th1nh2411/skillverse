@@ -93,12 +93,12 @@ Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối gi�
 - [x] (api) A3.5 Cron: thêm closeDuels, weeklyReputationRecovery thật; test quyền admin (người thường bị chặn)
 
 ### ui
-- [ ] U3.1 Trang chủ (`/home`): chuỗi ngày, nhiệm vụ hôm nay (tiến độ phân số), feed lên cấp + bài đăng, thả cheer
-- [ ] U3.2 Thử thách (`/challenges`): tab Đang diễn ra / Đấu 1v1 / Chờ duyệt, thử thách tuần, bỏ phiếu đấu
-- [ ] U3.3 Hồ sơ người khác (`/u/[handle]`): theo dõi, nhắn tin, báo cáo (sheet), đề nghị trao đổi kỹ năng (lưu ý gặp mặt chỉ hiện sau khi chấp nhận)
-- [ ] U3.4 Tin nhắn (`/messages`, `/messages/[threadId]`) tối giản
-- [ ] U3.5 Quản trị biên tập viên (`/admin`): báo cáo, xử phạt, thu hồi level, trùng hash, kháng nghị — tối giản, chỉ editor thấy
-- [ ] U3.6 Thông báo (chuông trên header) tối giản + chụp/tự soi
+- [x] (ui) U3.1 Trang chủ (`/home`): chuỗi ngày, nhiệm vụ hôm nay (tiến độ phân số), feed lên cấp + bài đăng, thả cheer
+- [x] (ui) U3.2 Thử thách (`/challenges`): tab Đang diễn ra / Đấu 1v1 / Chờ duyệt, thử thách tuần, bỏ phiếu đấu
+- [x] (ui) U3.3 Hồ sơ người khác (`/u/[handle]`): theo dõi, nhắn tin, báo cáo (sheet), đề nghị trao đổi kỹ năng (lưu ý gặp mặt chỉ hiện sau khi chấp nhận)
+- [x] (ui) U3.4 Tin nhắn (`/messages`, `/messages/[threadId]`) tối giản
+- [x] (ui) U3.5 Quản trị biên tập viên (`/admin`): báo cáo, xử phạt, thu hồi level, trùng hash, kháng nghị — tối giản, chỉ editor thấy
+- [x] (ui) U3.6 Thông báo (chuông trên header) tối giản + chụp/tự soi
 
 ### qa
 - [~] (qa) Q3.1 E2E: trang chủ hiển thị nhiệm vụ + feed; thả cheer

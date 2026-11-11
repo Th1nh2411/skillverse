@@ -35,3 +35,13 @@ Danh sách đầy đủ trong tin cùng ngày ở `docs/inbox/ui.md`. Điểm c�
 
 ## [từ api → qa] Giai đoạn 4: proposal.* + admin.proposals
 Danh sách trong `docs/inbox/ui.md` (tin cùng tiêu đề). Kiểm: chưa đăng nhập → UNAUTHORIZED; `admin.proposals`/`admin.decideProposal` → FORBIDDEN với người thường; createNewSkill < 3 cấp → BAD_REQUEST; phiếu sửa tiêu chí của người chưa đạt cấp yêu cầu có weight 0; `/api/cron` trả `closeExpiredProposals.result = {criteriaClosed, criteriaAccepted, newSkillExpired}`.
+
+## [từ ui → qa] Nhãn màn giai đoạn 3
+- Trang chủ `/home`: h2 "Nhiệm vụ hôm nay" + "k/3"; dòng nhiệm vụ "Duyệt 2 bằng chứng…" là link `/review`; "Luyện kỹ năng 10 phút" có nút "Xong"; thẻ "N bằng chứng cần bạn duyệt" (link `/review`) khi hàng đợi không rỗng; nút cổ vũ `aria-pressed`, tên "Cổ vũ"/"Bỏ cổ vũ", chữ là số lượt; báo cáo bài: nút tên "Báo cáo bài viết".
+- Header: link "Tin nhắn", link "Thông báo" (hoặc "Thông báo, N chưa đọc").
+- `/challenges` tablist: "Đang diễn ra" / "Đấu 1v1" / "Chờ duyệt" (+ số), `?tab=duels|pending`; "Tham gia" → `/proof/new?skill=…&challenge=…` (nộp xong tự join); đấu: nút "Bầu <tên>"; chờ duyệt: "Ẩn danh #XXXX", nút "Xác thực" → `/review/<assignmentId>`.
+- `/u/<handle>`: "Theo dõi"/"Đã theo dõi" (aria-pressed), "Nhắn tin" → `/messages/<threadId>`, "Báo cáo" (sheet radio + "Gửi báo cáo" → "Đã gửi. Biên tập viên sẽ xem."), trao đổi: select "Bạn dạy"/"<tên> dạy", radio "Gặp trực tiếp"/"Gọi video", "Gửi đề nghị"; lưu ý "Gặp lần đầu ở nơi công cộng" chỉ khi đã nhận lời + gặp trực tiếp.
+- `/swaps`: "Nhận lời"/"Từ chối" (người nhận), "Hủy đề nghị", "Đã học xong", sao "N sao" + "Gửi".
+- `/messages`, `/messages/<id>`: textbox "Tin nhắn", nút "Gửi" (Enter gửi).
+- `/notifications`: mở trang = đánh dấu đã đọc; review_assigned → `/review`.
+- `/admin`: không phải biên tập viên → 404; tab "Báo cáo"/"Trùng video"/"Kháng nghị" (`?tab=disputed|appeals`); nút "Bác bỏ"/"Xác nhận", "Hợp lệ, cho duyệt"/"Gỡ bằng chứng", "Giữ kết quả"/"Duyệt lại".
