@@ -149,8 +149,8 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 - [ ] U5.2 Trạng thái rỗng / lỗi / đang tải cho mọi màn
 
 ### domain
-- [~] (domain) D5.1 Rà phủ test: assignReviewers, finalizeProof (cả thu hồi), uy tín, bỏ phiếu đề xuất, hòa phiếu/quá hạn/trùng hash; bổ sung chỗ thiếu
-- [~] (domain) D5.2 Kiểm tra tính lại cache từ sổ cái: `recomputeUserCaches(userId)` khớp total_xp/reputation + test
+- [x] (domain) D5.1 Rà phủ test: assignReviewers, finalizeProof (cả thu hồi), uy tín, bỏ phiếu đề xuất, hòa phiếu/quá hạn/trùng hash; bổ sung chỗ thiếu
+- [x] (domain) D5.2 Kiểm tra tính lại cache từ sổ cái: `recomputeUserCaches(userId)` khớp total_xp/reputation + test
 
 ### qa
 - [ ] Q5.1 Chạy toàn bộ e2e trên build production cục bộ
