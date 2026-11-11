@@ -9,11 +9,20 @@ test.describe("Đăng nhập và chặn truy cập", () => {
     await expect(page, "A1.3: middleware chưa chuyển hướng về /login").toHaveURL(/\/login/);
   });
 
-  test("màn đăng nhập có Google và email", async ({ page }) => {
+  test("màn đăng nhập có email magic link (Google khi có AUTH_GOOGLE_ID)", async ({ page }) => {
     await gotoScreen(page, "/login", "Đăng nhập");
-    await expect(page.getByRole("button", { name: /Google/i })).toBeVisible();
     await expect(page.getByRole("textbox", { name: /email/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Gửi link" })).toBeVisible();
+    if (process.env.AUTH_GOOGLE_ID) await expect(page.getByRole("button", { name: /Google/i })).toBeVisible();
     await expectBasicA11y(page, "Đăng nhập");
+  });
+
+  test("đăng nhập dev bằng form trên màn đăng nhập", async ({ page }) => {
+    await gotoScreen(page, "/login", "Đăng nhập");
+    const devBtn = page.getByRole("button", { name: /minhhoang|Minh Hoàng/ });
+    test.skip((await devBtn.count()) === 0, "Màn đăng nhập chưa có khối đăng nhập dev");
+    await devBtn.first().click();
+    await expect(page).not.toHaveURL(/\/login/);
   });
 
   test("người đã onboarding đăng nhập dev vào được hồ sơ", async ({ page }) => {

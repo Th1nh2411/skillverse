@@ -37,7 +37,8 @@ export default defineConfig({
   ],
   webServer: {
     command: `pnpm exec next dev -p ${E2E_PORT}`,
-    url: `${E2E_BASE_URL}/`,
+    // Không dùng / (redirect tới /login có thể 404 khi màn chưa dựng) — manifest luôn 200 và không cần đăng nhập
+    url: `${E2E_BASE_URL}/manifest.webmanifest`,
     // Next dev biên dịch lần đầu khá lâu
     timeout: 180_000,
     reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",

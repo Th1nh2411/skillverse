@@ -40,7 +40,7 @@ export async function loginAs(page: Page, handle: SeedHandle): Promise<void> {
     const isJson = (res.headers()["content-type"] ?? "").includes("application/json");
     if ((res.status() === 404 && !isJson) || res.status() === 405) continue;
     if (res.status() >= 400) {
-      throw new Error(`Đăng nhập dev "${handle}" thất bại: ${p} → ${res.status()} ${await res.text()}`);
+      throw new Error(`Đăng nhập dev "${handle}" thất bại: ${p} → ${res.status()} ${(await res.text()).slice(0, 300)}`);
     }
     const cookies = await page.context().cookies();
     if (cookies.some((c) => /session/i.test(c.name))) return;
