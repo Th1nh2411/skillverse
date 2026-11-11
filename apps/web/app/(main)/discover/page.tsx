@@ -1,7 +1,8 @@
-export default function Page() {
-  return (
-    <main className="px-5 pt-5">
-      <h1 className="text-[22px] font-bold">Khám phá</h1>
-    </main>
-  );
+import type { Metadata } from "next";
+import { DiscoverView } from "./discover-view";
+
+export const metadata: Metadata = { title: "Khám phá" };
+
+export default function DiscoverPage() {
+  return <DiscoverView />;
 }
