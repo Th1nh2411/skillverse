@@ -42,7 +42,7 @@ export default defineConfig({
     // Không dùng / (redirect tới /login có thể 404 khi màn chưa dựng) — manifest luôn 200 và không cần đăng nhập
     url: `${E2E_BASE_URL}/manifest.webmanifest`,
     // Next dev biên dịch lần đầu khá lâu
-    timeout: 180_000,
+    timeout: 300_000,
     reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     stdout: process.env.E2E_SERVER_LOG === "1" ? "pipe" : "ignore",
     stderr: "pipe",

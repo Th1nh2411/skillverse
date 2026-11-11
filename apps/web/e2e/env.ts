@@ -7,6 +7,9 @@ export const E2E_BASE_URL = `http://localhost:${E2E_PORT}`;
 export const E2E_DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? "postgresql://skillverse:skillverse@localhost:5433/skillverse_e2e";
 
+/** Secret cron riêng cho e2e (dev server e2e nhận giá trị này, ghi đè .env). */
+export const E2E_CRON_SECRET = process.env.E2E_CRON_SECRET ?? "e2e-cron-secret";
+
 export function assertE2eDatabase(url: string): void {
   const dbName = new URL(url).pathname.replace(/^\//, "");
   if (!dbName.endsWith("_e2e")) {
@@ -29,5 +32,6 @@ export function e2eEnv(): Record<string, string> {
     AUTH_DEV_LOGIN: "true",
     AUTH_TRUST_HOST: "true",
     NEXT_TELEMETRY_DISABLED: "1",
+    CRON_SECRET: E2E_CRON_SECRET,
   };
 }
