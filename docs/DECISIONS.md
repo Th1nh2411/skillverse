@@ -23,5 +23,19 @@ Ghi lại mọi chỗ tài liệu không nói rõ và phương án đã chọn. 
 - **D40 — Thu hồi level vẫn đi qua `finalizeProof()`**. DATA_MODEL yêu cầu hạ `user_skills.level` khi báo cáo gian lận được xác nhận, trong khi quy tắc bắt buộc nói chỉ `finalizeProof()` ghi level. Giải pháp: `finalizeProof` có nhánh thu hồi (`outcome: "revoked"`, kèm report/sanction) — vẫn là hàm DUY NHẤT ghi level, trong một transaction: tạo `sanctions(level_revoked, proof_id)`, đặt level = target_level − 1 (nếu đang ≥ target_level), dòng âm `xp_ledger(revoked)`, −15 uy tín người duyệt đạt, cập nhật holder_count; không xóa bản ghi nào.
 - **D41 — Kháng nghị được chấp nhận (`overturned`)** không ghi level trực tiếp: mở một vòng duyệt mới với người duyệt khác; kết quả vẫn chốt bằng `finalizeProof`.
 
+- **D42 — Cây kỹ năng**: nút `achieved` khi level = max_level; `locked` khi có kỹ năng cha chưa đạt required_level; còn lại `practicing` (kể cả level 0).
+- **D43 — "Huy hiệu hiếm" trên hồ sơ** = số kỹ năng người dùng đạt cấp ≥ 1 mà kỹ năng đó Hiếm/Huyền thoại (không phải bảng user_badges).
+- **D44 — "Đạt cấp cao"** ở chi tiết kỹ năng = level ≥ max_level − 1.
+- **D45 — Số kỹ năng tối thiểu khi onboarding (3)** là hằng số form (`ONBOARDING_MIN_SKILLS` trong packages/validation), không phải ngưỡng nghiệp vụ nên không đưa vào app_config.
+- **D46 — Khám phá**: "Hiếm nhất" bỏ kỹ năng holder_count = 0; "Thịnh hành" growth = (tuần này − tuần trước)/max(tuần trước, 1), chỉ lấy growth > 0.
+
+## Auth & API
+- **D50 — Auth.js v5** với adapter tự viết trên Prisma, session lưu database; cùng `session_token` dùng cho cookie (web) và `Authorization: Bearer` (mobile). Google chỉ bật khi có biến môi trường; EMAIL_SERVER trống → link magic in ra console.
+- **D51 — Đăng nhập dev** (`POST /api/dev/login`) chỉ khi `AUTH_DEV_LOGIN=true`, và bị tắt cứng khi `VERCEL_ENV=production`.
+- **D52 — Proxy (Next 16 `proxy.ts`)** tra `auth_sessions` để chuyển hướng `/login`, `/onboarding`; quyền thật vẫn kiểm tra trong tRPC.
+- **D53 — `/api/auth/session`** chỉ trả `{expires, user:{id,name,image}}`; người dùng banned/đã xóa không có phiên; handle tự sinh từ tên bỏ dấu, trùng thì thêm `_NNNN`.
+- **D54 — DB test tách riêng**: domain `skillverse_test`, api `skillverse_test_api` (tự tạo + migrate trong global-setup), e2e `skillverse_e2e`.
+
 ## Giao diện
+- **D31 — Font tiêu đề Bitter** (slab, subset vietnamese, 700/800) cùng Be Vietnam Pro cho nội dung.
 - **D30 — Skill thiết kế**: `.claude/skills/skillverse-ui/SKILL.md` (bản sao từ `SKILL.md` gốc) ưu tiên hơn mockup về thẩm mỹ. Plugin `frontend-design` chưa được cài trong phiên (cần chạy `/plugin install frontend-design@claude-plugins-official`); agent ui đọc trực tiếp nội dung skill đó từ marketplace cục bộ.
