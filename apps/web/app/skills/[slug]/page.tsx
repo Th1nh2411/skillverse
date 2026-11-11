@@ -70,7 +70,7 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
         <div className="mx-5 mt-4 flex items-center gap-2 self-start rounded-full border border-accent-line bg-accent-soft py-1 pl-3 pr-1 text-[13px] font-semibold text-accent">
           {d.riskLevel === "high" ? <ShieldAlert size={16} aria-hidden /> : <TriangleAlert size={16} aria-hidden />}
           {d.riskLevel === "high" ? "Rủi ro cao" : "Cần cẩn thận"}
-          <InfoSheet title="An toàn khi luyện" label="Xem lưu ý an toàn">
+          <InfoSheet title="An toàn khi luyện" label="Cách luyện an toàn">
             Luôn luyện ở nơi an toàn, có người biết bạn đang làm gì và có sẵn dụng cụ xử lý sự cố (nước dập lửa, bộ sơ cứu). Bằng
             chứng quay cảnh nguy hiểm cho bản thân hoặc người khác sẽ bị từ chối.
           </InfoSheet>

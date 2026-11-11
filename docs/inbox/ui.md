@@ -3,7 +3,7 @@
 Người khác THÊM tin nhắn vào cuối file (không sửa/xóa tin cũ). Định dạng: `## [từ X → ui] tiêu đề` + nội dung. Chủ hộp thư đánh dấu `(đã xử lý)` sau tiêu đề khi xong.
 
 
-## [từ domain → ui] Dữ liệu giai đoạn 1 (output các hàm domain mà router api trả về)
+## [từ domain → ui] Dữ liệu giai đoạn 1 (output các hàm domain mà router api trả về) (đã xử lý)
 Chi tiết chữ ký ở `docs/inbox/api.md` (tin cùng tiêu đề); kiểu chính xác lấy qua `inferRouterOutputs<AppRouter>` khi api xong. Điểm UI cần biết:
 - `rarity`: `"legendary" | "rare" | null` (Huyền thoại / Hiếm / không nhãn), tính từ holderCount theo app_config.
 - Cây kỹ năng: `node.state` = `achieved` (đạt cấp cao nhất) | `practicing` (đã mở, gồm cả cấp 0) | `locked` (kỹ năng cha chưa đạt `requiredLevel`, xem `node.prerequisites`). `node.next` = yêu cầu cấp kế tiếp (level, title, xpReward, criteria[], minReviewers, minReviewerLevel, holdersAtOrAbove = "N người đã đạt cấp X"). `node.pendingProof` = đang chờ duyệt. Đếm "4/8 nút đã mở" = `unlockedCount/totalCount`.
@@ -29,7 +29,7 @@ Màn `/login`:
 - Đăng nhập dev (khi `process.env.AUTH_DEV_LOGIN === "true"`): `<form method="post" action="/api/dev/login">` với `<input name="handle">` (+ tùy chọn `next=/duong-dan`) → 303 về `next` (mặc định `/`). Không đặt handle lên URL.
 - Đăng xuất: server action `signOut({ redirectTo: "/login" })` từ `@/auth`.
 
-## [từ qa → ui] E2E giai đoạn 1 + 2 lưu ý nhỏ
+## [từ qa → ui] E2E giai đoạn 1 + 2 lưu ý nhỏ (đã xử lý)
 - E2E ở `apps/web/e2e/*.spec.ts` (chạy: `pnpm e2e`, cổng 3200, DB skillverse_e2e). Đăng nhập, onboarding, hồ sơ, cây kỹ năng, chi tiết kỹ năng: pass (kể cả a11y cơ bản: tên truy cập, vùng chạm 44px, lang=vi, không emoji). Selector dùng role/nhãn tiếng Việt — nếu đổi nhãn, các nhãn test đang dựa vào: "Bạn muốn giỏi điều gì?", nút "Tiếp tục"/"Đã chọn N/3"/"Bắt đầu thôi", chip aria-pressed, "Kỹ năng nổi bật", "Cây kỹ năng", "Gửi xác thực", "Rủi ro cao", ⓘ có nhãn bắt đầu bằng "Cách ".
 - Khám phá (`/discover`, U1.6) chưa dựng → discover.spec.ts đang fail/skip. Test chờ: h1 "Khám phá", heading "Hiếm nhất…" (trong `<section>`, thứ tự holder_count tăng dần: Thổi thủy tinh, Sống sót 72 giờ, Viết chữ ngược gương), heading "Thịnh hành…", bộ lọc "Sinh tồn"/"Kỹ năng dị"/"Thủ công"/"Thể chất" (button/tab/link), ô `searchbox` hoặc textbox tên chứa "Tìm"; gõ "nút dây" → kết quả "Thắt nút dây" dẫn tới `/skills/that-nut-day`; không kết quả → "Không tìm thấy…"/"Chưa có…"/"Đề xuất kỹ năng".
 - Nhỏ: `apps/web/app/(main)/profile/page.tsx` — IconLink "Thông báo" trỏ `/notifications` đang 404. Gợi ý: tạm ẩn hoặc dựng trang rỗng (EmptyState) cho tới giai đoạn thông báo.
