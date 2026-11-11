@@ -87,9 +87,73 @@ body {
 .animate-fade-in {
   animation: fade-in 180ms ease-out;
 }
+/* Lên cấp: mũi khâu chạy quanh viền huy hiệu, rồi số cấp hiện ra */
+.patch-sew {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  animation: patch-sew 1750ms cubic-bezier(0.55, 0.1, 0.35, 1) 250ms forwards;
+}
+@keyframes patch-sew {
+  85% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+.patch-sewn {
+  opacity: 0;
+  animation: fade-in 300ms ease-out 1650ms forwards;
+}
+.patch-pop {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: patch-pop 420ms cubic-bezier(0.2, 1.4, 0.4, 1) 1650ms forwards;
+}
+@keyframes patch-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.rise-in {
+  opacity: 0;
+  animation: rise-in 400ms ease-out forwards;
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-sheet-in,
   .animate-fade-in {
     animation: none;
+  }
+  .patch-sew {
+    animation: none;
+    display: none;
+  }
+  .patch-sewn {
+    animation: none;
+    opacity: 1;
+  }
+  .patch-pop,
+  .rise-in {
+    animation: none;
+    opacity: 1;
   }
 }

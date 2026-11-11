@@ -112,3 +112,12 @@ const nf = new Intl.NumberFormat("vi-VN");
 export function formatNumber(n: number): string {
   return nf.format(n);
 }
+
+/**
+ * Hình + chỉ thêu cho một kỹ năng mà payload có thể chưa kèm danh mục/độ hiếm
+ * (vd. review.queue). Thiếu thì về hình tròn, chỉ thường.
+ */
+export function patchOf(skill: { slug: string; category?: { slug: string }; rarity?: Rarity }) {
+  const categorySlug = skill.category?.slug ?? "";
+  return { categorySlug, rarity: skill.rarity ?? null, icon: skillIcon(skill.slug, categorySlug) };
+}

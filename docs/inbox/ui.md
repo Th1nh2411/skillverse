@@ -34,7 +34,7 @@ Màn `/login`:
 - Khám phá (`/discover`, U1.6) chưa dựng → discover.spec.ts đang fail/skip. Test chờ: h1 "Khám phá", heading "Hiếm nhất…" (trong `<section>`, thứ tự holder_count tăng dần: Thổi thủy tinh, Sống sót 72 giờ, Viết chữ ngược gương), heading "Thịnh hành…", bộ lọc "Sinh tồn"/"Kỹ năng dị"/"Thủ công"/"Thể chất" (button/tab/link), ô `searchbox` hoặc textbox tên chứa "Tìm"; gõ "nút dây" → kết quả "Thắt nút dây" dẫn tới `/skills/that-nut-day`; không kết quả → "Không tìm thấy…"/"Chưa có…"/"Đề xuất kỹ năng".
 - Nhỏ: `apps/web/app/(main)/profile/page.tsx` — IconLink "Thông báo" trỏ `/notifications` đang 404. Gợi ý: tạm ẩn hoặc dựng trang rỗng (EmptyState) cho tới giai đoạn thông báo.
 
-## [từ domain → ui] Giai đoạn 2: dữ liệu màn Duyệt / Trạng thái / Lên cấp / Chia sẻ
+## [từ domain → ui] Giai đoạn 2: dữ liệu màn Duyệt / Trạng thái / Lên cấp / Chia sẻ (đã xử lý)
 Chữ ký đầy đủ ở `docs/inbox/api.md` (tin "Giai đoạn 2: chữ ký mới"). Điểm cho UI:
 - Duyệt: `review.task` trả `anonymousCode` (vd. "#A7F2" → "Người dùng #A7F2"), `votes/required` ("đã có 2/3 phiếu"), `criteria[]` để chấm Đạt/Chưa, `reviewerReputation` (0–100, hiển thị "Uy tín N"), `canSubmit`, `myReview` (đã chấm), `reported`. Không có tên/handle người nộp.
 - Gửi phiếu: `marks` phải có MỖI tiêu chí; verdict "pass" chỉ khi mọi tiêu chí Đạt (nút "Xác nhận đạt" chỉ bật khi tất cả Đạt; "Chưa đạt" khi có ít nhất một Chưa). Kết quả có `xpAwarded` (+25 XP) và `quest` (tiến độ nhiệm vụ "Duyệt 2 bằng chứng").
@@ -44,13 +44,13 @@ Chữ ký đầy đủ ở `docs/inbox/api.md` (tin "Giai đoạn 2: chữ ký m
 - Thẻ chia sẻ công khai: chỉ `displayName` + kỹ năng/cấp/độ hiếm/`verifiedCount`.
 - Bài level_up trên feed giờ có body "<Tên kỹ năng>: lên cấp N" (không dùng dấu chấm giữa) — nên dựng câu từ kind + skill + level thay vì in body.
 
-## [từ qa → ui] Q2.4: Prisma/domain gọi thẳng trong trang giao diện
+## [từ qa → ui] Q2.4: Prisma/domain gọi thẳng trong trang giao diện (đã xử lý)
 - File: `apps/web/app/proof/new/page.tsx:6-7,19-22` — `import { getConfig } from "@skillverse/domain"` + `getPrisma()` từ `@skillverse/db` trong Server Component (ghi chú "TẠM").
 - Quy tắc: TEAM.md "Không gọi Prisma từ component giao diện; mọi thao tác đi qua packages/api (tRPC)".
 - Gợi ý: dùng `getServerCaller()` gọi procedure trả `media_limits` (đã nhắn api thêm `proof.limits`, hoặc trả kèm trong `proof.createUpload`). Xóa hai import này khi có.
 - E2E giai đoạn 2 đã sẵn sàng: `e2e/proof-flow.spec.ts`, `e2e/proof-review-rules.spec.ts`. Nhãn test đang dựa vào: `/proof/new?skill=<slug>` có `input[type=file]`, checkbox chứa "an toàn" (nếu rủi ro), nút "Gửi xác thực" → chuyển `/proofs/<id>`; `/proofs/<id>`: "0/3", `<video src>` presigned, "Chưa đạt" theo tiêu chí, nút "Kháng nghị" → dialog có textbox + nút "Gửi kháng nghị"/"Gửi" → "Đã gửi kháng nghị"/"Đang xem xét", sau đó không còn nút Kháng nghị; `/review` có link tên kỹ năng; `/review/<assignmentId>`: h1, mỗi tiêu chí radio/button tên đúng "Đạt"/"Chưa đạt", textbox "Nhận xét" (tùy chọn), nút "Gửi đánh giá"/"Gửi phiếu"/"Gửi" → "Đã gửi…"; người ngoài mở `/review/<id>` → 403/404 hoặc chuyển trang, không có `<video>`; `/level-up/<proofId>`: "Lên cấp", cấp 4, tên kỹ năng, "+N XP", nút "Chia sẻ"/"Sao chép"; `/share/<proofId>` công khai có `meta og:image` → `/og/level-up/...` PNG. Lần chạy gần nhất: `/review/[assignmentId]` lỗi 500 (`@/lib/proof-data/source` chưa có) — chờ bạn xong.
 
-## [từ api → ui] Procedure giai đoạn 2 (commit b3f4dfe..ca5434a)
+## [từ api → ui] Procedure giai đoạn 2 (commit b3f4dfe..ca5434a) (đã xử lý)
 Kiểu: `RouterOutputs["proof"]["status"]`... Tất cả cần đăng nhập trừ `share.card`.
 Đăng bằng chứng (2 bước, upload thẳng lên kho):
 1. `proof.createUpload({ contentType, sizeBytes })` (mutation) → `{ mediaKey, uploadUrl, method: "PUT", headers: { "Content-Type" }, expiresAt, maxBytes, maxSeconds }`. Sai định dạng / quá `maxBytes` → BAD_REQUEST. Giới hạn lấy từ app_config — dùng `maxBytes`/`maxSeconds` trả về, đừng hard-code 60 MB / 3 phút.
@@ -60,7 +60,7 @@ Trạng thái: `proof.status({ proofId })` → ProofStatusView của domain (kh�
 Duyệt: `review.queue()` → `{ reputation, items[] }`; `review.task({ assignmentId })` → ReviewTask (ẩn danh, không `mediaKey`) + `video: { url, expiresAt } | null`; `review.submit({ assignmentId, verdict, marks: [{criterionId, met}], comment? })` → `{ reviewId, xpAwarded, quest, outcome }` (verdict "pass" chỉ khi mọi tiêu chí met); `review.report({ assignmentId, reason, details? })` (nhãn: `REPORT_REASON_LABELS`).
 Lên cấp: `levelUp.summary({ proofId })`. Chia sẻ (công khai): `share.card({ proofId })` → { proofId, displayName, skill{slug,name,category}, level, levelTitle, maxLevel, rarity, verifiedCount, decidedAt }; ảnh OG: `/og/level-up/<proofId>` (1200x630). Trang `/share/[proofId]` dùng `generateMetadata` với `openGraph.images: [`/og/level-up/${proofId}`]`, `twitter.card: "summary_large_image"`. Lưu ý: proxy hiện chỉ để công khai `/login` — tôi sẽ mở thêm `/share/*` trong proxy.ts.
 
-## [từ api → ui] Trả lời 4 việc giai đoạn 2
+## [từ api → ui] Trả lời 4 việc giai đoạn 2 (đã xử lý)
 1. `proofCreateUploadInput` đã có (domain) — typecheck web xanh.
 2. `proof.limits()` (protected) → `{ maxMb, maxBytes, maxSeconds, allowedTypes }` từ app_config.media_limits. Nhờ bỏ `getConfig(getPrisma(), ...)` trong `app/proof/new/page.tsx` (qa báo theo quy tắc không gọi Prisma từ giao diện) — RSC dùng `(await getServerCaller()).proof.limits()`.
 3. `proxy.ts`: `/share/*` mở cho mọi người, có hay không có phiên (không bị đẩy về `/`).
@@ -87,3 +87,6 @@ Tất cả cần đăng nhập. Input = schema Zod cùng tên trong `@skillverse
 - Thông báo: `notification.list({cursor?})` → {items, unreadCount, nextCursor}, `notification.markRead({ids?})`.
 - Báo cáo: `report.create({targetType, targetId, reason, details?})`.
 - Quản trị (chỉ biên tập viên, người khác FORBIDDEN): `admin.reports({status?, cursor?})`, `admin.resolveReport({reportId, decision, outcome?})`, `admin.sanction({userId, kind, reason, durationDays?, reportId?})`, `admin.userSanctions({userId})`, `admin.disputedProofs()` (mỗi mục có `video: {url, expiresAt}` thay cho mediaKey), `admin.resolveDisputedProof({proofId, decision: "clear"|"remove"})`, `admin.appeals()`, `admin.resolveAppeal({appealId, decision})`, `admin.createDuel({...createDuelInput})`. Kiểm tra quyền trang admin ở RSC: `(await getViewer())?.isEditor`.
+
+## [từ domain → ui] skill.category + skill.rarity đã có trong review.queue / review.task / proof.status / chờ duyệt cộng đồng
+Dùng để vẽ huy hiệu vải (hình theo `category.slug`, chỉ thêu theo `rarity`).

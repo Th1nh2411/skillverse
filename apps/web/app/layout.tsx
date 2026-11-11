@@ -19,6 +19,7 @@ const bitter = Bitter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.APP_URL ?? process.env.AUTH_URL ?? "http://localhost:3000"),
   title: { default: "SkillVerse", template: "%s · SkillVerse" },
   description: "Lên level kỹ năng bằng bằng chứng được cộng đồng xác thực.",
   applicationName: "SkillVerse",

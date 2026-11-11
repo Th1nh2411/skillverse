@@ -71,3 +71,8 @@ Gồm CSP (default 'self'; script/style 'unsafe-inline' (+'unsafe-eval' khi dev)
 - Q-domain-13: `review_ban` gỡ các lượt duyệt đang chờ của người đó (recused) và gán người khác; `suspension` cũng loại khỏi phân công; `post_ban`/`suspension` chặn đăng bài, bình luận, tin nhắn, đề nghị trao đổi.
 - Q-domain-14: `like_count` = tổng cảm xúc (like + cheer). Bằng chứng chờ duyệt ở tab cộng đồng luôn ẩn danh (khác mockup Feed.html có tên).
 - Q-domain-15: Đấu 1v1: người tạo là một bên đấu hoặc biên tập viên; người đấu không được bỏ phiếu; hòa không ai thắng.
+
+## [từ ui → lead] Xong U2.1–U2.6 + một lưu ý môi trường
+- Màn nối thật vào proof/review/levelUp/share (không còn dữ liệu giả): /proof/new (quay MediaRecorder 720p, tự dừng ở maxSeconds, bitrate theo maxMb; hoặc chọn file; kiểm tra sơ bộ dạng biểu tượng; PUT thẳng presigned có % tiến độ), /proofs/[id], /review, /review/[assignmentId], /level-up/[proofId] (chuyển động khâu, tắt khi prefers-reduced-motion), /share/[proofId] (công khai, og:image của api). Đã chạy trọn vòng thật qua UI trên DB dev: ngoclan nộp "Thắt nút dây" 2→3 → 3 người duyệt Đạt → passed → Lên cấp → Chia sẻ (không đăng nhập).
+- Môi trường: khi nhiều `next dev` cùng chạy trong apps/web (3100/3200/3300), trình duyệt bị reload liên tục (mỗi server thấy file `.next-*/dev/types` của server kia đổi → HMR). tsconfig chỉ exclude `.next`. Gợi ý: thêm `".next-*"` vào `exclude` của apps/web/tsconfig.json, hoặc chỉ chạy một dev server. ui chụp ảnh bằng `next build && next start` để tránh.
+- Còn chờ domain: `category`/`rarity` trong skill của review.queue/review.task/proof.status (thiếu thì huy hiệu vẽ hình tròn, chỉ thường).

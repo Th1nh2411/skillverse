@@ -1,6 +1,14 @@
 import { Lock, type LucideIcon } from "lucide-react";
 import { useId } from "react";
-import { patchFabric, patchShape, RARITY_LABEL, threadOf, type PatchShape, type Rarity, type Thread } from "@/lib/skill-visual";
+import {
+  patchFabric,
+  patchShape,
+  RARITY_LABEL,
+  threadOf,
+  type PatchShape,
+  type Rarity,
+  type Thread,
+} from "@/lib/skill-visual";
 
 /**
  * Huy hiệu cấp độ vẽ như miếng vải thêu: viền vắt sổ (merrow) bằng chỉ, nền vải dệt chéo,
@@ -23,6 +31,8 @@ export type LevelPatchProps = {
   /** Nhãn cho trình đọc màn hình; bỏ trống nếu miếng vải chỉ để trang trí bên cạnh chữ. */
   label?: string;
   className?: string;
+  /** Chuyển động "khâu": chỉ chạy vòng quanh viền rồi hiện số. Tắt khi prefers-reduced-motion. */
+  stitch?: boolean;
 };
 
 const THREAD: Record<Thread, string> = {
@@ -43,7 +53,15 @@ const SHAPES: Record<Exclude<PatchShape, "circle">, Cmd[]> = {
     ["L", 9, 15],
     ["Z"],
   ],
-  hexagon: [["M", 50, 3], ["L", 91, 26.5], ["L", 91, 73.5], ["L", 50, 97], ["L", 9, 73.5], ["L", 9, 26.5], ["Z"]],
+  hexagon: [
+    ["M", 50, 3],
+    ["L", 91, 26.5],
+    ["L", 91, 73.5],
+    ["L", 50, 97],
+    ["L", 9, 73.5],
+    ["L", 9, 26.5],
+    ["Z"],
+  ],
   square: [
     ["M", 26, 6],
     ["L", 74, 6],
@@ -81,6 +99,7 @@ export function LevelPatch({
   size = 56,
   label,
   className,
+  stitch = false,
 }: LevelPatchProps) {
   const rarity = threadOf(rarityIn);
   const uid = useId().replace(/:/g, "");
@@ -88,12 +107,21 @@ export function LevelPatch({
   const fabric = patchFabric(categorySlug);
   const thread = THREAD[rarity];
   const a11y = label
-    ? { role: "img" as const, "aria-label": `${label}${rarity !== "common" ? `, ${RARITY_LABEL[rarity]}` : ""}` }
+    ? {
+        role: "img" as const,
+        "aria-label": `${label}${rarity !== "common" ? `, ${RARITY_LABEL[rarity]}` : ""}`,
+      }
     : { "aria-hidden": true as const };
 
   if (state === "locked") {
     return (
-      <svg viewBox="0 0 100 100" width={size} height={size} className={className} {...a11y}>
+      <svg
+        viewBox="0 0 100 100"
+        width={size}
+        height={size}
+        className={className}
+        {...a11y}
+      >
         <path d={shapePath(shape, 0.96)} fill="var(--color-surface)" />
         <path
           d={shapePath(shape, 0.96)}
@@ -104,7 +132,14 @@ export function LevelPatch({
           strokeDasharray="5 4"
           strokeLinecap="round"
         />
-        <Lock x={36} y={36} width={28} height={28} strokeWidth={2.2} color="var(--color-muted)" />
+        <Lock
+          x={36}
+          y={36}
+          width={28}
+          height={28}
+          strokeWidth={2.2}
+          color="var(--color-muted)"
+        />
       </svg>
     );
   }
@@ -113,60 +148,100 @@ export function LevelPatch({
   const fontSize = level !== undefined && level >= 10 ? 34 : 40;
 
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} className={className} {...a11y}>
+    <svg
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      className={className}
+      {...a11y}
+    >
       <defs>
-        <pattern id={`twill-${uid}`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+        <pattern
+          id={`twill-${uid}`}
+          width="5"
+          height="5"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(35)"
+        >
           <rect width="5" height="5" fill={fabric} />
-          <line x1="0" y1="0" x2="0" y2="5" stroke="#000" strokeOpacity="0.16" strokeWidth="2" />
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="5"
+            stroke="#000"
+            strokeOpacity="0.16"
+            strokeWidth="2"
+          />
         </pattern>
       </defs>
 
-      {earned ? (
-        <>
-          {/* Viền vắt sổ: dải chỉ dày, có gân */}
-          <path d={shapePath(shape, 1)} fill={thread} />
+      {/* Vải nền tới mép: thấy được khi chỉ chưa khâu tới */}
+      {stitch ? (
+        <path d={shapePath(shape, 0.97)} fill={`url(#twill-${uid})`} />
+      ) : null}
+
+      <g className={stitch ? "patch-sewn" : undefined}>
+        {earned ? (
+          <>
+            {/* Viền vắt sổ: dải chỉ dày, có gân */}
+            <path d={shapePath(shape, 1)} fill={thread} />
+            <path
+              d={shapePath(shape, 0.95)}
+              fill="none"
+              stroke="#000"
+              strokeOpacity="0.28"
+              strokeWidth={5}
+              strokeDasharray="0.9 1.6"
+            />
+            <path d={shapePath(shape, 0.88)} fill={`url(#twill-${uid})`} />
+          </>
+        ) : (
+          <>
+            <path d={shapePath(shape, 0.96)} fill={`url(#twill-${uid})`} />
+            <path
+              d={shapePath(shape, 0.96)}
+              fill="none"
+              stroke={thread}
+              strokeOpacity="0.45"
+              strokeWidth={1.6}
+              strokeDasharray="1 3.2"
+              strokeLinecap="round"
+            />
+          </>
+        )}
+
+        {/* Đường khâu chạy bên trong */}
+        <path
+          d={shapePath(shape, earned ? 0.77 : 0.82)}
+          fill="none"
+          stroke={thread}
+          strokeWidth={2}
+          strokeDasharray="4 3"
+          strokeLinecap="round"
+        />
+        {rarity === "legendary" && earned ? (
           <path
-            d={shapePath(shape, 0.95)}
+            d={shapePath(shape, 0.69)}
             fill="none"
-            stroke="#000"
-            strokeOpacity="0.28"
-            strokeWidth={5}
-            strokeDasharray="0.9 1.6"
-          />
-          <path d={shapePath(shape, 0.88)} fill={`url(#twill-${uid})`} />
-        </>
-      ) : (
-        <>
-          <path d={shapePath(shape, 0.96)} fill={`url(#twill-${uid})`} />
-          <path
-            d={shapePath(shape, 0.96)}
-            fill="none"
-            stroke={thread}
-            strokeOpacity="0.45"
-            strokeWidth={1.6}
-            strokeDasharray="1 3.2"
+            stroke="var(--color-thread-legendary-2)"
+            strokeWidth={1.4}
+            strokeDasharray="2 2.6"
             strokeLinecap="round"
           />
-        </>
-      )}
+        ) : null}
+      </g>
 
-      {/* Đường khâu chạy bên trong */}
-      <path
-        d={shapePath(shape, earned ? 0.77 : 0.82)}
-        fill="none"
-        stroke={thread}
-        strokeWidth={2}
-        strokeDasharray="4 3"
-        strokeLinecap="round"
-      />
-      {rarity === "legendary" && earned ? (
+      {/* Lên cấp: một sợi chỉ chạy vòng quanh mép, rồi nhường chỗ cho viền đã khâu */}
+      {stitch ? (
         <path
-          d={shapePath(shape, 0.69)}
+          d={shapePath(shape, 0.94)}
           fill="none"
-          stroke="var(--color-thread-legendary-2)"
-          strokeWidth={1.4}
-          strokeDasharray="2 2.6"
+          stroke={thread}
+          strokeWidth={6}
           strokeLinecap="round"
+          pathLength={1}
+          className="patch-sew"
         />
       ) : null}
 
@@ -179,12 +254,24 @@ export function LevelPatch({
           fill={thread}
           fontWeight={800}
           fontSize={fontSize}
-          style={{ fontFamily: "var(--font-display)", fontVariantNumeric: "tabular-nums" }}
+          className={stitch ? "patch-pop" : undefined}
+          style={{
+            fontFamily: "var(--font-display)",
+            fontVariantNumeric: "tabular-nums",
+          }}
         >
           {level}
         </text>
       ) : Icon ? (
-        <Icon x={33} y={shape === "shield" ? 31 : 33} width={34} height={34} strokeWidth={2.2} color={thread} />
+        <Icon
+          x={33}
+          y={shape === "shield" ? 31 : 33}
+          width={34}
+          height={34}
+          strokeWidth={2.2}
+          color={thread}
+          className={stitch ? "patch-pop" : undefined}
+        />
       ) : null}
     </svg>
   );

@@ -60,19 +60,19 @@ Màn: Đăng bằng chứng (Proof.html), Duyệt (Review.html), Lên cấp (Lev
 - [x] (api) A2.5 Test router (quyền: người không được phân công không duyệt được, không xem được video; cron sai secret → 401)
 
 ### ui
-- [ ] U2.1 Đăng bằng chứng (`/proof/new`): chọn kỹ năng/cấp, quay trong app bằng MediaRecorder 720p (ưu tiên) hoặc chọn file, giới hạn 60 MB / 3 phút, upload thẳng presigned, kết quả kiểm tra sơ bộ dạng biểu tượng, cam kết an toàn một lần, nút "Gửi xác thực"
-- [ ] U2.2 Trạng thái bằng chứng của tôi (`/proofs/[id]`): tiến độ 0/3, kết quả từng tiêu chí khi trượt, nút "Kháng nghị"
-- [ ] U2.3 Duyệt (`/review` hàng đợi + `/review/[assignmentId]`): ẩn danh (biểu tượng khiên + ⓘ), chấm từng tiêu chí Đạt/Chưa đạt, nhận xét, "Báo cáo" mở sheet lý do, uy tín kèm ⓘ
-- [ ] U2.4 Lên cấp (`/level-up/[proofId]`): chuyển động "khâu" huy hiệu (tôn trọng prefers-reduced-motion), XP, huy hiệu, nút chia sẻ (Web Share API, fallback sao chép link)
-- [ ] U2.5 Trang công khai `/share/[proofId]` (không cần đăng nhập, không lộ dữ liệu cá nhân ngoài tên hiển thị) dùng ảnh OG của api
-- [ ] U2.6 Chụp màn hình + tự soi từng màn như giai đoạn 1
+- [x] (ui) U2.1 Đăng bằng chứng (`/proof/new`): chọn kỹ năng/cấp, quay trong app bằng MediaRecorder 720p (ưu tiên) hoặc chọn file, giới hạn 60 MB / 3 phút, upload thẳng presigned, kết quả kiểm tra sơ bộ dạng biểu tượng, cam kết an toàn một lần, nút "Gửi xác thực"
+- [x] (ui) U2.2 Trạng thái bằng chứng của tôi (`/proofs/[id]`): tiến độ 0/3, kết quả từng tiêu chí khi trượt, nút "Kháng nghị"
+- [x] (ui) U2.3 Duyệt (`/review` hàng đợi + `/review/[assignmentId]`): ẩn danh (biểu tượng khiên + ⓘ), chấm từng tiêu chí Đạt/Chưa đạt, nhận xét, "Báo cáo" mở sheet lý do, uy tín kèm ⓘ
+- [x] (ui) U2.4 Lên cấp (`/level-up/[proofId]`): chuyển động "khâu" huy hiệu (tôn trọng prefers-reduced-motion), XP, huy hiệu, nút chia sẻ (Web Share API, fallback sao chép link)
+- [x] (ui) U2.5 Trang công khai `/share/[proofId]` (không cần đăng nhập, không lộ dữ liệu cá nhân ngoài tên hiển thị) dùng ảnh OG của api
+- [x] (ui) U2.6 Chụp màn hình + tự soi từng màn như giai đoạn 1
 
 ### qa
-- [~] (qa) Q2.1 E2E chính: người dùng nộp bằng chứng (file video mẫu nhỏ trong e2e/fixtures) → 3 người duyệt (đăng nhập dev từng người được phân công) chấm Đạt → người nộp thấy Lên cấp, level tăng
-- [~] (qa) Q2.2 E2E: trượt + kháng nghị; người duyệt không được phân công bị chặn; người duyệt không thấy tên người nộp
-- [~] (qa) Q2.3 E2E/HTTP: /api/cron sai secret → 401, đúng secret → 200
-- [~] (qa) Q2.4 Rà soát: finalizeProof là nơi duy nhất ghi level; mọi ngưỡng qua app_config; URL video là presigned có hạn; không lộ người nộp trong payload review
-- [~] (qa) Q2.5 Cập nhật docs/QA.md
+- [x] (qa) Q2.1 E2E chính: người dùng nộp bằng chứng (file video mẫu nhỏ trong e2e/fixtures) → 3 người duyệt (đăng nhập dev từng người được phân công) chấm Đạt → người nộp thấy Lên cấp, level tăng
+- [x] (qa) Q2.2 E2E: trượt + kháng nghị; người duyệt không được phân công bị chặn; người duyệt không thấy tên người nộp
+- [x] (qa) Q2.3 E2E/HTTP: /api/cron sai secret → 401, đúng secret → 200
+- [x] (qa) Q2.4 Rà soát: finalizeProof là nơi duy nhất ghi level; mọi ngưỡng qua app_config; URL video là presigned có hạn; không lộ người nộp trong payload review
+- [x] (qa) Q2.5 Cập nhật docs/QA.md
 
 ## Giai đoạn 3 — Xã hội và an toàn
 Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối giản cho biên tập viên, Hồ sơ người khác (PeerProfile.html) + trao đổi kỹ năng + nhắn tin.
