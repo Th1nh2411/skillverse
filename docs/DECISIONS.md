@@ -19,5 +19,9 @@ Ghi lại mọi chỗ tài liệu không nói rõ và phương án đã chọn. 
 ## Video
 - **D20 — Hash video = SHA-256 của file** (khác DATA_MODEL.md: perceptual hash). TODO bản chính thức: perceptual hash (vd. pHash khung hình qua ffmpeg) để bắt video gần trùng.
 
+## Nghiệp vụ
+- **D40 — Thu hồi level vẫn đi qua `finalizeProof()`**. DATA_MODEL yêu cầu hạ `user_skills.level` khi báo cáo gian lận được xác nhận, trong khi quy tắc bắt buộc nói chỉ `finalizeProof()` ghi level. Giải pháp: `finalizeProof` có nhánh thu hồi (`outcome: "revoked"`, kèm report/sanction) — vẫn là hàm DUY NHẤT ghi level, trong một transaction: tạo `sanctions(level_revoked, proof_id)`, đặt level = target_level − 1 (nếu đang ≥ target_level), dòng âm `xp_ledger(revoked)`, −15 uy tín người duyệt đạt, cập nhật holder_count; không xóa bản ghi nào.
+- **D41 — Kháng nghị được chấp nhận (`overturned`)** không ghi level trực tiếp: mở một vòng duyệt mới với người duyệt khác; kết quả vẫn chốt bằng `finalizeProof`.
+
 ## Giao diện
 - **D30 — Skill thiết kế**: `.claude/skills/skillverse-ui/SKILL.md` (bản sao từ `SKILL.md` gốc) ưu tiên hơn mockup về thẩm mỹ. Plugin `frontend-design` chưa được cài trong phiên (cần chạy `/plugin install frontend-design@claude-plugins-official`); agent ui đọc trực tiếp nội dung skill đó từ marketplace cục bộ.
