@@ -1,5 +1,6 @@
 import { Award, ScanFace, ShieldCheck, Video } from "lucide-react";
 import { InfoSheet } from "@/components/ui/sheet";
+import { SelfMark, VerifiedMark } from "@/components/milestone-tick";
 
 /**
  * "Nhờ xác nhận" là gì: tùy chọn, quay video để cộng đồng công nhận mốc → XP + huy hiệu thêu.
@@ -8,6 +9,16 @@ import { InfoSheet } from "@/components/ui/sheet";
 export function MilestoneRulesInfo({ reviewers, reviewerTitle }: { reviewers: number; reviewerTitle: string | null }) {
   return (
     <InfoSheet title="Nhờ xác nhận" label="Nhờ xác nhận là gì">
+      <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2 rounded-[12px] bg-surface px-3 py-2.5 text-[13px] font-semibold text-text">
+        <span className="inline-flex items-center gap-2">
+          <VerifiedMark size={22} />
+          Đã xác nhận
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <SelfMark size={22} />
+          Tự đánh dấu
+        </span>
+      </div>
       <ul className="flex flex-col gap-3 pt-1 text-text">
         <li className="flex items-start gap-3">
           <Award size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden />

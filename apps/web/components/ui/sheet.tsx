@@ -18,11 +18,15 @@ export function Sheet({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const openedAt = useRef(0);
 
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
+    if (open && !d.open) {
+      openedAt.current = performance.now();
+      d.showModal();
+    }
     if (!open && d.open) d.close();
   }, [open]);
 
@@ -32,7 +36,8 @@ export function Sheet({
       aria-label={title}
       onClose={onClose}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        // Bỏ qua chạm vào nền ngay khi sheet đang trượt lên (tránh đóng nhầm khi bấm nút đúng lúc mở).
+        if (e.target === e.currentTarget && performance.now() - openedAt.current > 350) onClose();
       }}
       className="m-0 mt-auto h-auto max-h-[85dvh] w-full max-w-none bg-transparent p-0 text-text backdrop:bg-black/60 open:flex open:justify-center"
     >

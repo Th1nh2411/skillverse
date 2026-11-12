@@ -16,12 +16,15 @@ const THREAD_VAR = {
 export function MilestoneBar({
   value,
   max,
+  verified,
   showNext = true,
   showCount = false,
   className = "",
 }: {
   value: number;
   max: number;
+  /** Số mốc đã được cộng đồng xác nhận (đoạn chỉ liền); phần còn lại tới `value` là tự đánh dấu (đoạn gạch chéo nhạt). Mặc định = value. */
+  verified?: number;
   /** Tô mốc kế tiếp bằng nét đứt hổ phách. */
   showNext?: boolean;
   /** Hiện "X/5" bên phải. */
@@ -33,7 +36,7 @@ export function MilestoneBar({
     <div className={`flex items-center gap-2 ${className}`}>
       <div
         role="progressbar"
-        aria-label={progressLabel(value, n)}
+        aria-label={`${progressLabel(value, n)}${verified !== undefined && verified < value ? `, ${verified} đã xác nhận` : ""}`}
         aria-valuemin={0}
         aria-valuemax={n}
         aria-valuenow={value}
@@ -41,12 +44,13 @@ export function MilestoneBar({
       >
         {Array.from({ length: n }, (_, i) => {
           const done = i < value;
+          const solid = i < (verified ?? value);
           const next = showNext && i === value;
           return (
             <span
               key={i}
               className={`h-[6px] flex-1 rounded-full ${
-                done ? "bg-trail" : next ? "border border-dashed border-accent" : "bg-surface-3"
+                done ? (solid ? "bg-trail" : "bg-hatch") : next ? "border border-dashed border-accent" : "bg-surface-3"
               }`}
             />
           );

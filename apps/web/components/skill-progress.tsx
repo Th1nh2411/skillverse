@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Hourglass, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Hourglass } from "lucide-react";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { MilestoneBar } from "@/components/ui/milestone";
 import { milestoneName } from "@/lib/milestone";
@@ -12,7 +12,6 @@ import { skillIcon, type Rarity } from "@/lib/skill-visual";
 export function SkillProgressRow({
   s,
   pending = false,
-  verifiedByCount = 0,
   patchSize = 52,
 }: {
   s: {
@@ -28,7 +27,6 @@ export function SkillProgressRow({
     maxLevel: number;
   };
   pending?: boolean;
-  verifiedByCount?: number;
   patchSize?: number;
 }) {
   const done = s.selfLevel > 0;
@@ -54,12 +52,11 @@ export function SkillProgressRow({
               <Hourglass size={13} aria-hidden />
               Chờ duyệt
             </span>
-          ) : verifiedByCount > 0 ? (
-            <span className="tabular inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold text-teal">
-              <ShieldCheck size={14} aria-hidden />
-              <span className="sr-only">Đã xác thực bởi</span>
-              {verifiedByCount}
-              <span className="sr-only">người</span>
+          ) : s.level > 0 ? (
+            <span className="tabular inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold text-accent">
+              <BadgeCheck size={15} aria-hidden />
+              {s.level}
+              <span className="sr-only">mốc đã xác nhận</span>
             </span>
           ) : null}
         </div>
@@ -73,7 +70,7 @@ export function SkillProgressRow({
             "Chưa xong mốc nào"
           )}
         </span>
-        <MilestoneBar value={s.selfLevel} max={s.maxLevel} showCount showNext={false} />
+        <MilestoneBar value={s.selfLevel} max={s.maxLevel} verified={s.level} showCount showNext={false} />
       </div>
     </Link>
   );

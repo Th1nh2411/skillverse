@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { MilestoneBar } from "@/components/ui/milestone";
 import { MilestoneRulesInfo } from "@/components/milestone-rules";
-import { TickNode, useMilestoneToggle, type TickState } from "@/components/milestone-tick";
+import { MarkLabel, TickNode, useMilestoneFlow, type MilestoneTarget, type TickState } from "@/components/milestone-tick";
 import { SummitArt } from "@/components/illustrations";
 import { milestoneName } from "@/lib/milestone";
 
@@ -53,27 +53,26 @@ export function MilestoneTrail({
   reviewerTitle: string | null;
 }) {
   const [checked, setChecked] = useState(() => new Set(levels.filter((l) => l.checked).map((l) => l.level)));
-  const [celebrate, setCelebrate] = useState<number | null>(null);
-  const { toggle, pending } = useMilestoneToggle();
+  const flow = useMilestoneFlow((level, on) =>
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(level);
+      else next.delete(level);
+      return next;
+    }),
+  );
+  const { pending, celebrate } = flow;
   const self = selfLevelOf(levels, checked);
   const max = levels.length;
   const verifyLevel = verifiedLevel + 1 <= max ? verifiedLevel + 1 : null;
   const locked = prerequisitesMet === false;
 
-  async function run(lv: TrailLevel, on: boolean) {
-    const name = milestoneName(lv.title, lv.level);
-    const prev = new Set(checked);
-    const next = new Set(checked);
-    if (on) next.add(lv.level);
-    else next.delete(lv.level);
-    setChecked(next);
-    setCelebrate(on ? lv.level : null);
-    const r = await toggle(lv.skillLevelId, on, name);
-    if (!r) {
-      setChecked(prev);
-      setCelebrate(null);
-    }
-  }
+  const target = (lv: TrailLevel): MilestoneTarget => ({
+    skillLevelId: lv.skillLevelId,
+    level: lv.level,
+    name: milestoneName(lv.title, lv.level),
+    task: lv.task,
+  });
 
   const verifyAction = (compact: boolean) =>
     pendingProofId ? (
@@ -99,7 +98,7 @@ export function MilestoneTrail({
         <h2 id="milestones" className="text-[17px] font-bold">
           {max} mốc
         </h2>
-        <MilestoneBar value={self} max={max} showCount className="flex-1" />
+        <MilestoneBar value={self} max={max} verified={verifiedLevel} showCount className="flex-1" />
       </div>
 
       <ol className="mt-2 flex flex-col px-3">
@@ -114,12 +113,21 @@ export function MilestoneTrail({
                 : "locked";
           const canCheck = state === "next" && !locked;
           const canUncheck = state === "checked" && lv.level === self;
+          const onPress =
+            state === "verified"
+              ? () => flow.showVerified(target(lv))
+              : canCheck
+                ? () => flow.askCheck(target(lv))
+                : canUncheck
+                  ? () => flow.askUncheck(target(lv))
+                  : undefined;
           const last = i === levels.length - 1;
           const isNext = state === "next";
 
           const head = (
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className={`text-[16px] font-bold leading-snug ${state === "locked" ? "text-muted" : "text-text"}`}>{name}</span>
+              {state === "verified" || state === "checked" ? <MarkLabel verified={state === "verified"} /> : null}
               {lv.task ? (
                 <span className={`line-clamp-2 text-[14px] leading-snug ${isNext ? "text-text" : "text-muted"}`}>{lv.task}</span>
               ) : null}
@@ -135,7 +143,7 @@ export function MilestoneTrail({
                     name={name}
                     celebrate={celebrate === lv.level}
                     disabled={pending}
-                    onToggle={canCheck ? () => run(lv, true) : canUncheck ? () => run(lv, false) : undefined}
+                    onPress={onPress}
                   />
                 </span>
                 {!last ? (
@@ -164,7 +172,7 @@ export function MilestoneTrail({
                     </ButtonLink>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <Button size="md" className="w-full" disabled={pending} onClick={() => run(lv, true)}>
+                      <Button size="md" className="w-full" disabled={pending} onClick={() => flow.askCheck(target(lv))}>
                         <Check size={18} strokeWidth={3} aria-hidden />
                         Xong rồi
                       </Button>
@@ -210,6 +218,8 @@ export function MilestoneTrail({
           );
         })}
       </ol>
+
+      {flow.sheet}
 
       {self >= max ? (
         <div className="mx-5 mt-4 flex items-center gap-4 rounded-[var(--radius-card)] border border-dashed border-border px-4 py-3">

@@ -4,11 +4,11 @@ import { ArrowLeft, Check, ChevronRight, Hourglass, Lock, Video } from "lucide-r
 import type { RouterOutputs } from "@skillverse/api";
 import Link from "next/link";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { useMilestoneToggle } from "@/components/milestone-tick";
+import { useMilestoneFlow } from "@/components/milestone-tick";
 import { IconLink } from "@/components/ui/icon-button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { MilestoneBar } from "@/components/ui/milestone";
-import { CategoryArt } from "@/components/illustrations";
+import { ArtHeader, CategoryArt } from "@/components/illustrations";
 import { milestoneName } from "@/lib/milestone";
 import { skillIcon } from "@/lib/skill-visual";
 
@@ -104,7 +104,7 @@ export function SkillTreeView({ tree }: { tree: Tree }) {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[560px] flex-col">
-      <header className="flex items-center gap-2 px-3 pb-2 pt-3">
+      <ArtHeader art={<CategoryArt slug={tree.category.slug} size={118} />} className="mb-1 gap-2">
         <IconLink href="/profile" label="Quay lại hồ sơ" icon={ArrowLeft} />
         <div className="flex min-w-0 flex-1 flex-col">
           <h1 className="truncate font-display text-[22px] font-extrabold leading-tight">{tree.category.name}</h1>
@@ -113,21 +113,16 @@ export function SkillTreeView({ tree }: { tree: Tree }) {
             {tree.unlockedCount}/{tree.totalCount} đã mở
           </p>
         </div>
-        <CategoryArt slug={tree.category.slug} size={96} className="-my-2 mr-1 shrink-0 text-muted" />
-      </header>
+      </ArtHeader>
 
-      <ul className="flex gap-4 px-5 pb-1 pt-1 text-[12px] text-muted" aria-label="Chú giải">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 px-5 pb-1 pt-1 text-[12px] text-muted" aria-label="Chú giải">
         <li className="flex items-center gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
-            <circle cx="7" cy="7" r="6" fill="var(--color-trail)" />
-          </svg>
-          Đã xong
+          <span aria-hidden className="size-[8px] rounded-full bg-accent" />
+          Đã xác nhận
         </li>
         <li className="flex items-center gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
-            <circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--color-trail)" strokeWidth="2" />
-          </svg>
-          Đang luyện
+          <span aria-hidden className="size-[8px] rounded-full border border-trail" />
+          Tự đánh dấu
         </li>
         <li className="flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
@@ -280,7 +275,12 @@ function TreeNode({
       ) : node.state !== "locked" ? (
         <span aria-hidden className="flex gap-[3px]">
           {Array.from({ length: node.maxLevel }, (_, i) => (
-            <span key={i} className={`size-[5px] rounded-full ${i < node.selfLevel ? "bg-trail" : "bg-surface-3"}`} />
+            <span
+              key={i}
+              className={`size-[6px] rounded-full ${
+                i < node.level ? "bg-accent" : i < node.selfLevel ? "border border-trail" : "bg-surface-3"
+              }`}
+            />
           ))}
         </span>
       ) : null}
@@ -291,8 +291,8 @@ function TreeNode({
 function NodeSheet({ node }: { node: Node }) {
   const unmet = node.prerequisites.filter((p) => !p.met);
   const next = node.next;
-  const { toggle, pending } = useMilestoneToggle();
-  const [celebrate, setCelebrate] = useState<string | null>(null);
+  const flow = useMilestoneFlow();
+  const { pending } = flow;
   const done = node.selfLevel >= node.maxLevel;
   return (
     <section
@@ -305,7 +305,7 @@ function NodeSheet({ node }: { node: Node }) {
         <span className="text-[13px] font-semibold text-muted">Chi tiết</span>
         <ChevronRight size={18} className="text-muted" aria-hidden />
       </Link>
-      <MilestoneBar value={node.selfLevel} max={node.maxLevel} showCount showNext={node.state !== "locked" && !done} className="mt-1" />
+      <MilestoneBar value={node.selfLevel} max={node.maxLevel} verified={node.verifiedCount} showCount showNext={node.state !== "locked" && !done} className="mt-1" />
 
       {node.state === "locked" ? (
         <ul className="mt-4 flex flex-col gap-2" aria-label="Điều kiện mở">
@@ -345,12 +345,11 @@ function NodeSheet({ node }: { node: Node }) {
           <Button
             className="flex-1"
             disabled={pending}
-            onClick={async () => {
-              setCelebrate(next.skillLevelId);
-              await toggle(next.skillLevelId, true, milestoneName(next.title, next.level));
-            }}
+            onClick={() =>
+              flow.askCheck({ skillLevelId: next.skillLevelId, level: next.level, name: milestoneName(next.title, next.level), task: next.task })
+            }
           >
-            <Check size={18} strokeWidth={3} className={celebrate === next.skillLevelId ? "tick-pop" : ""} aria-hidden />
+            <Check size={18} strokeWidth={3} className={flow.celebrate === next.level ? "tick-pop" : ""} aria-hidden />
             Xong rồi
           </Button>
           {node.pendingProof ? (
@@ -366,6 +365,7 @@ function NodeSheet({ node }: { node: Node }) {
           )}
         </div>
       ) : null}
+      {flow.sheet}
     </section>
   );
 }
