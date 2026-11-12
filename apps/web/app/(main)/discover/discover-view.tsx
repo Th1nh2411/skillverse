@@ -1,13 +1,15 @@
 "use client";
 import Link from "next/link";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { MapPin, Plus, Search, SearchX, TrendingUp, Users, X } from "lucide-react";
+import { MapPin, Plus, Search, TrendingUp, Users, X } from "lucide-react";
 import { useDeferredValue, useState } from "react";
 import type { RouterOutputs } from "@skillverse/api";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { Avatar, EmptyState, Skeleton } from "@/components/ui/misc";
-import { formatNumber, skillIcon } from "@/lib/skill-visual";
+import { milestoneName } from "@/lib/milestone";
+import { CategoryArt, SearchArt } from "@/components/illustrations";
+import { categoryIcon, formatNumber, skillIcon } from "@/lib/skill-visual";
 import { useTRPC } from "@/lib/trpc";
 
 type Home = RouterOutputs["discover"]["home"];
@@ -70,6 +72,7 @@ export function DiscoverView() {
         </CategoryChip>
         {(home.data?.categories ?? []).map((c) => (
           <CategoryChip key={c.slug} on={category === c.slug} onClick={() => setCategory(c.slug)}>
+            <CatIcon slug={c.slug} />
             {c.name}
           </CategoryChip>
         ))}
@@ -95,7 +98,7 @@ export function DiscoverView() {
           </Button>
         </div>
       ) : home.data ? (
-        <HomeSections data={home.data} />
+        <HomeSections data={home.data} showCategories={category === undefined} />
       ) : null}
     </main>
   );
@@ -107,7 +110,7 @@ function CategoryChip({ on, onClick, children }: { on: boolean; onClick: () => v
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`min-h-11 shrink-0 rounded-full px-4 text-[14px] font-semibold transition-colors ${
+      className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold transition-colors ${
         on ? "bg-text text-bg" : "border border-border text-text hover:bg-surface-2"
       }`}
     >
@@ -116,9 +119,34 @@ function CategoryChip({ on, onClick, children }: { on: boolean; onClick: () => v
   );
 }
 
-function HomeSections({ data }: { data: Home }) {
+function CatIcon({ slug }: { slug: string }) {
+  const Icon = categoryIcon(slug);
+  return <Icon size={16} aria-hidden />;
+}
+
+function HomeSections({ data, showCategories }: { data: Home; showCategories: boolean }) {
   return (
     <>
+      {showCategories && data.categories.length > 0 ? (
+        <section aria-labelledby="trees" className="flex flex-col gap-3 px-5 pt-6">
+          <h2 id="trees" className="text-[17px] font-bold">
+            Cây kỹ năng
+          </h2>
+          <ul className="grid grid-cols-2 gap-3">
+            {data.categories.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/skills/tree/${c.slug}`}
+                  className="flex h-full flex-col items-center gap-1 rounded-[var(--radius-card)] border border-border px-3 pb-3 pt-2 text-center transition-colors hover:bg-surface"
+                >
+                  <CategoryArt slug={c.slug} size={112} className="text-muted" />
+                  <span className="text-[14px] font-semibold">{c.name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {data.rarest.length > 0 ? (
         <section aria-labelledby="rarest" className="flex flex-col gap-3 pt-6">
           <h2 id="rarest" className="px-5 text-[17px] font-bold">
@@ -141,7 +169,7 @@ function HomeSections({ data }: { data: Home }) {
                   <span className="tabular mt-auto inline-flex items-center gap-1 text-[12px] text-muted">
                     <Users size={13} aria-hidden />
                     {formatNumber(s.holderCount)}
-                    <span className="sr-only">người đạt cấp cao nhất</span>
+                    <span className="sr-only">người xong mọi mốc</span>
                   </span>
                 </Link>
               </li>
@@ -214,7 +242,7 @@ function Nearby({ nearby }: { nearby: Home["nearby"] }) {
                   <span className="truncate text-[15px] font-semibold">{p.displayName}</span>
                   {p.topSkills[0] ? (
                     <span className="truncate text-[13px] text-muted">
-                      {p.topSkills[0].name} cấp {p.topSkills[0].level}
+                      {p.topSkills[0].name}: mốc {milestoneName(p.topSkills[0].levelTitle, p.topSkills[0].level)}
                     </span>
                   ) : null}
                 </span>
@@ -243,7 +271,7 @@ function SearchResults({ results, pending, q }: { results: Summary[] | undefined
     return (
       <div className="px-5 pt-6">
         <EmptyState
-          icon={SearchX}
+          art={<SearchArt size={140} />}
           title={`Chưa có kỹ năng "${q}"`}
           action={
             <ButtonLink href={`/skills/propose?name=${encodeURIComponent(q)}`} size="md">

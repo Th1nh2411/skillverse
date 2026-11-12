@@ -3,7 +3,7 @@ import { getServerCaller } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { ReviewForm } from "./review-form";
 
-export const metadata: Metadata = { title: "Duyệt bằng chứng" };
+export const metadata: Metadata = { title: "Duyệt" };
 
 export default async function ReviewTaskPage({ params }: { params: Promise<{ assignmentId: string }> }) {
   const { assignmentId } = await params;

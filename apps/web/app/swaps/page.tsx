@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { ArrowLeftRight } from "lucide-react";
 import { getServerCaller } from "@/lib/server/trpc";
 import { BackButton } from "@/components/ui/back-button";
 import { EmptyState } from "@/components/ui/misc";
+import { TrailArt } from "@/components/illustrations";
 import { SwapCard } from "./swap-card";
 
 export const metadata: Metadata = { title: "Trao đổi kỹ năng" };
@@ -21,7 +21,7 @@ export default async function SwapsPage() {
       </header>
       {swaps.length === 0 ? (
         <div className="px-5 pt-4">
-          <EmptyState icon={ArrowLeftRight} title="Chưa có đề nghị trao đổi nào" />
+          <EmptyState art={<TrailArt size={140} />} title="Chưa có đề nghị trao đổi nào" />
         </div>
       ) : (
         <>

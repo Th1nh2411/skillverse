@@ -6,7 +6,7 @@ import { Compass, House, Plus, Trophy, User } from "lucide-react";
 const items = [
   { href: "/home", label: "Trang chủ", Icon: House },
   { href: "/discover", label: "Khám phá", Icon: Compass },
-  { href: "/proof/new", label: "Đăng bằng chứng", Icon: Plus, primary: true },
+  { href: "/proof/new", label: "Gửi video", Icon: Plus, primary: true },
   { href: "/challenges", label: "Thử thách", Icon: Trophy },
   { href: "/profile", label: "Hồ sơ", Icon: User },
 ] as const;

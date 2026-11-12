@@ -1,14 +1,16 @@
 "use client";
 import Link from "next/link";
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
-import { MessageCircle, PartyPopper, ShieldCheck, Sprout } from "lucide-react";
+import { MessageCircle, PartyPopper, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import type { RouterOutputs } from "@skillverse/api";
 import { ReportSheet } from "@/components/report-sheet";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { Avatar, EmptyState, Skeleton } from "@/components/ui/misc";
-import { formatNumber } from "@/lib/skill-visual";
+import { TrailArt } from "@/components/illustrations";
+import { milestoneName } from "@/lib/milestone";
+import { formatNumber, skillIcon } from "@/lib/skill-visual";
 import { timeAgo } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
 
@@ -42,7 +44,7 @@ export function Feed() {
       ) : items.length === 0 ? (
         <div className="px-5 pt-4">
           <EmptyState
-            icon={Sprout}
+            art={<TrailArt size={150} />}
             title="Theo dõi kỹ năng hoặc người luyện để thấy tin ở đây"
             action={
               <ButtonLink href="/discover" size="md">
@@ -92,11 +94,11 @@ function LevelUpItem({ it }: { it: Item }) {
           <Link href={`/u/${it.author.handle}`} className="font-bold hover:underline">
             {it.author.displayName}
           </Link>{" "}
-          lên <b className="tabular font-bold text-accent">cấp {lu.level}</b>
+          xong mốc <b className="font-bold text-accent">{milestoneName(lu.levelTitle, lu.level)}</b>
           {it.skill ? (
             <>
               {" "}
-              <Link href={`/skills/${it.skill.slug}`} className="font-semibold hover:underline">
+              <Link href={`/skills/${it.skill.slug}`} className="text-muted hover:underline">
                 {it.skill.name}
               </Link>
             </>
@@ -114,7 +116,13 @@ function LevelUpItem({ it }: { it: Item }) {
         <Actions it={it} />
       </div>
       <Link href={`/share/${lu.proofId}`} aria-label="Xem thẻ thành tích" className="shrink-0 self-start">
-        <LevelPatch categorySlug={it.skill?.category.slug ?? ""} rarity={it.skill?.rarity ?? null} state="earned" level={lu.level} size={48} />
+        <LevelPatch
+          categorySlug={it.skill?.category.slug ?? ""}
+          rarity={it.skill?.rarity ?? null}
+          state="earned"
+          icon={skillIcon(it.skill?.slug ?? "", it.skill?.category.slug)}
+          size={48}
+        />
       </Link>
     </article>
   );
@@ -129,8 +137,7 @@ function PostItem({ it }: { it: Item }) {
           <p className="text-[15px]">
             <Link href={`/u/${it.author.handle}`} className="font-bold hover:underline">
               {it.author.displayName}
-            </Link>{" "}
-            <span className="tabular text-[13px] text-muted">cấp {it.author.accountLevel}</span>
+            </Link>
           </p>
           <p className="truncate text-[13px] text-muted">
             {it.skill ? (

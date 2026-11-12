@@ -4,6 +4,7 @@ import { ChevronRight, Flame, ShieldCheck } from "lucide-react";
 import { getServerCaller } from "@/lib/server/trpc";
 import { AppHeader } from "@/components/app-header";
 import { InfoSheet } from "@/components/ui/sheet";
+import { NextMilestoneCard, pickNextSkill } from "@/components/next-milestone";
 import { QuestList } from "./quest-list";
 import { Feed } from "./feed";
 
@@ -11,8 +12,13 @@ export const metadata: Metadata = { title: "Trang chủ" };
 
 export default async function HomePage() {
   const api = await getServerCaller();
-  const [q, queue] = await Promise.all([api.home.quests(), api.review.queue().catch(() => null)]);
+  const [q, queue, me] = await Promise.all([
+    api.home.quests(),
+    api.review.queue().catch(() => null),
+    api.profile.me().catch(() => null),
+  ]);
   const toReview = queue?.items.length ?? 0;
+  const nextSkill = me ? pickNextSkill(me.featuredSkills) : null;
 
   return (
     <main className="flex flex-col">
@@ -39,9 +45,15 @@ export default async function HomePage() {
           className="mx-5 mt-4 flex min-h-14 items-center gap-3 rounded-[var(--radius-card)] border border-teal/40 bg-teal-soft px-4 py-3 transition-colors hover:border-teal"
         >
           <ShieldCheck size={22} className="shrink-0 text-teal" aria-hidden />
-          <span className="tabular flex-1 text-[15px] font-semibold">{toReview} bằng chứng cần bạn duyệt</span>
+          <span className="tabular flex-1 text-[15px] font-semibold">{toReview} video chờ bạn xem giúp</span>
           <ChevronRight size={18} className="text-teal" aria-hidden />
         </Link>
+      ) : null}
+
+      {nextSkill ? (
+        <div className="mx-5 mt-4">
+          <NextMilestoneCard s={nextSkill} />
+        </div>
       ) : null}
 
       <section aria-labelledby="quests" className="mx-5 mt-5 flex flex-col">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Clock, Plus, ShieldAlert, TriangleAlert } from "lucide-react";
+import { ArrowRight, Clock, Lightbulb, Plus, ShieldAlert, TriangleAlert, Video } from "lucide-react";
+import { milestoneName } from "@/lib/milestone";
 import { getServerCaller, getViewer } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { CriteriaVote } from "@/components/criteria-vote";
@@ -18,7 +19,7 @@ import { SupportButton } from "./support-button";
 export const metadata: Metadata = { title: "Đề xuất" };
 
 type Crit = { text: string };
-type NewSkillPayload = { riskLevel?: string; description?: string | null; levels?: { level: number; criteria: Crit[] }[] };
+type NewSkillPayload = { riskLevel?: string; description?: string | null; levels?: { level: number; title?: string | null; description?: string | null; criteria: Crit[] }[] };
 type EditPayload = { criteria?: Crit[] };
 
 export default async function ProposalPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,7 +34,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ id: s
       <header className="flex items-center gap-1 px-3 pt-3">
         <BackButton fallback="/proposals" />
         <span className="text-[14px] font-semibold text-muted">
-          {p.kind === "new_skill" ? "Đề xuất kỹ năng mới" : "Góp ý tiêu chí"}
+          {p.kind === "new_skill" ? "Đề xuất kỹ năng mới" : "Góp ý mốc"}
         </span>
       </header>
 
@@ -113,21 +114,29 @@ function NewSkillBody({ p, isAuthor }: { p: Detail; isAuthor: boolean }) {
       {payload.levels?.length ? (
         <section aria-labelledby="levels" className="mx-5 mt-5 flex flex-col gap-2">
           <h2 id="levels" className="text-[15px] font-bold">
-            Tiêu chí từng cấp
+            Các mốc
           </h2>
           <ol className="flex flex-col">
             {payload.levels.map((l) => (
               <li key={l.level} className="flex gap-3 border-b border-border py-2.5 last:border-0">
-                <span className="tabular flex size-7 shrink-0 items-center justify-center rounded-[8px] border border-border font-display text-[14px] font-extrabold text-muted">
+                <span className="tabular flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border-strong font-display text-[13px] font-extrabold text-muted">
                   {l.level}
                 </span>
-                <ul className="flex flex-col gap-0.5 text-[14px] leading-snug">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <span className="text-[15px] font-bold leading-snug">{milestoneName(l.title, l.level)}</span>
                   {l.criteria.map((c, i) => (
-                    <li key={i} className={i > 0 ? "text-muted" : undefined}>
+                    <span key={i} className="flex items-start gap-1.5 text-[14px] leading-snug">
+                      <Video size={14} className="mt-[3px] shrink-0 text-accent" aria-hidden />
                       {c.text}
-                    </li>
+                    </span>
                   ))}
-                </ul>
+                  {l.description ? (
+                    <span className="flex items-start gap-1.5 text-[13px] leading-snug text-muted">
+                      <Lightbulb size={14} className="mt-[2px] shrink-0" aria-label="Cách làm" />
+                      {l.description}
+                    </span>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ol>
@@ -148,10 +157,10 @@ function EditBody({ p }: { p: Detail }) {
           className="mx-5 mt-3 self-start text-[14px] font-semibold text-accent hover:underline"
         >
           {p.skill.name}
-          {p.targetLevel ? `, cấp ${p.targetLevel}` : ""}
+          {p.targetLevel ? `: mốc ${milestoneName(p.levelTitle, p.targetLevel)}` : ""}
         </Link>
       ) : null}
-      <section aria-label="So sánh tiêu chí" className="mx-5 mt-4 grid gap-3">
+      <section aria-label="So sánh" className="mx-5 mt-4 grid gap-3">
         {p.currentCriteria ? (
           <div className="flex flex-col gap-1.5 rounded-[14px] border border-border p-3.5">
             <h2 className="text-[12px] font-semibold text-muted">Hiện tại</h2>

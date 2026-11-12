@@ -1,5 +1,5 @@
 /**
- * Thẻ chia sẻ "Lên cấp" 1200x630 cho next/og. Miếng vải thêu vẽ bằng SVG (data URI) theo cùng
+ * Thẻ chia sẻ "Xong mốc" 1200x630 cho next/og. Miếng vải thêu vẽ bằng SVG (data URI) theo cùng
  * quy tắc với LevelPatch của ui: hình theo danh mục, màu chỉ theo độ hiếm, viền vắt sổ.
  */
 import { readFile } from "node:fs/promises";
@@ -53,7 +53,7 @@ function shapePath(shape: PatchShape, scale: number): string {
     .join(" ");
 }
 
-/** SVG miếng vải thêu đã khâu xong (không có chữ — số cấp vẽ bằng font thật phía trên). */
+/** SVG miếng vải thêu đã khâu xong, giữa là dấu kiểm thêu (không hiện số cấp). */
 export function patchSvg(categorySlug: string, rarity: Rarity): string {
   const shape = patchShape(categorySlug);
   const fabric = patchFabric(categorySlug);
@@ -69,6 +69,8 @@ export function patchSvg(categorySlug: string, rarity: Rarity): string {
 <path d="${shapePath(shape, 0.88)}" fill="url(#tw)"/>
 <path d="${shapePath(shape, 0.77)}" fill="none" stroke="${thread}" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
 ${legendary}
+<path d="M33 51 L45 63 L68 38" fill="none" stroke="${thread}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M33 51 L45 63 L68 38" fill="none" stroke="#000" stroke-opacity="0.25" stroke-width="7" stroke-dasharray="0.8 1.6"/>
 </svg>`;
 }
 
@@ -88,7 +90,7 @@ export async function renderLevelUpCard(card: LevelUpCard): Promise<ImageRespons
   const thread = THREAD[threadOf(card.rarity)];
   const rarityLabel = card.rarity ? RARITY_LABEL[card.rarity] : null;
   const svg = `data:image/svg+xml;base64,${Buffer.from(patchSvg(card.categorySlug, card.rarity)).toString("base64")}`;
-  const shield = patchShape(card.categorySlug) === "shield";
+  const milestone = card.levelTitle?.trim() || `Mốc ${card.level}`;
   const fonts = await loadFonts();
 
   return new ImageResponse(
@@ -108,30 +110,44 @@ export async function renderLevelUpCard(card: LevelUpCard): Promise<ImageRespons
       >
         <div style={{ display: "flex", position: "relative", width: 400, height: 400, flexShrink: 0 }}>
           <img src={svg} width={400} height={400} alt="" />
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              top: shield ? -8 : 0,
-              width: 400,
-              height: 400,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: card.level >= 10 ? 136 : 160,
-              fontWeight: 700,
-              color: thread,
-            }}
-          >
-            {String(card.level)}
-          </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, minWidth: 0 }}>
           <div style={{ display: "flex", fontSize: 30, fontWeight: 500, color: C.muted }}>{card.categoryName}</div>
-          <div style={{ display: "flex", fontSize: 76, fontWeight: 700, lineHeight: 1.1, marginTop: 12 }}>{card.skillName}</div>
-          <div style={{ display: "flex", fontSize: 40, fontWeight: 700, color: C.accent, marginTop: 20 }}>
-            {card.levelTitle ? `Cấp ${card.level}: ${card.levelTitle}` : `Cấp ${card.level}`}
+          <div
+            style={{
+              display: "flex",
+              fontSize: card.skillName.length > 16 ? 54 : card.skillName.length > 11 ? 62 : 76,
+              fontWeight: 700,
+              lineHeight: 1.1,
+              marginTop: 12,
+            }}
+          >
+            {card.skillName}
+          </div>
+          <div style={{ display: "flex", marginTop: 22 }}>
+            <div
+              style={{
+                display: "flex",
+                fontSize: 40,
+                fontWeight: 700,
+                color: thread,
+                background: patchFabric(card.categorySlug),
+                border: `3px dashed ${thread}`,
+                borderRadius: 14,
+                padding: "8px 26px",
+              }}
+            >
+              {`Xong mốc: ${milestone}`}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+            {Array.from({ length: card.maxLevel }, (_, i) => (
+              <div
+                key={i}
+                style={{ display: "flex", width: 64, height: 10, borderRadius: 999, background: i < card.level ? C.threadCommon : C.border }}
+              />
+            ))}
           </div>
           {rarityLabel ? (
             <div style={{ display: "flex", marginTop: 24 }}>

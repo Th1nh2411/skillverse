@@ -24,7 +24,7 @@ const bitter = Bitter({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL ?? process.env.AUTH_URL ?? "http://localhost:3000"),
   title: { default: "SkillVerse", template: "%s · SkillVerse" },
-  description: "Lên level kỹ năng bằng bằng chứng được cộng đồng xác thực.",
+  description: "Học kỹ năng mới, khoe từng mốc, kết bạn cùng sở thích.",
   applicationName: "SkillVerse",
   appleWebApp: { capable: true, title: "SkillVerse", statusBarStyle: "black-translucent" },
   icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], apple: "/icons/apple-touch-icon.png" },

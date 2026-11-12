@@ -2,6 +2,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Check, Flag, PlayCircle, ShieldCheck, X, Zap } from "lucide-react";
+import { NotebookArt } from "@/components/illustrations";
+import { LevelPatch } from "@/components/ui/level-patch";
+import { milestoneName } from "@/lib/milestone";
+import { patchOf } from "@/lib/skill-visual";
 import type { RouterOutputs } from "@skillverse/api";
 import { REPORT_REASON_LABELS, reportReason, type ReportReasonValue } from "@skillverse/validation";
 import { BackButton } from "@/components/ui/back-button";
@@ -24,13 +28,15 @@ export function ReviewForm({ task }: { task: Task }) {
   const [reported, setReported] = useState(task.reported);
 
   const marked = task.criteria.filter((c) => marks[c.id] !== undefined).length;
+  const single = task.criteria.length === 1 ? task.criteria[0]! : null;
+  const patch = patchOf(task.skill);
   const allMarked = marked === task.criteria.length;
   const allPass = allMarked && task.criteria.every((c) => marks[c.id]);
 
   if (submit.isSuccess) {
     return (
       <Done
-        title="Đã gửi phiếu. Cảm ơn bạn."
+        title="Đã gửi phiếu. Cảm ơn bạn đã xem giúp!"
         extra={
           submit.data.xpAwarded > 0 ? (
             <span className="tabular inline-flex items-center gap-1 text-[15px] font-bold text-accent">
@@ -52,24 +58,34 @@ export function ReviewForm({ task }: { task: Task }) {
         <ReputationChip value={task.reviewerReputation} />
       </header>
 
-      <section className="flex items-start gap-3 px-5 pt-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <h2 className="text-[18px] font-bold leading-snug">
-            {task.skill.name}{" "}
-            <span className="tabular whitespace-nowrap font-semibold text-muted">lên cấp {task.targetLevel}</span>
+      <section className="flex items-center gap-3 px-5 pt-2">
+        <LevelPatch
+          categorySlug={patch.categorySlug}
+          rarity={patch.rarity}
+          state="practicing"
+          icon={patch.icon}
+          size={44}
+        />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-[13px] text-muted">{task.skill.name}</span>
+          <h2 className="truncate text-[17px] font-bold leading-snug">
+            <span className="sr-only">Mốc </span>
+            {milestoneName(task.levelTitle, task.targetLevel)}
           </h2>
-          <div className="flex items-center gap-1.5 text-[13px] text-muted">
-            <ShieldCheck size={15} className="text-teal" aria-hidden />
-            <span className="tabular">Ẩn danh {task.anonymousCode}</span>
-            <InfoSheet title="Duyệt ẩn danh" label="Cách chọn người duyệt">
-              Bạn được chọn ngẫu nhiên. Người nộp ẩn danh, không phải người bạn theo dõi hay từng gặp gần đây. Chỉ chấm theo tiêu
-              chí trong video.
-            </InfoSheet>
-          </div>
         </div>
-        <span className="tabular mt-1 shrink-0 text-[13px] text-muted">
-          {task.votes}/{task.required} phiếu
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-0.5 text-[12px] text-muted">
+          <span className="tabular inline-flex items-center gap-1">
+            <ShieldCheck size={14} className="text-teal" aria-hidden />
+            {task.anonymousCode}
+            <InfoSheet title="Duyệt ẩn danh" label="Cách chọn người duyệt">
+              Bạn được chọn ngẫu nhiên. Người gửi ẩn danh, không phải người bạn theo dõi hay từng gặp gần đây. Chỉ chấm theo việc
+              cần làm trong video.
+            </InfoSheet>
+          </span>
+          <span className="tabular">
+            {task.votes}/{task.required} phiếu
+          </span>
+        </div>
       </section>
 
       <div className="relative mx-5 mt-3 overflow-hidden rounded-[var(--radius-card)] bg-black">
@@ -89,25 +105,30 @@ export function ReviewForm({ task }: { task: Task }) {
       </div>
       {task.caption ? <p className="mx-5 mt-2 text-[14px] leading-snug text-muted">{task.caption}</p> : null}
 
-      <section aria-labelledby="crit" className="mx-5 mt-5 flex flex-col">
-        <h2 id="crit" className="pb-1 text-[15px] font-bold">
-          Tiêu chí
-        </h2>
+      <section aria-labelledby="crit" className="mx-5 mt-5 flex flex-col gap-3">
+        {single ? (
+          <h2 id="crit" className="text-[17px] font-bold leading-snug">
+            <span className="block text-[14px] font-semibold text-muted">Video có làm được:</span>
+            {single.text}?
+          </h2>
+        ) : (
+          <h2 id="crit" className="text-[17px] font-bold">
+            Video có làm được?
+          </h2>
+        )}
         {task.criteria.map((c) => {
           const v = marks[c.id];
           return (
             <div
               key={c.id}
               role="group"
-              aria-labelledby={`c-${c.id}`}
-              className="flex flex-col gap-2 border-b border-border py-3 last:border-0"
+              aria-label={c.text}
+              className={`flex flex-col gap-2 ${single ? "" : "border-b border-border pb-3 last:border-0"}`}
             >
-              <span id={`c-${c.id}`} className="text-[14px] leading-snug">
-                {c.text}
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <MarkButton disabled={closed} on={v === true} pass onClick={() => setMarks((m) => ({ ...m, [c.id]: true }))} />
-                <MarkButton disabled={closed} on={v === false} onClick={() => setMarks((m) => ({ ...m, [c.id]: false }))} />
+              {!single ? <span className="text-[15px] leading-snug">{c.text}</span> : null}
+              <div className="grid grid-cols-2 gap-2.5">
+                <MarkButton big={!!single} disabled={closed} on={v === true} pass onClick={() => setMarks((m) => ({ ...m, [c.id]: true }))} />
+                <MarkButton big={!!single} disabled={closed} on={v === false} onClick={() => setMarks((m) => ({ ...m, [c.id]: false }))} />
               </div>
             </div>
           );
@@ -118,7 +139,7 @@ export function ReviewForm({ task }: { task: Task }) {
         <>
           <div className="mx-5 mt-4 flex flex-col gap-1.5">
             <label htmlFor="note" className="text-[13px] font-semibold text-muted">
-              Nhận xét cho người nộp
+              Nhận xét
             </label>
             <textarea
               id="note"
@@ -126,7 +147,7 @@ export function ReviewForm({ task }: { task: Task }) {
               maxLength={500}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Góp ý cụ thể giúp họ tiến bộ"
+              placeholder="Không bắt buộc"
               className="min-h-[76px] resize-none rounded-[var(--radius-btn)] border border-border bg-surface px-4 py-3 text-[15px] text-text placeholder:text-muted/70 focus:border-accent focus:outline-none"
             />
           </div>
@@ -142,7 +163,7 @@ export function ReviewForm({ task }: { task: Task }) {
         ) : null}
         {closed ? (
           <p className="flex min-h-[52px] items-center justify-center text-[15px] font-semibold text-muted">
-            {task.myReview ? "Bạn đã chấm bằng chứng này" : task.state === "expired" ? "Lượt duyệt đã hết hạn" : "Lượt duyệt đã đóng"}
+            {task.myReview ? "Bạn đã chấm video này" : task.state === "expired" ? "Lượt duyệt đã hết hạn" : "Lượt duyệt đã đóng"}
           </p>
         ) : (
           <Button
@@ -161,13 +182,17 @@ export function ReviewForm({ task }: { task: Task }) {
             {submit.isPending ? (
               "Đang gửi"
             ) : !allMarked ? (
-              <span className="tabular">
-                Chấm {marked}/{task.criteria.length} tiêu chí
-              </span>
+              single ? (
+                "Chọn kết quả"
+              ) : (
+                <span className="tabular">
+                  Chấm {marked}/{task.criteria.length}
+                </span>
+              )
             ) : allPass ? (
-              `Xác nhận đạt cấp ${task.targetLevel}`
+              "Gửi: Đạt"
             ) : (
-              "Gửi phiếu chưa đạt"
+              "Gửi: Chưa đạt"
             )}
           </Button>
         )}
@@ -178,9 +203,10 @@ export function ReviewForm({ task }: { task: Task }) {
 
 function Done({ title, extra, icon }: { title: string; extra?: React.ReactNode; icon?: "flag" }) {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col gap-4 px-5 pt-[18vh]">
+    <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col gap-4 px-5 pt-[14vh]">
       <EmptyState
-        icon={icon === "flag" ? Flag : ShieldCheck}
+        icon={icon === "flag" ? Flag : undefined}
+        art={icon === "flag" ? undefined : <NotebookArt size={150} />}
         title={title}
         action={
           <div className="flex flex-col items-center gap-4">
@@ -195,14 +221,28 @@ function Done({ title, extra, icon }: { title: string; extra?: React.ReactNode; 
   );
 }
 
-function MarkButton({ on, pass, disabled, onClick }: { on: boolean; pass?: boolean; disabled?: boolean; onClick: () => void }) {
+function MarkButton({
+  on,
+  pass,
+  big,
+  disabled,
+  onClick,
+}: {
+  on: boolean;
+  pass?: boolean;
+  big?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       aria-pressed={on}
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[14px] font-semibold transition-colors disabled:opacity-60 ${
+      className={`inline-flex items-center justify-center gap-1.5 rounded-[12px] px-3 font-semibold transition-colors disabled:opacity-60 ${
+        big ? "min-h-14 text-[16px]" : "min-h-11 text-[14px]"
+      } ${
         on
           ? pass
             ? "bg-teal text-bg"
@@ -210,7 +250,7 @@ function MarkButton({ on, pass, disabled, onClick }: { on: boolean; pass?: boole
           : "border border-border text-text hover:bg-surface-2"
       }`}
     >
-      {pass ? <Check size={16} aria-hidden /> : <X size={16} aria-hidden />}
+      {pass ? <Check size={big ? 20 : 16} aria-hidden /> : <X size={big ? 20 : 16} aria-hidden />}
       {pass ? "Đạt" : "Chưa đạt"}
     </button>
   );
@@ -241,7 +281,7 @@ function ReportButton({ assignmentId, onReported }: { assignmentId: string; onRe
         <Flag size={16} aria-hidden />
         Báo cáo
       </button>
-      <Sheet open={open} onClose={() => setOpen(false)} title="Báo cáo bằng chứng">
+      <Sheet open={open} onClose={() => setOpen(false)} title="Báo cáo video">
         <fieldset className="flex flex-col pt-1">
           <legend className="sr-only">Lý do</legend>
           {reportReason.options.map((r) => (

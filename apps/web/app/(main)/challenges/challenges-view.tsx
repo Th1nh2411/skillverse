@@ -7,7 +7,6 @@ import {
   Crown,
   ShieldCheck,
   Swords,
-  Trophy,
   Users,
   Zap,
 } from "lucide-react";
@@ -16,8 +15,10 @@ import type { RouterOutputs } from "@skillverse/api";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { Avatar, EmptyState, Skeleton, QueryError } from "@/components/ui/misc";
+import { SummitArt } from "@/components/illustrations";
 import { InfoSheet } from "@/components/ui/sheet";
-import { formatNumber } from "@/lib/skill-visual";
+import { milestoneName } from "@/lib/milestone";
+import { formatNumber, skillIcon } from "@/lib/skill-visual";
 import { clockTime, timeLeft } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
 
@@ -127,7 +128,7 @@ function ActiveChallenges() {
   if (!q.data?.length)
     return (
       <div className="px-5">
-        <EmptyState icon={Trophy} title="Chưa có thử thách nào đang diễn ra" />
+        <EmptyState art={<SummitArt size={140} />} title="Chưa có thử thách nào đang diễn ra" />
       </div>
     );
   return (
@@ -362,7 +363,7 @@ function PendingProofs({
       <div className="px-5">
         <EmptyState
           icon={ShieldCheck}
-          title="Không có bằng chứng nào đang chờ duyệt"
+          title="Không có video nào đang chờ duyệt"
         />
       </div>
     );
@@ -373,7 +374,7 @@ function PendingProofs({
         Người nộp ẩn danh
         <InfoSheet
           title="Chờ duyệt"
-          label="Cách hoạt động của bằng chứng chờ duyệt"
+          label="Cách hoạt động của video chờ duyệt"
         >
           Ai cũng xem được bằng chứng đang chờ, nhưng chỉ người được hệ thống
           chọn ngẫu nhiên mới chấm được. Tên người nộp được ẩn để việc duyệt
@@ -399,7 +400,7 @@ function PendingRow({ p }: { p: Pending }) {
         categorySlug={p.skill.category.slug}
         rarity={p.skill.rarity}
         state="practicing"
-        level={p.targetLevel}
+        icon={skillIcon(p.skill.slug, p.skill.category.slug)}
         size={48}
       />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -407,8 +408,7 @@ function PendingRow({ p }: { p: Pending }) {
           {p.skill.name}
         </span>
         <span className="tabular truncate text-[13px] text-muted">
-          {p.isMine ? "Của bạn" : `Ẩn danh ${p.anonymousCode}`}, lên cấp{" "}
-          {p.targetLevel}
+          {p.isMine ? "Của bạn" : `Ẩn danh ${p.anonymousCode}`}: mốc {milestoneName(p.levelTitle, p.targetLevel)}
         </span>
         <span className="tabular text-[12px] text-muted">
           {p.votes}/{p.required} đã duyệt

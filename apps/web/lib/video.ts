@@ -74,7 +74,7 @@ export function precheck(clip: VideoClip, limits: MediaLimits): CheckItem[] {
   if (clip.durationS > limits.maxSeconds) {
     items.push({ key: "duration", state: "fail", label: dur, detail: `Tối đa ${formatDuration(limits.maxSeconds)}.` });
   } else if (clip.durationS < 5) {
-    items.push({ key: "duration", state: "warn", label: dur, detail: "Video rất ngắn, người duyệt có thể không thấy đủ tiêu chí." });
+    items.push({ key: "duration", state: "warn", label: dur, detail: "Video rất ngắn, người xem có thể chưa thấy đủ." });
   } else {
     items.push({ key: "duration", state: "pass", label: dur });
   }

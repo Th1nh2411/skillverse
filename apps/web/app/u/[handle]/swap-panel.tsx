@@ -107,7 +107,7 @@ function ProposeForm({ handle, name, myTeach, theirTeach }: { handle: string; na
   if (myTeach.length === 0 || theirTeach.length === 0) {
     return (
       <p className="text-[14px] text-muted">
-        {myTeach.length === 0 ? "Đạt cấp 1 một kỹ năng để có thể dạy lại." : `${name} chưa đạt cấp kỹ năng nào để dạy.`}
+        {myTeach.length === 0 ? "Xong ít nhất một mốc để có thể dạy lại." : `${name} chưa xong mốc nào để dạy.`}
       </p>
     );
   }

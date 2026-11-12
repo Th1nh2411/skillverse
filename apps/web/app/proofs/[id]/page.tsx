@@ -7,10 +7,11 @@ import { BackButton } from "@/components/ui/back-button";
 import { ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { InfoSheet } from "@/components/ui/sheet";
+import { milestoneName } from "@/lib/milestone";
 import { patchOf } from "@/lib/skill-visual";
 import { AppealButton } from "./appeal-button";
 
-export const metadata: Metadata = { title: "Bằng chứng của tôi" };
+export const metadata: Metadata = { title: "Video của tôi" };
 
 type Status = RouterOutputs["proof"]["status"];
 
@@ -20,12 +21,13 @@ export default async function ProofStatusPage({ params }: { params: Promise<{ id
   const p = await orNotFound(api.proof.status({ proofId: id }));
   const patch = patchOf(p.skill);
   const decided = p.status === "passed" || p.status === "failed";
+  const milestone = milestoneName(p.levelTitle, p.targetLevel);
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-32">
       <header className="flex items-center gap-1 px-3 pt-3">
         <BackButton fallback="/profile" />
-        <span className="text-[14px] font-semibold text-muted">Bằng chứng</span>
+        <span className="text-[14px] font-semibold text-muted">Video của bạn</span>
       </header>
 
       <section className="flex items-center gap-4 px-5 pt-3">
@@ -33,12 +35,16 @@ export default async function ProofStatusPage({ params }: { params: Promise<{ id
           categorySlug={patch.categorySlug}
           rarity={patch.rarity}
           state={p.status === "passed" ? "earned" : "practicing"}
-          level={p.targetLevel}
+          icon={patch.icon}
           size={72}
-          label={`${p.skill.name}, cấp ${p.targetLevel}`}
+          label={p.skill.name}
         />
-        <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="font-display text-[24px] font-extrabold leading-tight">{p.skill.name}</h1>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="truncate text-[14px] text-muted">{p.skill.name}</p>
+          <h1 className="font-display text-[24px] font-extrabold leading-tight">
+            <span className="sr-only">Mốc </span>
+            {milestone}
+          </h1>
           <StatusLine p={p} />
         </div>
       </section>
@@ -54,7 +60,7 @@ export default async function ProofStatusPage({ params }: { params: Promise<{ id
       {p.criteria && p.criteria.length > 0 ? (
         <section aria-labelledby="crit" className="mx-5 mt-6 flex flex-col">
           <h2 id="crit" className="pb-1 text-[15px] font-bold">
-            Từng tiêu chí
+            Kết quả chấm
           </h2>
           <ul className="flex flex-col">
             {p.criteria.map((c) => {
@@ -137,15 +143,21 @@ function StatusLine({ p }: { p: Status }) {
     return (
       <p className={`${base} text-teal`}>
         <ShieldCheck size={18} aria-hidden />
-        Đã đạt cấp {p.targetLevel}
+        Đã xong mốc
       </p>
     );
-  if (p.status === "failed") return <p className={`${base} text-danger`}>Chưa đạt cấp {p.targetLevel}</p>;
+  if (p.status === "failed")
+    return (
+      <p className={`${base} text-danger`}>
+        <CircleX size={17} aria-hidden />
+        Chưa đạt
+      </p>
+    );
   if (p.status === "removed") return <p className={`${base} text-muted`}>Đã gỡ</p>;
   return (
     <p className={`${base} text-muted`}>
       <Hourglass size={16} aria-hidden />
-      {p.underEditorReview ? "Biên tập viên đang xem" : `Chờ duyệt cấp ${p.targetLevel}`}
+      {p.underEditorReview ? "Biên tập viên đang xem" : "Chờ duyệt"}
     </p>
   );
 }
@@ -164,9 +176,9 @@ function Votes({ votes, required }: { votes: number; required: number }) {
       </ol>
       <div className="tabular flex items-center gap-1 text-[13px] text-muted">
         {votes}/{required} người đã duyệt
-        <InfoSheet title="Ai duyệt bằng chứng?" label="Cách chọn người duyệt">
-          Người duyệt được chọn ngẫu nhiên trong số người đạt cấp cao của kỹ năng, không phải người bạn theo dõi, và không thấy tên
-          bạn. Ai quá hạn sẽ được thay bằng người khác.
+        <InfoSheet title="Ai xem video của bạn?" label="Cách chọn người duyệt">
+          Người duyệt được chọn ngẫu nhiên trong số người đã xong các mốc cao của kỹ năng, không phải người bạn theo dõi, và không
+          thấy tên bạn. Ai quá hạn sẽ được thay bằng người khác.
         </InfoSheet>
       </div>
     </section>

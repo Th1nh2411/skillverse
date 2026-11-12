@@ -9,6 +9,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Skeleton, QueryError } from "@/components/ui/misc";
 import { timeAgo } from "@/lib/time";
+import { milestoneName } from "@/lib/milestone";
 import { useTRPC } from "@/lib/trpc";
 
 type Tab = "reports" | "disputed" | "appeals" | "proposals";
@@ -26,7 +27,7 @@ const TARGET_LABEL: Record<Report["targetType"], string> = {
 };
 
 const ACTION_LABEL = {
-  level_revoked: "Đã thu hồi cấp",
+  level_revoked: "Đã thu hồi mốc",
   proof_removed: "Đã gỡ bằng chứng",
   post_hidden: "Đã ẩn bài viết",
 } as const;
@@ -155,7 +156,7 @@ function ReportCard({ r }: { r: Report }) {
         placeholder="Kết luận (không bắt buộc)"
         className={input}
       />
-      {revokes ? <p className="text-[13px] text-accent">Xác nhận sẽ thu hồi cấp của bằng chứng này.</p> : null}
+      {revokes ? <p className="text-[13px] text-accent">Xác nhận sẽ thu hồi mốc của bằng chứng này.</p> : null}
       {resolve.error ? (
         <p role="alert" className="text-[13px] text-danger">
           {resolve.error.message}
@@ -271,7 +272,7 @@ function DisputedCard({ d }: { d: Disputed }) {
     <li className={card}>
       <div className="flex flex-col gap-0.5">
         <h2 className="text-[15px] font-bold">
-          {d.skill.name} <span className="tabular text-muted">cấp {d.targetLevel}</span>
+          {d.skill.name} <span className="text-muted">mốc {milestoneName(d.levelTitle, d.targetLevel)}</span>
         </h2>
         <p className="text-[13px] text-muted">
           <Link href={`/u/${d.user.handle}`} className="hover:underline">
@@ -336,7 +337,7 @@ function AppealCard({ a }: { a: Appeal }) {
     <li className={card}>
       <div className="flex flex-col gap-0.5">
         <h2 className="text-[15px] font-bold">
-          {a.proof.skill.name} <span className="tabular text-muted">cấp {a.proof.targetLevel}</span>
+          {a.proof.skill.name} <span className="text-muted">mốc {milestoneName(a.proof.levelTitle, a.proof.targetLevel)}</span>
         </h2>
         <p className="tabular text-[13px] text-muted">
           <Link href={`/u/${a.user.handle}`} className="hover:underline">

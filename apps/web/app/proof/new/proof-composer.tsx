@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { CircleAlert, CircleCheck, CircleX, Upload, Video, X } from "lucide-react";
+import { CircleAlert, CircleCheck, CircleX, ShieldCheck, Upload, Video, X } from "lucide-react";
+import { MilestoneRulesInfo } from "@/components/milestone-rules";
 import { CameraRecorder } from "@/components/camera-recorder";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { LevelPatch } from "@/components/ui/level-patch";
 import { InfoSheet } from "@/components/ui/sheet";
 import { useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc";
-import type { Rarity } from "@/lib/skill-visual";
+import { skillIcon, type Rarity } from "@/lib/skill-visual";
 import { formatDuration, precheck, readVideoMeta, type CheckItem, type MediaLimits, type VideoClip } from "@/lib/video";
 
 type Props = {
@@ -18,13 +19,22 @@ type Props = {
   /** Đến từ "Tham gia" thử thách: nộp xong thì tham gia bằng bằng chứng này. */
   challengeId?: string;
   skill: { id: string; slug: string; name: string; categorySlug: string; rarity: Rarity; riskLevel: "none" | "low" | "high" };
-  myLevel: number;
-  target: { level: number; criteria: { id: string; text: string }[]; minReviewers: number; minReviewerLevel: number };
+  /** Số mốc đã xong / tổng số mốc (chỉ để vẽ thanh tiến độ). */
+  progress: { done: number; max: number };
+  target: {
+    level: number;
+    /** Tên mốc, vd. "Trời gió". */
+    name: string;
+    criteria: { id: string; text: string }[];
+    minReviewers: number;
+    /** Tên mốc tối thiểu của người duyệt. */
+    reviewerTitle: string | null;
+  };
 };
 
 type Phase = { kind: "idle" } | { kind: "uploading"; pct: number } | { kind: "submitting" };
 
-export function ProofComposer({ limits, challengeId, skill, myLevel, target }: Props) {
+export function ProofComposer({ limits, challengeId, skill, progress, target }: Props) {
   const router = useRouter();
   const trpc = useTRPC();
   const createUpload = useMutation(trpc.proof.createUpload.mutationOptions());
@@ -98,37 +108,44 @@ export function ProofComposer({ limits, challengeId, skill, myLevel, target }: P
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-40">
       <header className="flex items-center gap-1 px-3 pt-3">
         <BackButton fallback={`/skills/${skill.slug}`} label="Đóng" />
-        <h1 className="font-display text-[22px] font-extrabold">Đăng bằng chứng</h1>
+        <h1 className="font-display text-[22px] font-extrabold">Gửi video</h1>
       </header>
 
-      <section className="mx-5 mt-3 flex items-center gap-3 rounded-[var(--radius-card)] bg-surface px-3.5 py-3">
-        <LevelPatch categorySlug={skill.categorySlug} rarity={skill.rarity} state="practicing" level={target.level} size={48} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[16px] font-bold">{skill.name}</span>
-          <span className="tabular text-[13px] text-muted">
-            Cấp {myLevel} → {target.level}
-          </span>
+      <section className="mx-5 mt-3 flex flex-col gap-3 rounded-[var(--radius-card)] bg-surface px-3.5 py-3">
+        <div className="flex items-center gap-3">
+          <LevelPatch
+            categorySlug={skill.categorySlug}
+            rarity={skill.rarity}
+            state={progress.done > 0 ? "earned" : "practicing"}
+            icon={skillIcon(skill.slug, skill.categorySlug)}
+            size={48}
+          />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-[13px] font-semibold text-muted">{skill.name}</span>
+            <span className="truncate text-[17px] font-bold leading-snug">
+              <span className="sr-only">Mốc </span>
+              {target.name}
+            </span>
+          </div>
+          <Link href="/proof/new" className="-mr-1 inline-flex min-h-11 items-center px-2 text-[14px] font-semibold text-accent">
+            Đổi
+          </Link>
         </div>
-        <Link
-          href="/proof/new"
-          className="inline-flex min-h-11 items-center px-2 text-[14px] font-semibold text-accent"
-        >
-          Đổi
-        </Link>
-      </section>
-
-      <section aria-labelledby="need" className="mx-5 mt-4 flex flex-col gap-1.5">
-        <h2 id="need" className="text-[13px] font-semibold text-muted">
-          Video cần cho thấy
-        </h2>
-        <ul className="flex flex-col gap-1">
-          {target.criteria.map((c) => (
-            <li key={c.id} className="flex items-start gap-2 text-[14px] leading-snug">
-              <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-trail" aria-hidden />
-              {c.text}
-            </li>
-          ))}
-        </ul>
+        {target.criteria.length === 1 ? (
+          <p className="flex items-start gap-2 border-t border-border pt-3 text-[15px] font-semibold leading-snug">
+            <Video size={18} className="mt-0.5 shrink-0 text-accent" aria-label="Video cần thấy" />
+            {target.criteria[0]!.text}
+          </p>
+        ) : (
+          <ul aria-label="Video cần thấy" className="flex flex-col gap-1 border-t border-border pt-3">
+            {target.criteria.map((c) => (
+              <li key={c.id} className="flex items-start gap-2 text-[14px] leading-snug">
+                <Video size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+                {c.text}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <div className="mx-5 mt-5">
@@ -227,7 +244,7 @@ export function ProofComposer({ limits, challengeId, skill, myLevel, target }: P
 
       <div className="mx-5 mt-5 flex flex-col gap-1.5">
         <label htmlFor="caption" className="text-[13px] font-semibold text-muted">
-          Mô tả
+          Ghi chú
         </label>
         <textarea
           id="caption"
@@ -235,7 +252,7 @@ export function ProofComposer({ limits, challengeId, skill, myLevel, target }: P
           maxLength={500}
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          placeholder="Dụng cụ, điều kiện, mẹo của bạn"
+          placeholder="Không bắt buộc"
           className="min-h-[76px] resize-none rounded-[var(--radius-btn)] border border-border bg-surface px-4 py-3 text-[15px] text-text placeholder:text-muted/70 focus:border-accent focus:outline-none"
         />
       </div>
@@ -258,10 +275,10 @@ export function ProofComposer({ limits, challengeId, skill, myLevel, target }: P
             {error}
           </p>
         ) : null}
-        <div className="flex items-center justify-center gap-1 text-[12px] text-muted">
-          <span className="tabular">
-            {target.minReviewers} người cấp {target.minReviewerLevel}+ sẽ duyệt
-          </span>
+        <div className="flex items-center justify-center gap-1.5 text-[13px] text-muted">
+          <ShieldCheck size={15} className="text-teal" aria-hidden />
+          <span className="tabular">{target.minReviewers} người duyệt</span>
+          <MilestoneRulesInfo reviewers={target.minReviewers} reviewerTitle={target.reviewerTitle} />
         </div>
         <Button className="w-full" disabled={!canSubmit} onClick={submit}>
           {phase.kind === "uploading" ? (
@@ -269,7 +286,7 @@ export function ProofComposer({ limits, challengeId, skill, myLevel, target }: P
           ) : phase.kind === "submitting" ? (
             "Đang gửi"
           ) : (
-            "Gửi xác thực"
+            "Gửi video"
           )}
         </Button>
       </div>

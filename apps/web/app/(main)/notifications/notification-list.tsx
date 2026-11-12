@@ -2,12 +2,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
-import { BellOff } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { RouterOutputs } from "@skillverse/api";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Skeleton, QueryError } from "@/components/ui/misc";
+import { NotebookArt } from "@/components/illustrations";
 import { notificationCopy } from "@/lib/notification-copy";
 import { timeAgo } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
@@ -52,7 +52,7 @@ export function NotificationList() {
         </div>
       ) : items.length === 0 ? (
         <div className="px-5 pt-3">
-          <EmptyState icon={BellOff} title="Chưa có thông báo nào" />
+          <EmptyState art={<NotebookArt size={140} />} title="Chưa có thông báo nào" />
         </div>
       ) : (
         <ul className="flex flex-col pt-2">

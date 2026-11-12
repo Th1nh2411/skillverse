@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Flame, MailCheck, TriangleAlert } from "lucide-react";
+import { MailCheck, TriangleAlert } from "lucide-react";
 import { devLoginEnabled } from "@skillverse/api";
 import { googleEnabled, signIn } from "@/auth";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { LevelPatch } from "@/components/ui/level-patch";
+import { FieldNotebookArt } from "@/components/illustrations";
 
 export const metadata: Metadata = { title: "Đăng nhập" };
 
@@ -30,12 +30,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const dev = devLoginEnabled();
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[440px] flex-col px-5 pb-[max(env(safe-area-inset-bottom),24px)] pt-[12vh]">
+    <main className="mx-auto flex min-h-dvh max-w-[440px] flex-col px-5 pb-[max(env(safe-area-inset-bottom),24px)] pt-[8vh]">
       <div className="flex flex-col items-start gap-5">
-        <LevelPatch categorySlug="sinh-ton" rarity="legendary" icon={Flame} size={88} />
+        <FieldNotebookArt size={200} className="-ml-2 text-muted" />
         <div className="flex flex-col gap-2">
           <h1 className="font-display text-[34px] font-extrabold leading-[1.1] tracking-[-0.01em]">SkillVerse</h1>
-          <p className="text-[15px] text-muted">Làm được thật. Cộng đồng xác nhận.</p>
+          <p className="text-[15px] text-muted">Học cái mới, khoe từng mốc.</p>
         </div>
       </div>
 

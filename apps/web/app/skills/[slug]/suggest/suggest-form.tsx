@@ -2,13 +2,13 @@
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { MAX_CRITERIA_PER_LEVEL } from "@skillverse/validation";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/lib/trpc";
 
-type Level = { id: string; level: number; criteria: string[] };
+type Level = { id: string; level: number; title: string; criteria: string[] };
 const field =
   "w-full rounded-[var(--radius-btn)] border border-border bg-surface px-4 py-3 text-[15px] text-text placeholder:text-muted/70 focus:border-accent focus:outline-none";
 
@@ -20,6 +20,11 @@ export function SuggestForm({ skill, levels, initialLevel }: { skill: { slug: st
   const current = levels.find((l) => l.level === levelNo)!;
   const [criteria, setCriteria] = useState<string[]>(current.criteria);
   const [summary, setSummary] = useState("");
+  const chipsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Mốc đang chọn có thể nằm ngoài khung cuộn ngang: đưa vào giữa khi mở trang.
+    chipsRef.current?.querySelector('[aria-checked="true"]')?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, []);
   const [rationale, setRationale] = useState("");
   const create = useMutation(
     trpc.proposal.createCriteriaEdit.mutationOptions({ onSuccess: (r) => router.replace(`/proposals/${r.proposalId}`) }),
@@ -34,12 +39,12 @@ export function SuggestForm({ skill, levels, initialLevel }: { skill: { slug: st
       <header className="flex items-center gap-1 px-3 pt-3">
         <BackButton fallback={`/skills/${skill.slug}`} label="Đóng" />
         <div className="flex min-w-0 flex-col">
-          <h1 className="font-display text-[22px] font-extrabold leading-tight">Góp ý tiêu chí</h1>
+          <h1 className="font-display text-[22px] font-extrabold leading-tight">Góp ý mốc</h1>
           <p className="truncate text-[13px] text-muted">{skill.name}</p>
         </div>
       </header>
 
-      <div role="radiogroup" aria-label="Cấp" className="no-scrollbar mx-5 mt-4 flex gap-2 overflow-x-auto">
+      <div ref={chipsRef} role="radiogroup" aria-label="Mốc" className="no-scrollbar mx-5 mt-4 flex gap-2 overflow-x-auto">
         {levels.map((l) => {
           const on = l.level === levelNo;
           return (
@@ -52,11 +57,11 @@ export function SuggestForm({ skill, levels, initialLevel }: { skill: { slug: st
                 setLevelNo(l.level);
                 setCriteria(l.criteria);
               }}
-              className={`tabular min-h-11 shrink-0 rounded-full px-4 text-[14px] font-semibold ${
+              className={`min-h-11 shrink-0 rounded-full px-4 text-[14px] font-semibold ${
                 on ? "bg-text text-bg" : "border border-border text-text hover:bg-surface-2"
               }`}
             >
-              Cấp {l.level}
+              {l.title}
             </button>
           );
         })}
@@ -64,12 +69,12 @@ export function SuggestForm({ skill, levels, initialLevel }: { skill: { slug: st
 
       <section aria-labelledby={`${id}-c`} className="mx-5 mt-5 flex flex-col gap-2">
         <h2 id={`${id}-c`} className="text-[13px] font-semibold text-muted">
-          Tiêu chí cấp {levelNo}
+          Việc cần làm ở mốc {current.title}
         </h2>
         {criteria.map((c, i) => (
           <div key={`${levelNo}-${i}`} className="flex items-center gap-1">
             <input
-              aria-label={`Tiêu chí ${i + 1}`}
+              aria-label={`Việc cần làm ${i + 1}`}
               value={c}
               maxLength={200}
               onChange={(e) => setCriteria((cs) => cs.map((x, j) => (j === i ? e.target.value : x)))}
@@ -78,7 +83,7 @@ export function SuggestForm({ skill, levels, initialLevel }: { skill: { slug: st
             {criteria.length > 1 ? (
               <button
                 type="button"
-                aria-label={`Bỏ tiêu chí ${i + 1}`}
+                aria-label={`Bỏ dòng ${i + 1}`}
                 onClick={() => setCriteria((cs) => cs.filter((_, j) => j !== i))}
                 className="inline-flex size-11 shrink-0 items-center justify-center text-muted hover:text-text"
               >
@@ -94,7 +99,7 @@ export function SuggestForm({ skill, levels, initialLevel }: { skill: { slug: st
             className="inline-flex min-h-11 items-center gap-1 self-start px-1 text-[14px] font-semibold text-muted hover:text-text"
           >
             <Plus size={16} aria-hidden />
-            Thêm tiêu chí
+            Thêm điều kiện
           </button>
         ) : null}
       </section>

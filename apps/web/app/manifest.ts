@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/home",
     name: "SkillVerse",
     short_name: "SkillVerse",
-    description: "Lên level kỹ năng bằng bằng chứng được cộng đồng xác thực.",
+    description: "Học kỹ năng mới, khoe từng mốc, kết bạn cùng sở thích.",
     start_url: "/home",
     scope: "/",
     display: "standalone",
@@ -21,8 +21,8 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
     ],
     shortcuts: [
-      { name: "Đăng bằng chứng", url: "/proof/new", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: "Duyệt bằng chứng", url: "/review", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Gửi video", url: "/proof/new", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Xem giúp bạn bè", url: "/review", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
     ],
   };
 }

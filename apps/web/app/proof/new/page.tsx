@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Hourglass, Lock, Sprout } from "lucide-react";
+import { ChevronRight, Lock } from "lucide-react";
 import { getServerCaller } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { BackButton } from "@/components/ui/back-button";
 import { ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { EmptyState } from "@/components/ui/misc";
+import { MilestoneBar } from "@/components/ui/milestone";
+import { SummitArt, TrailArt, WaitArt } from "@/components/illustrations";
+import { milestoneName, titleAt } from "@/lib/milestone";
 import { skillIcon } from "@/lib/skill-visual";
 import { ProofComposer } from "./proof-composer";
 
-export const metadata: Metadata = { title: "Đăng bằng chứng" };
+export const metadata: Metadata = { title: "Gửi video" };
 
 export default async function NewProofPage({ searchParams }: { searchParams: Promise<{ skill?: string; challenge?: string }> }) {
   const { skill, challenge } = await searchParams;
@@ -39,8 +42,8 @@ async function PickSkill() {
       {options.length === 0 ? (
         <div className="px-5 pt-4">
           <EmptyState
-            icon={Sprout}
-            title="Chưa có kỹ năng nào để lên cấp"
+            art={<TrailArt size={150} />}
+            title="Chưa có mốc nào đang chờ bạn"
             action={
               <ButtonLink href="/discover" size="md">
                 Khám phá
@@ -60,15 +63,15 @@ async function PickSkill() {
                   categorySlug={s.category.slug}
                   rarity={s.rarity}
                   state={s.level > 0 ? "earned" : "practicing"}
-                  level={s.level > 0 ? s.level : undefined}
-                  icon={s.level > 0 ? undefined : skillIcon(s.slug, s.category.slug)}
+                  icon={skillIcon(s.slug, s.category.slug)}
                   size={44}
                 />
-                <span className="flex min-w-0 flex-1 flex-col">
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="truncate text-[15px] font-semibold">{s.name}</span>
-                  <span className="tabular text-[13px] text-muted">
-                    Lên cấp {s.level + 1}
+                  <span className="truncate text-[13px] text-muted">
+                    Mốc tiếp: <b className="font-semibold text-text">{milestoneName(s.nextLevelTitle, s.level + 1)}</b>
                   </span>
+                  <MilestoneBar value={s.level} max={s.maxLevel} />
                 </span>
                 <ChevronRight size={18} className="text-muted" aria-hidden />
               </Link>
@@ -92,8 +95,8 @@ async function Compose({ slug, challengeId }: { slug: string; challengeId?: stri
       <Shell title={d.name}>
         <div className="px-5 pt-4">
           <EmptyState
-            icon={Hourglass}
-            title={`Đang chờ duyệt cấp ${d.myPendingProof.targetLevel}`}
+            art={<WaitArt size={130} />}
+            title={`Mốc ${titleAt(d.levels, d.myPendingProof.targetLevel)} đang chờ duyệt`}
             action={
               <ButtonLink href={`/proofs/${d.myPendingProof.proofId}`} size="md" variant="secondary">
                 Xem tiến độ
@@ -108,7 +111,7 @@ async function Compose({ slug, challengeId }: { slug: string; challengeId?: stri
     return (
       <Shell title={d.name}>
         <div className="px-5 pt-4">
-          <EmptyState icon={Sprout} title="Bạn đã đạt cấp cao nhất" />
+          <EmptyState art={<SummitArt size={150} />} title={`Xong cả ${d.maxLevel} mốc`} />
         </div>
       </Shell>
     );
@@ -119,7 +122,7 @@ async function Compose({ slug, challengeId }: { slug: string; challengeId?: stri
         <div className="px-5 pt-4">
           <EmptyState
             icon={Lock}
-            title="Cần đạt kỹ năng nền trước"
+            title="Cần xong kỹ năng nền trước"
             action={
               <ButtonLink href={`/skills/tree/${d.category.slug}`} size="md" variant="secondary">
                 Xem cây kỹ năng
@@ -143,12 +146,13 @@ async function Compose({ slug, challengeId }: { slug: string; challengeId?: stri
         rarity: d.rarity,
         riskLevel: d.riskLevel,
       }}
-      myLevel={myLevel}
+      progress={{ done: myLevel, max: d.maxLevel }}
       target={{
         level: target,
+        name: milestoneName(level.title, target),
         criteria: level.criteria.map((c) => ({ id: c.id, text: c.text })),
         minReviewers: level.minReviewers,
-        minReviewerLevel: level.minReviewerLevel,
+        reviewerTitle: titleAt(d.levels, level.minReviewerLevel),
       }}
     />
   );

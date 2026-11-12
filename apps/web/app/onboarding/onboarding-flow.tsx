@@ -1,6 +1,6 @@
 "use client";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check, Plus, Search, Zap } from "lucide-react";
+import { ArrowLeft, Check, Lightbulb, Plus, Search, Video, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useMemo, useState } from "react";
 import type { RouterOutputs } from "@skillverse/api";
@@ -10,6 +10,8 @@ import { IconButton } from "@/components/ui/icon-button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { Skeleton } from "@/components/ui/misc";
 import { InfoSheet } from "@/components/ui/sheet";
+import { BackpackArt } from "@/components/illustrations";
+import { milestoneName } from "@/lib/milestone";
 import { skillIcon } from "@/lib/skill-visual";
 import { useTRPC } from "@/lib/trpc";
 
@@ -40,8 +42,8 @@ export function OnboardingFlow() {
     }),
   );
 
-  function finish() {
-    router.replace("/profile");
+  function finish(next = "/profile") {
+    router.replace(next);
     router.refresh();
   }
 
@@ -72,9 +74,12 @@ export function OnboardingFlow() {
 
       {step === 1 ? (
         <>
-          <header className="flex flex-col gap-1.5">
-            <h1 className="font-display text-[28px] font-extrabold leading-tight">Bạn muốn giỏi điều gì?</h1>
-            <p className="text-[14px] text-muted">Chọn ít nhất {minSkills} kỹ năng.</p>
+          <header className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <h1 className="font-display text-[28px] font-extrabold leading-tight">Bạn muốn giỏi điều gì?</h1>
+              <p className="tabular text-[14px] text-muted">Chọn ít nhất {minSkills} kỹ năng.</p>
+            </div>
+            <BackpackArt size={96} className="shrink-0 text-muted" />
           </header>
 
           {options.isPending ? (
@@ -119,10 +124,10 @@ export function OnboardingFlow() {
             <div className="flex items-center gap-2">
               <h1 className="font-display text-[28px] font-extrabold leading-tight">Bạn đang ở đâu?</h1>
               <InfoSheet title="Trình độ tự chọn">
-                Lựa chọn này chỉ giúp gợi ý thử thách phù hợp. Cấp chính thức luôn cần bằng chứng được cộng đồng duyệt.
+                Lựa chọn này chỉ giúp gợi ý mốc vừa sức. Mỗi mốc chỉ được công nhận khi có video được cộng đồng duyệt.
               </InfoSheet>
             </div>
-            <p className="text-[14px] text-muted">Để gợi ý thử thách vừa sức.</p>
+            <p className="text-[14px] text-muted">Để gợi ý mốc vừa sức.</p>
           </header>
 
           <ul className="flex flex-col gap-5">
@@ -188,30 +193,48 @@ export function OnboardingFlow() {
       {step === 3 && challenge ? (
         <>
           <header className="flex flex-col gap-1.5">
-            <h1 className="font-display text-[28px] font-extrabold leading-tight">Thử thách đầu tiên</h1>
-            <p className="text-[14px] text-muted">Làm xong, quay video và gửi xác thực.</p>
+            <h1 className="font-display text-[28px] font-extrabold leading-tight">Mốc đầu tiên</h1>
+            <p className="text-[14px] text-muted">Làm được thì quay video.</p>
           </header>
 
           <section className="flex flex-col items-center gap-5 rounded-[var(--radius-card)] border border-accent-line bg-accent-soft px-5 py-7 text-center">
             <LevelPatch
               categorySlug={pickedCategory(picked, challenge.skillId)}
               state="practicing"
-              level={challenge.targetLevel}
+              icon={skillIcon(challenge.slug, pickedCategory(picked, challenge.skillId))}
               size={84}
-              label={`${challenge.name}, cấp ${challenge.targetLevel}`}
+              label={challenge.name}
             />
             <div className="flex flex-col gap-1.5">
-              <h2 className="text-[19px] font-bold leading-snug">{challenge.criteria[0]?.text ?? challenge.name}</h2>
               <p className="text-[14px] text-accent-ink">{challenge.name}</p>
+              <h2 className="font-display text-[24px] font-extrabold leading-tight">
+                {milestoneName(challenge.levelTitle, challenge.targetLevel)}
+              </h2>
+              {challenge.criteria[0] ? (
+                <p className="inline-flex items-start justify-center gap-1.5 text-[15px] font-semibold leading-snug">
+                  <Video size={17} className="mt-0.5 shrink-0 text-accent" aria-label="Video cần thấy" />
+                  {challenge.criteria[0].text}
+                </p>
+              ) : null}
             </div>
+            {challenge.levelDescription ? (
+              <p className="flex items-start gap-2 text-left text-[14px] leading-relaxed text-accent-ink">
+                <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent" aria-label="Cách làm" />
+                {challenge.levelDescription}
+              </p>
+            ) : null}
             <span className="tabular inline-flex items-center gap-1 text-[15px] font-bold text-accent">
               <Zap size={16} aria-hidden />+{challenge.xpReward} XP
             </span>
           </section>
 
-          <div className="mt-auto">
-            <Button className="w-full" onClick={finish}>
-              Bắt đầu thôi
+          <div className="mt-auto flex flex-col gap-2">
+            <Button className="w-full" onClick={() => finish(`/proof/new?skill=${challenge.slug}`)}>
+              <Video size={20} aria-hidden />
+              Quay video
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => finish()}>
+              Để sau
             </Button>
           </div>
         </>
@@ -302,6 +325,7 @@ function match(name: string, q: string) {
 }
 
 function Chip({ skill, on, onClick }: { skill: SkillOption; on: boolean; onClick: () => void }) {
+  const Icon = skillIcon(skill.slug, skill.category.slug);
   return (
     <button
       type="button"
@@ -310,10 +334,10 @@ function Chip({ skill, on, onClick }: { skill: SkillOption; on: boolean; onClick
       className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold transition-colors ${
         on
           ? "border-2 border-accent bg-accent-soft pl-3 text-text"
-          : "border border-border text-text hover:bg-surface-2"
+          : "border border-border pl-3 text-text hover:bg-surface-2"
       }`}
     >
-      {on ? <Check size={16} className="text-accent" aria-hidden /> : null}
+      {on ? <Check size={16} className="text-accent" aria-hidden /> : <Icon size={16} className="text-muted" aria-hidden />}
       {skill.name}
     </button>
   );

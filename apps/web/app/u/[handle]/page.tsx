@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { getServerCaller, getViewer } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { ReportSheet } from "@/components/report-sheet";
 import { BackButton } from "@/components/ui/back-button";
-import { LevelPatch } from "@/components/ui/level-patch";
+import { SkillProgressRow } from "@/components/skill-progress";
 import { Avatar } from "@/components/ui/misc";
 import { InfoSheet } from "@/components/ui/sheet";
 import { formatNumber } from "@/lib/skill-visual";
@@ -51,13 +50,14 @@ export default async function PeerProfilePage({ params }: Params) {
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="truncate font-display text-[24px] font-extrabold leading-tight">{p.displayName}</h1>
           <div className="tabular flex flex-wrap items-center gap-x-3 text-[14px] text-muted">
-            <span>Cấp {p.xp.level}</span>
+            <span>Hạng {p.xp.level}</span>
             <span className="inline-flex items-center gap-1 text-teal">
               <ShieldCheck size={14} aria-hidden />
-              Uy tín {p.reputation}
+              <span className="sr-only">Uy tín duyệt</span>
+              {p.reputation}
             </span>
             <InfoSheet title="Uy tín duyệt" label="Cách tính uy tín duyệt">
-              Uy tín tăng khi phiếu duyệt trùng với đa số người duyệt, giảm khi trái. Người uy tín cao được ưu tiên duyệt cấp cao.
+              Uy tín tăng khi phiếu duyệt trùng với đa số người duyệt, giảm khi trái. Người uy tín cao được ưu tiên duyệt các mốc khó.
             </InfoSheet>
           </div>
         </div>
@@ -81,30 +81,19 @@ export default async function PeerProfilePage({ params }: Params) {
 
       <section aria-labelledby="featured" className="mt-6 flex flex-col">
         <h2 id="featured" className="px-5 text-[17px] font-bold">
-          Kỹ năng nổi bật
+          Kỹ năng
         </h2>
-        <ul className="mt-1 flex flex-col">
-          {p.featuredSkills.map((s) => (
-            <li key={s.skillId}>
-              <Link
-                href={`/skills/${s.slug}`}
-                className="flex min-h-14 items-center gap-3.5 px-5 py-2 transition-colors hover:bg-surface"
-              >
-                <LevelPatch
-                  categorySlug={s.category.slug}
-                  rarity={s.rarity}
-                  state={s.level > 0 ? "earned" : "practicing"}
-                  level={s.level > 0 ? s.level : undefined}
-                  size={44}
-                />
-                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{s.name}</span>
-                <span className="tabular shrink-0 text-[13px] text-muted">
-                  Cấp {s.level}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {p.featuredSkills.length === 0 ? (
+          <p className="px-5 pt-2 text-[14px] text-muted">Chưa xong mốc nào.</p>
+        ) : (
+          <ul className="mt-1 flex flex-col">
+            {p.featuredSkills.map((s) => (
+              <li key={s.skillId}>
+                <SkillProgressRow s={s} patchSize={44} />
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <SwapPanel

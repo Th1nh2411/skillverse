@@ -6,13 +6,14 @@ import { BackButton } from "@/components/ui/back-button";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/misc";
 import { PROPOSAL_STATUS } from "@/lib/proposal-labels";
+import { milestoneName } from "@/lib/milestone";
 import { formatNumber } from "@/lib/skill-visual";
 
 export const metadata: Metadata = { title: "Đề xuất của cộng đồng" };
 
 const TABS = [
   { kind: "new_skill", label: "Kỹ năng mới" },
-  { kind: "edit_criteria", label: "Sửa tiêu chí" },
+  { kind: "edit_criteria", label: "Góp ý mốc" },
 ] as const;
 
 export default async function ProposalsPage({ searchParams }: { searchParams: Promise<{ kind?: string; skill?: string }> }) {
@@ -57,7 +58,7 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
         <div className="px-5 pt-4">
           <EmptyState
             icon={Lightbulb}
-            title={kind === "new_skill" ? "Chưa có đề xuất kỹ năng nào" : "Chưa có góp ý tiêu chí nào"}
+            title={kind === "new_skill" ? "Chưa có đề xuất kỹ năng nào" : "Chưa có góp ý mốc nào"}
             action={
               kind === "new_skill" ? (
                 <ButtonLink href="/skills/propose" size="md">
@@ -79,7 +80,7 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
                     {p.skill ? (
                       <span className="truncate text-[13px] text-muted">
                         {p.skill.name}
-                        {p.targetLevel ? `, cấp ${p.targetLevel}` : ""}
+                        {p.targetLevel ? `: mốc ${milestoneName(p.levelTitle, p.targetLevel)}` : ""}
                       </span>
                     ) : null}
                     <span className="tabular flex items-center gap-3 text-[12px]">

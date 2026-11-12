@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Clock, Inbox } from "lucide-react";
+import { ChevronRight, Clock, ShieldCheck } from "lucide-react";
+import { NotebookArt } from "@/components/illustrations";
+import { milestoneName } from "@/lib/milestone";
 import { getServerCaller } from "@/lib/server/trpc";
 import { patchOf } from "@/lib/skill-visual";
 import { BackButton } from "@/components/ui/back-button";
@@ -8,7 +10,7 @@ import { LevelPatch } from "@/components/ui/level-patch";
 import { EmptyState } from "@/components/ui/misc";
 import { ReputationChip } from "./reputation-chip";
 
-export const metadata: Metadata = { title: "Duyệt bằng chứng" };
+export const metadata: Metadata = { title: "Cần duyệt" };
 
 function dueLabel(due: Date) {
   const h = Math.round((due.getTime() - Date.now()) / 3_600_000);
@@ -22,13 +24,13 @@ export default async function ReviewQueuePage() {
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col">
       <header className="flex items-center gap-1 px-3 pt-3">
         <BackButton fallback="/home" />
-        <h1 className="flex-1 font-display text-[22px] font-extrabold">Hàng đợi duyệt</h1>
+        <h1 className="flex-1 font-display text-[22px] font-extrabold">Cần duyệt</h1>
         <ReputationChip value={q.reputation} />
       </header>
 
       {q.items.length === 0 ? (
         <div className="px-5 pt-4">
-          <EmptyState icon={Inbox} title="Chưa có bằng chứng nào cần bạn duyệt" />
+          <EmptyState art={<NotebookArt size={150} />} title="Chưa có video nào cần bạn duyệt" />
         </div>
       ) : (
         <ul className="flex flex-col pt-3">
@@ -45,13 +47,19 @@ export default async function ReviewQueuePage() {
                     categorySlug={patch.categorySlug}
                     rarity={patch.rarity}
                     state="practicing"
-                    level={it.targetLevel}
+                    icon={patch.icon}
                     size={48}
                   />
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="truncate text-[15px] font-semibold">{it.skill.name}</span>
-                    <span className="tabular truncate text-[13px] text-muted">
-                      Lên cấp {it.targetLevel}, đã có {it.votes}/{it.required} phiếu
+                    <span className="truncate text-[13px] text-muted">{it.skill.name}</span>
+                    <span className="truncate text-[15px] font-semibold">
+                      <span className="sr-only">Mốc </span>
+                      {milestoneName(it.levelTitle, it.targetLevel)}
+                    </span>
+                    <span className="tabular inline-flex items-center gap-1 text-[12px] text-muted">
+                      <ShieldCheck size={13} className="text-teal" aria-hidden />
+                      {it.votes}/{it.required}
+                      <span className="sr-only">phiếu</span>
                     </span>
                   </span>
                   <span

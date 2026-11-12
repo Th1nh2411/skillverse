@@ -1,19 +1,22 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, Hourglass, Lock, Users, Zap } from "lucide-react";
+import { ArrowLeft, Check, Hourglass, Lock, Video, Zap } from "lucide-react";
 import type { RouterOutputs } from "@skillverse/api";
 import { ButtonLink } from "@/components/ui/button";
 import { IconLink } from "@/components/ui/icon-button";
 import { LevelPatch } from "@/components/ui/level-patch";
-import { InfoSheet } from "@/components/ui/sheet";
-import { formatNumber, skillIcon } from "@/lib/skill-visual";
+import { MilestoneBar } from "@/components/ui/milestone";
+import { MilestoneRulesInfo } from "@/components/milestone-rules";
+import { CategoryArt } from "@/components/illustrations";
+import { milestoneName } from "@/lib/milestone";
+import { skillIcon } from "@/lib/skill-visual";
 
 type Tree = RouterOutputs["skill"]["tree"];
 type Node = Tree["nodes"][number];
 
 const PATCH = 60;
-const LABEL_H = 46;
-const ROW_H = 150;
+const LABEL_H = 66;
+const ROW_H = 164;
 const TOP = 6;
 
 type Placed = { node: Node; depth: number; frac: number };
@@ -102,12 +105,14 @@ export function SkillTreeView({ tree }: { tree: Tree }) {
     <div className="mx-auto flex min-h-dvh max-w-[560px] flex-col">
       <header className="flex items-center gap-2 px-3 pb-2 pt-3">
         <IconLink href="/profile" label="Quay lại hồ sơ" icon={ArrowLeft} />
-        <div className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <h1 className="truncate font-display text-[22px] font-extrabold leading-tight">{tree.category.name}</h1>
-          <p className="tabular text-[13px] text-muted">
+          <p className="tabular inline-flex items-center gap-1 text-[13px] text-muted">
+            <Lock size={12} aria-hidden />
             {tree.unlockedCount}/{tree.totalCount} đã mở
           </p>
         </div>
+        <CategoryArt slug={tree.category.slug} size={96} className="-my-2 mr-1 shrink-0 text-muted" />
       </header>
 
       <ul className="flex gap-4 px-5 pb-1 pt-1 text-[12px] text-muted" aria-label="Chú giải">
@@ -115,7 +120,7 @@ export function SkillTreeView({ tree }: { tree: Tree }) {
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
             <circle cx="7" cy="7" r="6" fill="var(--color-trail)" />
           </svg>
-          Đã đạt
+          Đã xong
         </li>
         <li className="flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
@@ -224,6 +229,8 @@ function TreeNode({
   style?: React.CSSProperties;
 }) {
   const positioned = style !== undefined;
+  const firstUnmet = node.prerequisites.find((p) => !p.met);
+  const lockHint = firstUnmet ? milestoneName(firstUnmet.requiredLevelTitle, firstUnmet.requiredLevel) : null;
   return (
     <button
       type="button"
@@ -246,11 +253,10 @@ function TreeNode({
           <LevelPatch
             categorySlug={categorySlug}
             rarity={node.rarity}
-            state={node.state === "achieved" ? "earned" : "practicing"}
-            level={node.level > 0 ? node.level : undefined}
-            icon={node.level > 0 ? undefined : skillIcon(node.slug, categorySlug)}
+            state={node.level > 0 ? "earned" : "practicing"}
+            icon={skillIcon(node.slug, categorySlug)}
             size={PATCH - 4}
-            label={`${node.name}, cấp ${node.level} trên ${node.maxLevel}`}
+            label={`${node.name}, ${node.state === "achieved" ? "đã xong" : `xong ${node.level}/${node.maxLevel} mốc`}`}
           />
         )}
         {node.pendingProof ? (
@@ -266,12 +272,24 @@ function TreeNode({
       >
         {node.name}
       </span>
+      {node.state === "locked" && lockHint ? (
+        <span className="line-clamp-2 px-1 text-center text-[11px] leading-tight text-muted">
+          Xong mốc {lockHint}
+        </span>
+      ) : node.state !== "locked" ? (
+        <span aria-hidden className="flex gap-[3px]">
+          {Array.from({ length: node.maxLevel }, (_, i) => (
+            <span key={i} className={`size-[5px] rounded-full ${i < node.level ? "bg-trail" : "bg-surface-3"}`} />
+          ))}
+        </span>
+      ) : null}
     </button>
   );
 }
 
 function NodeSheet({ node }: { node: Node }) {
   const unmet = node.prerequisites.filter((p) => !p.met);
+  const next = node.next;
   return (
     <section
       aria-label={`Kỹ năng ${node.name}`}
@@ -279,76 +297,62 @@ function NodeSheet({ node }: { node: Node }) {
       className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-[560px] rounded-t-[22px] border-t border-border bg-surface-2 px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-4"
     >
       <div className="flex items-start gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h2 className="truncate font-display text-[21px] font-extrabold leading-tight">{node.name}</h2>
-          <p className="tabular flex flex-wrap items-center gap-x-3 text-[13px] text-muted">
-            <span>
-              Cấp {node.level}/{node.maxLevel}
-            </span>
-            {node.next ? (
-              <span className="inline-flex items-center gap-1">
-                <Users size={13} aria-hidden />
-                {formatNumber(node.next.holdersAtOrAbove)} người đạt cấp {node.next.level}
-              </span>
-            ) : null}
-          </p>
+          <MilestoneBar value={node.level} max={node.maxLevel} showCount showNext={node.state === "practicing"} />
         </div>
-        {node.next && node.state !== "locked" ? (
+        {next && node.state !== "locked" ? (
           <span className="tabular inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-[13px] font-bold text-accent">
-            <Zap size={13} aria-hidden />+{node.next.xpReward} XP
+            <Zap size={13} aria-hidden />+{next.xpReward} XP
           </span>
         ) : null}
       </div>
 
       {node.state === "locked" ? (
-        <ul className="mt-4 flex flex-col gap-2">
+        <ul className="mt-4 flex flex-col gap-2" aria-label="Điều kiện mở">
           {unmet.map((p) => (
             <li key={p.skillId} className="flex items-center gap-2.5 text-[14px]">
               <Lock size={16} className="shrink-0 text-muted" aria-hidden />
               <span>
-                {p.name} cấp {p.requiredLevel}
-              </span>
-              <span className="tabular ml-auto text-[13px] text-muted">
-                {p.userLevel}/{p.requiredLevel}
+                <b className="font-semibold">{p.name}</b>: xong mốc {milestoneName(p.requiredLevelTitle, p.requiredLevel)}
               </span>
             </li>
           ))}
         </ul>
-      ) : node.next ? (
-        <div className="mt-4 flex flex-col gap-2">
+      ) : next ? (
+        <div className="mt-4 flex flex-col gap-1">
           <div className="flex items-center gap-1">
-            <h3 className="text-[14px] font-semibold text-muted">Yêu cầu cấp {node.next.level}</h3>
-            <InfoSheet title="Ai xác thực?" label="Cách xác thực">
-              {node.next.minReviewers} người đạt cấp {node.next.minReviewerLevel} trở lên của kỹ năng này được chọn ngẫu nhiên để duyệt
-              video của bạn theo từng tiêu chí.
-            </InfoSheet>
+            <h3 className="text-[15px] font-bold">
+              <span className="font-semibold text-accent">Mốc tiếp: </span>
+              {milestoneName(next.title, next.level)}
+            </h3>
+            <MilestoneRulesInfo reviewers={next.minReviewers} reviewerTitle={null} />
           </div>
-          <ul className="flex flex-col gap-1.5">
-            {node.next.criteria.slice(0, 3).map((c) => (
-              <li key={c.id} className="flex items-start gap-2.5 text-[14px] leading-snug">
-                <Check size={16} className="mt-0.5 shrink-0 text-teal" aria-hidden />
-                <span className="line-clamp-2">{c.text}</span>
-              </li>
-            ))}
-          </ul>
+          {next.task ? (
+            <p className="flex items-start gap-2 text-[14px] leading-snug text-muted">
+              <Video size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+              <span className="line-clamp-2">{next.task}</span>
+            </p>
+          ) : null}
         </div>
       ) : (
         <p className="mt-4 flex items-center gap-2 text-[14px] font-semibold text-teal">
           <Check size={18} aria-hidden />
-          Đã đạt cấp cao nhất
+          Xong cả {node.maxLevel} mốc
         </p>
       )}
 
       <div className="mt-4 flex gap-2.5">
-        {node.state === "practicing" && node.next && !node.pendingProof ? (
+        {node.state === "practicing" && next && !node.pendingProof ? (
           <ButtonLink href={`/proof/new?skill=${node.slug}`} className="flex-1">
-            Gửi xác thực
+            <Video size={18} aria-hidden />
+            Quay video
           </ButtonLink>
         ) : null}
         {node.pendingProof ? (
           <p className="flex min-h-[52px] flex-1 items-center gap-2 text-[14px] font-semibold text-muted">
             <Hourglass size={16} aria-hidden />
-            Chờ duyệt cấp {node.pendingProof.targetLevel}
+            Chờ duyệt
           </p>
         ) : null}
         <ButtonLink

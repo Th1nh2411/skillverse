@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MessagesSquare } from "lucide-react";
 import { getServerCaller } from "@/lib/server/trpc";
 import { BackButton } from "@/components/ui/back-button";
 import { Avatar, EmptyState } from "@/components/ui/misc";
+import { TrailArt } from "@/components/illustrations";
 import { timeAgo } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Tin nhắn" };
@@ -19,7 +19,7 @@ export default async function MessagesPage() {
       </header>
       {threads.length === 0 ? (
         <div className="px-5 pt-4">
-          <EmptyState icon={MessagesSquare} title="Chưa có tin nhắn. Nhắn từ hồ sơ một người luyện cùng kỹ năng." />
+          <EmptyState art={<TrailArt size={140} />} title="Chưa có tin nhắn. Nhắn từ hồ sơ một người luyện cùng kỹ năng." />
         </div>
       ) : (
         <ul className="flex flex-col pt-2">

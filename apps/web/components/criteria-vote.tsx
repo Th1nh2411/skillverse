@@ -21,9 +21,12 @@ export function CriteriaVote({
   myVote: initialVote,
   myWeight: initialWeight,
   open,
+  voterMinTitle,
 }: {
   proposalId: string;
   rule: Rule;
+  /** Tên mốc tương ứng rule.voter_min_level (người xong mốc này trở lên mới được tính phiếu). */
+  voterMinTitle?: string | null;
   tally: Tally;
   /** VoteValue của DB ("support" là phiếu ủng hộ kỹ năng mới, không dùng ở đây). */
   myVote: "support" | "agree" | "disagree" | null;
@@ -45,6 +48,7 @@ export function CriteriaVote({
   );
   const pct = Math.round((tally.agreeRatio ?? 0) * 100);
   const need = Math.round(rule.agree_ratio * 100);
+  const voters = voterMinTitle ? `người đã xong mốc ${voterMinTitle}` : "người đã xong các mốc cao của kỹ năng";
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -52,10 +56,9 @@ export function CriteriaVote({
       <div className="tabular flex items-center justify-between text-[13px] text-muted">
         <span className="inline-flex items-center gap-1">
           <b className="font-bold text-teal">{tally.agreeRatio === null ? "Chưa có phiếu" : `${pct}% đồng ý`}</b>
-          <InfoSheet title="Sửa tiêu chí" label="Cách thông qua góp ý">
-            Thông qua khi đạt {need}% đồng ý và có ít nhất {rule.min_votes} phiếu được tính. Chỉ phiếu của người đạt cấp{" "}
-            {rule.voter_min_level} trở lên kỹ năng này được tính; người cấp cao hơn có trọng số lớn hơn. Tiêu chí mới áp dụng cho
-            bằng chứng nộp sau đó.
+          <InfoSheet title="Cách thông qua" label="Cách thông qua góp ý">
+            Thông qua khi đạt {need}% đồng ý và có ít nhất {rule.min_votes} phiếu được tính. Chỉ phiếu của {voters} trở lên được
+            tính; ai xong nhiều mốc hơn có trọng số lớn hơn. Nội dung mới áp dụng cho video gửi sau đó.
           </InfoSheet>
         </span>
         <span className="inline-flex items-center gap-1">
@@ -97,7 +100,7 @@ export function CriteriaVote({
       ) : null}
       {myVote && myWeight === 0 ? (
         <p className="text-[13px] leading-snug text-muted">
-          Phiếu của bạn được ghi nhận nhưng chưa được tính vì bạn chưa đạt cấp {rule.voter_min_level}.
+          Phiếu đã ghi nhận, chưa được tính vì bạn chưa xong mốc {voterMinTitle ?? "yêu cầu"}.
         </p>
       ) : null}
       {vote.error ? (

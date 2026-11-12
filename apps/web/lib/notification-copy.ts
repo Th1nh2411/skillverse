@@ -24,21 +24,21 @@ export function notificationCopy(n: N): Copy {
   switch (n.kind) {
     case "review_assigned":
       // refId là bằng chứng, người duyệt không mở được trang bằng chứng → về hàng đợi duyệt.
-      return { text: "Bạn được chọn duyệt một bằng chứng mới.", href: "/review", icon: ShieldCheck, tone: "teal" };
+      return { text: "Có video mới nhờ bạn xem giúp.", href: "/review", icon: ShieldCheck, tone: "teal" };
     case "proof_passed":
-      return { text: "Bằng chứng của bạn đã đạt. Lên cấp!", href: n.refId ? `/level-up/${n.refId}` : proof, icon: Award, tone: "accent" };
+      return { text: "Xong mốc rồi! Xem thành tích.", href: n.refId ? `/level-up/${n.refId}` : proof, icon: Award, tone: "accent" };
     case "proof_failed":
-      return { text: "Bằng chứng của bạn chưa đạt. Xem nhận xét.", href: proof, icon: CircleX, tone: "danger" };
+      return { text: "Video chưa qua mốc. Xem góp ý rồi thử lại nhé.", href: proof, icon: CircleX, tone: "danger" };
     case "proof_editor_review":
-      return { text: "Bằng chứng của bạn đang được biên tập viên xem.", href: proof, icon: Scale, tone: "muted" };
+      return { text: "Video của bạn đang được biên tập viên xem.", href: proof, icon: Scale, tone: "muted" };
     case "proof_cleared":
-      return { text: "Bằng chứng của bạn đã được xác nhận hợp lệ.", href: proof, icon: ShieldCheck, tone: "teal" };
+      return { text: "Video của bạn đã được xác nhận hợp lệ.", href: proof, icon: ShieldCheck, tone: "teal" };
     case "proof_removed":
-      return { text: "Bằng chứng của bạn đã bị gỡ.", href: proof, icon: ShieldAlert, tone: "danger" };
+      return { text: "Video của bạn đã bị gỡ.", href: proof, icon: ShieldAlert, tone: "danger" };
     case "level_revoked":
-      return { text: "Một cấp kỹ năng của bạn đã bị thu hồi sau khi xem xét báo cáo.", href: proof, icon: ShieldAlert, tone: "danger" };
+      return { text: "Một mốc của bạn đã bị thu hồi sau khi xem xét báo cáo.", href: proof, icon: ShieldAlert, tone: "danger" };
     case "appeal_overturned":
-      return { text: "Kháng nghị được chấp nhận. Bằng chứng sẽ được duyệt lại.", href: proof, icon: Scale, tone: "teal" };
+      return { text: "Kháng nghị được chấp nhận. Video sẽ được duyệt lại.", href: proof, icon: Scale, tone: "teal" };
     case "appeal_upheld":
       return { text: "Kháng nghị không được chấp nhận.", href: proof, icon: Scale, tone: "muted" };
     case "appeal_filed":
