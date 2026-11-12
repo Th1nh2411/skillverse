@@ -35,7 +35,7 @@ export const proposalRouter = router({
     .input(proposalIdInput)
     .query(({ ctx, input }) => getProposal(ctx.db, { proposalId: input.proposalId, viewerId: ctx.user.id })),
 
-  /** Đề xuất kỹ năng mới (levels[i] = tiêu chí cấp i+1). */
+  /** Đề xuất kỹ năng mới (levels[i] = mốc i+1: { title, description?, criteria }). */
   createNewSkill: protectedProcedure.input(newSkillProposalInput).mutation(({ ctx, input }) =>
     proposeNewSkill(ctx.db, {
       authorId: ctx.user.id,

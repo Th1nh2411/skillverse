@@ -14,6 +14,7 @@ import {
   resolveDisputedProof,
   resolveReport,
   sanctionUser,
+  updateMilestone,
 } from "@skillverse/domain";
 import {
   createDuelInput,
@@ -23,6 +24,7 @@ import {
   resolveDisputedProofInput,
   resolveReportInput,
   sanctionUserInput,
+  updateMilestoneInput,
 } from "@skillverse/validation";
 import { VIEW_URL_TTL_S } from "../media";
 import { editorProcedure, router } from "../trpc";
@@ -93,6 +95,16 @@ export const adminRouter = router({
       editorId: ctx.user.id,
       decision: input.decision,
       note: input.note ?? null,
+    }),
+  ),
+
+  /** Sửa tên / hướng dẫn một mốc kỹ năng (không đụng tiêu chí chấm — tiêu chí chỉ đổi qua criteria_versions mới). */
+  updateMilestone: editorProcedure.input(updateMilestoneInput).mutation(({ ctx, input }) =>
+    updateMilestone(ctx.db, {
+      editorId: ctx.user.id,
+      skillLevelId: input.skillLevelId,
+      title: input.title,
+      description: input.description,
     }),
   ),
 

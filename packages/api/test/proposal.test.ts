@@ -22,7 +22,11 @@ async function viewer(userId: string): Promise<SessionUser> {
 async function expectCode(p: Promise<unknown>, code: TRPCError["code"]) {
   await expect(p).rejects.toSatisfy((e: unknown) => e instanceof TRPCError && e.code === code);
 }
-const levels = [1, 2, 3].map((lv) => [{ text: `Tiêu chí cấp ${lv}`, kind: "checklist" as const }]);
+const levels = [1, 2, 3].map((lv) => ({
+  title: `Mốc ${lv}`,
+  description: lv === 1 ? "Hướng dẫn mốc đầu" : undefined,
+  criteria: [{ text: `Tiêu chí cấp ${lv}`, kind: "checklist" as const }],
+}));
 
 beforeAll(async () => {
   await resetDb(db);
@@ -52,10 +56,18 @@ describe("proposal.* — quyền + validate", () => {
     await expectCode(c.proposal.createNewSkill({ name: "Abc", categorySlug: "ky-nang-di", levels }), "UNAUTHORIZED");
   });
 
-  it("input sai → BAD_REQUEST (ít hơn 3 cấp, tiêu chí trống, phiếu lạ)", async () => {
+  it("input sai → BAD_REQUEST (ít hơn 3 mốc, quá 5 mốc, tiêu chí trống, tên mốc trống, phiếu lạ)", async () => {
     const c = await caller(author);
     await expectCode(c.proposal.createNewSkill({ name: "Abc", categorySlug: "ky-nang-di", levels: levels.slice(0, 2) }), "BAD_REQUEST");
-    await expectCode(c.proposal.createNewSkill({ name: "Abc", categorySlug: "ky-nang-di", levels: [[], [], []] }), "BAD_REQUEST");
+    await expectCode(c.proposal.createNewSkill({ name: "Abc", categorySlug: "ky-nang-di", levels: [...levels, ...levels] }), "BAD_REQUEST");
+    await expectCode(
+      c.proposal.createNewSkill({ name: "Abc", categorySlug: "ky-nang-di", levels: levels.map((l) => ({ ...l, criteria: [] })) }),
+      "BAD_REQUEST",
+    );
+    await expectCode(
+      c.proposal.createNewSkill({ name: "Abc", categorySlug: "ky-nang-di", levels: levels.map((l) => ({ ...l, title: "  " })) }),
+      "BAD_REQUEST",
+    );
     await expectCode(c.proposal.vote({ proposalId: ID, vote: "maybe" as "agree" }), "BAD_REQUEST");
     await expectCode(
       c.proposal.createCriteriaEdit({ skillLevelId: skill.levels.get(1)!.levelId, criteria: [{ text: "Tiêu chí mới", kind: "checklist" }], summary: "x" }),
@@ -67,6 +79,7 @@ describe("proposal.* — quyền + validate", () => {
     const c = await caller(author);
     await expectCode(c.admin.proposals(), "FORBIDDEN");
     await expectCode(c.admin.decideProposal({ proposalId: ID, decision: "accepted" }), "FORBIDDEN");
+    await expectCode(c.admin.updateMilestone({ skillLevelId: skill.levels.get(1)!.levelId, title: "Mốc mới" }), "FORBIDDEN");
   });
 });
 
@@ -94,6 +107,30 @@ describe("luồng kỹ năng mới: đề xuất → ủng hộ → biên tập 
     expect(decided).toMatchObject({ status: "accepted" });
     expect(decided.skillSlug).toBeTruthy();
     expect((await (await caller(author)).proposal.get({ proposalId })).status).toBe("accepted");
+
+    // Kỹ năng mới hiển thị tên mốc + hướng dẫn
+    const detail = await (await caller(author)).skill.detail({ slug: decided.skillSlug! });
+    expect(detail.levels.map((l) => [l.level, l.title, l.description, l.task])).toEqual([
+      [1, "Mốc 1", "Hướng dẫn mốc đầu", "Tiêu chí cấp 1"],
+      [2, "Mốc 2", null, "Tiêu chí cấp 2"],
+      [3, "Mốc 3", null, "Tiêu chí cấp 3"],
+    ]);
+    expect(detail.nextMilestone).toMatchObject({ level: 1, title: "Mốc 1", description: "Hướng dẫn mốc đầu", task: "Tiêu chí cấp 1" });
+  });
+
+  it("admin.updateMilestone: biên tập viên sửa tên + hướng dẫn, không đụng tiêu chí; input sai → BAD_REQUEST", async () => {
+    const lv = skill.levels.get(2)!;
+    const c = await caller(editor);
+    const r = await c.admin.updateMilestone({ skillLevelId: lv.levelId, title: "  Trời gió ", description: "Chắn gió bằng thân người." });
+    expect(r).toMatchObject({ level: 2, title: "Trời gió", description: "Chắn gió bằng thân người." });
+    const cleared = await c.admin.updateMilestone({ skillLevelId: lv.levelId, description: null });
+    expect(cleared).toMatchObject({ title: "Trời gió", description: null });
+    const row = await db.skillLevel.findUniqueOrThrow({ where: { id: lv.levelId } });
+    expect(row.currentVersionId).toBe(lv.versionId);
+    await expectCode(c.admin.updateMilestone({ skillLevelId: lv.levelId }), "BAD_REQUEST");
+    await expectCode(c.admin.updateMilestone({ skillLevelId: lv.levelId, title: "x".repeat(41) }), "BAD_REQUEST");
+    await expectCode(c.admin.updateMilestone({ skillLevelId: ID, title: "Không có" }), "NOT_FOUND");
+    await expectCode((await caller(null)).admin.updateMilestone({ skillLevelId: lv.levelId, title: "A" }), "UNAUTHORIZED");
   });
 
   it("sửa tiêu chí: tạo đề xuất + bỏ phiếu (trọng số 0 với người chưa đạt cấp yêu cầu)", async () => {
