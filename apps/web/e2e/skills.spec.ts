@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { expectBasicA11y } from "./helpers/a11y";
 import { loginAs } from "./helpers/auth";
-import { expectSingleH1, gotoScreen } from "./helpers/nav";
+import { expectNotFoundPage, expectSingleH1, gotoScreen } from "./helpers/nav";
 import { clickable } from "./helpers/ui";
 
 /**
@@ -45,7 +45,7 @@ test.describe("Cây kỹ năng", () => {
 
   test("danh mục không tồn tại trả 404", async ({ page }) => {
     const res = await page.goto("/skills/tree/khong-ton-tai");
-    expect(res?.status()).toBe(404);
+    await expectNotFoundPage(page, res);
   });
 
   test("a11y cơ bản", async ({ page }) => {
@@ -94,7 +94,7 @@ test.describe("Chi tiết kỹ năng", () => {
 
   test("slug không tồn tại trả 404", async ({ page }) => {
     const res = await page.goto("/skills/khong-ton-tai-xyz");
-    expect(res?.status()).toBe(404);
+    await expectNotFoundPage(page, res);
   });
 
   test("a11y cơ bản", async ({ page }) => {

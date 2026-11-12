@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
+import { expectNotFoundPage } from "./helpers/nav";
 import { closeE2eDb, e2eDb, proofRow, userSkillLevel } from "./helpers/db";
 import { uniqueVideo } from "./helpers/proof";
 import { devToken, skipIfNoProcedure, trpcMutation, trpcQuery } from "./helpers/trpc";
@@ -143,6 +144,7 @@ test.describe.serial("Báo cáo bằng chứng đã đạt → biên tập viên
     }
     await loginAs(page, "minhhoang");
     const res = await page.goto("/admin");
-    expect((res?.status() ?? 0) >= 400 || !/\/admin/.test(new URL(page.url()).pathname), "Người thường vào được /admin").toBeTruthy();
+    if (/\/admin/.test(new URL(page.url()).pathname)) await expectNotFoundPage(page, res);
+    await expect(page.getByRole("tab", { name: /Báo cáo|Trùng video|Kháng nghị/ })).toHaveCount(0);
   });
 });

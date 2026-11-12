@@ -8,7 +8,7 @@ import {
   proofRow,
   userSkillLevel,
 } from "./helpers/db";
-import { gotoScreen } from "./helpers/nav";
+import { expectNotFoundPage, gotoScreen } from "./helpers/nav";
 import { reviewViaUi, submitProofViaUi, uniqueVideo } from "./helpers/proof";
 import { devToken, skipIfNoProcedure, trpcMutation, trpcQuery } from "./helpers/trpc";
 import { clickable } from "./helpers/ui";
@@ -79,7 +79,7 @@ test.describe.serial("Trượt, kháng nghị và quyền duyệt", () => {
 
     await loginAs(page, outsider as never);
     const res = await page.goto(`/review/${assignmentId}`);
-    expect(res?.status(), "Người ngoài mở trang duyệt phải 404").toBe(404);
+    await expectNotFoundPage(page, res);
     await expect(page.locator("video")).toHaveCount(0);
   });
 
