@@ -8,10 +8,12 @@ import { ButtonLink } from "@/components/ui/button";
 import { AppHeader } from "@/components/app-header";
 import { Avatar, EmptyState, ProgressBar } from "@/components/ui/misc";
 import { TrailArt } from "@/components/illustrations";
-import { NextMilestoneCard, pickNextSkill } from "@/components/next-milestone";
+import { NextMilestoneCard } from "@/components/next-milestone";
+import { pickNextSkill } from "@/lib/next-skill";
 import { SkillProgressRow } from "@/components/skill-progress";
 import { formatNumber } from "@/lib/skill-visual";
 import { SettingsButton } from "./settings-button";
+import { ProfileTabs } from "./profile-tabs";
 
 export const metadata: Metadata = { title: "Hồ sơ" };
 
@@ -23,7 +25,8 @@ async function logout() {
   await signOut({ redirectTo: "/login" });
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const { tab } = await searchParams;
   const api = await getServerCaller();
   const p = await api.profile.me();
   const treeCategory = p.topCategories[0]?.slug ?? p.featuredSkills[0]?.category.slug ?? "sinh-ton";
@@ -80,40 +83,46 @@ export default async function ProfilePage() {
         <Stat value={p.stats.challengeCount} label="Thử thách" />
       </dl>
 
-      <section aria-labelledby="featured" className="flex flex-col pt-6">
-        <div className="flex items-center justify-between px-5">
-          <h2 id="featured" className="text-[17px] font-bold">
-            Kỹ năng
-          </h2>
-          <Link
-            href={`/skills/tree/${treeCategory}`}
-            className="-mr-2 inline-flex min-h-11 items-center gap-0.5 px-2 text-[14px] font-semibold text-accent"
-          >
-            Cây kỹ năng
-            <ChevronRight size={16} aria-hidden />
-          </Link>
-        </div>
+      <ProfileTabs
+        initial={tab === "saved" ? "saved" : "skills"}
+        skills={
+          <section aria-labelledby="featured" className="flex flex-col pt-1">
+            <div className="flex items-center justify-between px-5">
+              <h2 id="featured" className="sr-only">
+                Kỹ năng
+              </h2>
+              <span aria-hidden />
+              <Link
+                href={`/skills/tree/${treeCategory}`}
+                className="-mr-2 inline-flex min-h-11 items-center gap-0.5 px-2 text-[14px] font-semibold text-accent"
+              >
+                Cây kỹ năng
+                <ChevronRight size={16} aria-hidden />
+              </Link>
+            </div>
 
-        {p.featuredSkills.length === 0 ? (
-          <div className="px-5 pt-2">
-            <EmptyState
-              art={<TrailArt size={150} />}
-              title="Chưa có kỹ năng nào. Chọn kỹ năng đầu tiên"
-              action={
-                <ButtonLink href="/discover" size="md">
-                  Khám phá
-                </ButtonLink>
-              }
-            />
-          </div>
-        ) : (
-          <ul className="flex flex-col">
-            {p.featuredSkills.map((s) => (
-              <FeaturedRow key={s.skillId} s={s} />
-            ))}
-          </ul>
-        )}
-      </section>
+            {p.featuredSkills.length === 0 ? (
+              <div className="px-5 pt-2">
+                <EmptyState
+                  art={<TrailArt size={150} />}
+                  title="Chưa có kỹ năng nào. Chọn kỹ năng đầu tiên"
+                  action={
+                    <ButtonLink href="/discover" size="md">
+                      Khám phá
+                    </ButtonLink>
+                  }
+                />
+              </div>
+            ) : (
+              <ul className="flex flex-col">
+                {p.featuredSkills.map((s) => (
+                  <FeaturedRow key={s.skillId} s={s} />
+                ))}
+              </ul>
+            )}
+          </section>
+        }
+      />
     </main>
   );
 }

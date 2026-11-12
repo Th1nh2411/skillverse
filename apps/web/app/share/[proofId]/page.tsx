@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { getServerCaller } from "@/lib/server/trpc";
+import { getServerCaller, getViewer } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { ShareCard } from "@/components/share-card";
 import { ButtonLink } from "@/components/ui/button";
+import { SaveButton } from "@/components/save-button";
 import { milestoneName } from "@/lib/milestone";
 
 type Params = { params: Promise<{ proofId: string }> };
@@ -33,9 +34,11 @@ export default async function SharePage({ params }: Params) {
   const { proofId } = await params;
   const card = await orNotFound(loadCard(proofId));
   const milestone = milestoneName(card.levelTitle, card.level);
+  const viewer = await getViewer();
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col px-5 pb-[max(env(safe-area-inset-bottom),24px)] pt-[10vh]">
+    <main className="relative mx-auto flex min-h-dvh max-w-[560px] flex-col px-5 pb-[max(env(safe-area-inset-bottom),24px)] pt-[10vh]">
+      {viewer ? <SaveButton targetType="proof" targetId={card.proofId} saved={card.saved} className="absolute right-3 top-3" /> : null}
       <h1 className="sr-only">
         {card.displayName} xong mốc {milestone}, {card.skill.name}
       </h1>

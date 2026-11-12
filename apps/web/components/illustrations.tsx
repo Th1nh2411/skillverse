@@ -166,6 +166,20 @@ export function NotebookArt(p: ArtProps) {
   );
 }
 
+/** Chưa lưu gì: sổ tay gấp với dải ruy băng đánh dấu trang. */
+export function BookmarkArt(p: ArtProps) {
+  return (
+    <Art {...p}>
+      <Ground />
+      <rect x="44" y="22" width="72" height="70" rx="6" fill={PAPER} transform="rotate(-4 80 57)" />
+      <path d="M58 40 h36M58 52 h36M58 64 h24" strokeWidth={1.4} transform="rotate(-4 80 57)" />
+      <path d="M98 16 v34 l8 -7 l8 7 v-34 z" fill={AMBER} stroke={AMBER} />
+      <Sparkle x={130} y={30} s={3} />
+      <Sparkle x={30} y={40} s={3} />
+    </Art>
+  );
+}
+
 /** Không tìm thấy: kính lúp trên bản đồ gấp. */
 export function SearchArt(p: ArtProps) {
   return (

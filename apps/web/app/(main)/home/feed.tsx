@@ -5,6 +5,7 @@ import { MessageCircle, PartyPopper, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import type { RouterOutputs } from "@skillverse/api";
 import { ReportSheet } from "@/components/report-sheet";
+import { SaveButton } from "@/components/save-button";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { Avatar, EmptyState, Skeleton } from "@/components/ui/misc";
@@ -194,11 +195,10 @@ function Actions({ it, report }: { it: Item; report?: boolean }) {
           <span className="sr-only">bình luận</span>
         </span>
       ) : null}
-      {report ? (
-        <span className="ml-auto">
-          <ReportSheet targetType="post" targetId={it.id} title="Báo cáo bài viết" compact label="Báo cáo bài viết" />
-        </span>
-      ) : null}
+      <span className="ml-auto flex items-center">
+        <SaveButton targetType="post" targetId={it.id} saved={it.saved} size={18} />
+        {report ? <ReportSheet targetType="post" targetId={it.id} title="Báo cáo bài viết" compact label="Báo cáo bài viết" /> : null}
+      </span>
     </div>
   );
 }

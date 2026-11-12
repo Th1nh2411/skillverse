@@ -4,6 +4,7 @@ import { getServerCaller } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { ShareButton } from "@/components/share-button";
 import { ShareCard } from "@/components/share-card";
+import { SaveButton } from "@/components/save-button";
 import { SewingRingArt } from "@/components/illustrations";
 import { ButtonLink } from "@/components/ui/button";
 import { MilestoneBar, MilestonePatch } from "@/components/ui/milestone";
@@ -22,7 +23,8 @@ export default async function LevelUpPage({ params }: { params: Promise<{ proofI
   const rankUp = s.accountLevelAfter > s.accountLevelBefore;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col items-center px-5 pb-[max(env(safe-area-inset-bottom),24px)] pt-[5vh] text-center">
+    <main className="relative mx-auto flex min-h-dvh max-w-[560px] flex-col items-center px-5 pb-[max(env(safe-area-inset-bottom),24px)] pt-[5vh] text-center">
+      <SaveButton targetType="proof" targetId={s.proofId} saved={s.saved} className="absolute right-3 top-3" />
       {s.totalVotes > 0 ? (
         <p className="tabular inline-flex items-center gap-1.5 text-[14px] font-semibold text-teal">
           <ShieldCheck size={17} aria-hidden />

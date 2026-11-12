@@ -9,6 +9,7 @@ import { LevelPatch } from "@/components/ui/level-patch";
 import { InfoSheet } from "@/components/ui/sheet";
 import { milestoneName } from "@/lib/milestone";
 import { patchOf } from "@/lib/skill-visual";
+import { SaveButton } from "@/components/save-button";
 import { AppealButton } from "./appeal-button";
 
 export const metadata: Metadata = { title: "Video của tôi" };
@@ -27,7 +28,8 @@ export default async function ProofStatusPage({ params }: { params: Promise<{ id
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-32">
       <header className="flex items-center gap-1 px-3 pt-3">
         <BackButton fallback="/profile" />
-        <span className="text-[14px] font-semibold text-muted">Video của bạn</span>
+        <span className="flex-1 text-[14px] font-semibold text-muted">Video của bạn</span>
+        <SaveButton targetType="proof" targetId={p.proofId} saved={p.saved} />
       </header>
 
       <section className="flex items-center gap-4 px-5 pt-3">
