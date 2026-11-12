@@ -101,11 +101,11 @@ Màn: Trang chủ (Home.html), Thử thách (Feed.html), quản trị tối gi�
 - [x] (ui) U3.6 Thông báo (chuông trên header) tối giản + chụp/tự soi
 
 ### qa
-- [~] (qa) Q3.1 E2E: trang chủ hiển thị nhiệm vụ + feed; thả cheer
-- [~] (qa) Q3.2 E2E: báo cáo bằng chứng đã đạt → biên tập viên xác nhận → level bị hạ, XP âm, người duyệt bị trừ uy tín
-- [~] (qa) Q3.3 E2E: theo dõi, nhắn tin, đề nghị trao đổi; người thường không vào được /admin
-- [~] (qa) Q3.4 E2E: bỏ phiếu đấu 1v1 (1 phiếu/người)
-- [~] (qa) Q3.5 Rà soát + docs/QA.md
+- [x] (qa) Q3.1 E2E: trang chủ hiển thị nhiệm vụ + feed; thả cheer
+- [x] (qa) Q3.2 E2E: báo cáo bằng chứng đã đạt → biên tập viên xác nhận → level bị hạ, XP âm, người duyệt bị trừ uy tín
+- [x] (qa) Q3.3 E2E: theo dõi, nhắn tin, đề nghị trao đổi; người thường không vào được /admin
+- [x] (qa) Q3.4 E2E: bỏ phiếu đấu 1v1 (1 phiếu/người)
+- [x] (qa) Q3.5 Rà soát + docs/QA.md
 
 ## Giai đoạn 4 — Cộng đồng góp ý
 Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu chí trên Chi tiết kỹ năng.

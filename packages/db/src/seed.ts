@@ -340,8 +340,7 @@ async function main() {
         proofId: proof.id,
         skillId: s.id,
         body: `Lên cấp ${level} · ${SKILLS.find((x) => x.slug === slug)!.name}`,
-        likeCount: 12 + level * 7,
-        commentCount: level,
+        // like_count / comment_count là cache: đặt 0 rồi tạo dòng thật ở reactPost bên dưới
         createdAt: new Date(now - hoursAgo * 3600000),
       },
     });
@@ -355,11 +354,24 @@ async function main() {
       kind: "text",
       skillId: skills.get("viet-chu-nguoc-guong")!.id,
       body: "Chép nguyên bài thơ lục bát bằng tay trái, ngược gương. Mất 3 tháng luyện mới viết đều được như vậy.",
-      likeCount: 248,
-      commentCount: 36,
       createdAt: new Date(now - 3600000),
     },
   });
+
+  // Cảm xúc + bình luận thật để cache like_count/comment_count khớp bảng reactions/comments.
+  const handles = USERS.filter((u) => !u.fresh).map((u) => u.handle);
+  const allPosts = await prisma.post.findMany({ select: { id: true, authorId: true } });
+  for (const [i, post] of allPosts.entries()) {
+    const fans = handles.map((h) => users.get(h)!).filter((id) => id !== post.authorId).slice(0, 3 + ((i * 3) % 6));
+    for (const [j, userId] of fans.entries()) {
+      await prisma.reaction.create({ data: { postId: post.id, userId, kind: j % 3 === 0 ? "cheer" : "like" } });
+    }
+    const commenters = fans.slice(0, 1 + (i % 3));
+    for (const userId of commenters) {
+      await prisma.comment.create({ data: { postId: post.id, userId, body: "Đỉnh quá, mình cũng đang luyện kỹ năng này." } });
+    }
+    await prisma.post.update({ where: { id: post.id }, data: { likeCount: fans.length, commentCount: commenters.length } });
+  }
 
   // Bằng chứng đang chờ duyệt (Lan Phương, tung hứng cấp 4) — chưa phân công; domain/cron sẽ gán.
   const th = skills.get("tung-hung")!;

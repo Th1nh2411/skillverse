@@ -27,7 +27,7 @@ Procedure (đều cần đăng nhập trừ `me`, `health`): `skill.tree`, `skil
 - Cron: `POST /api/cron` với `Authorization: Bearer $CRON_SECRET` hoặc `x-cron-secret` → 200 `{ok, jobs:{reassignExpiredReviews, closeExpiredProposals, weeklyReputationRecovery}}`; thiếu/sai → 401 JSON.
 - (bổ sung) `proof.limits()` → `{ maxMb, maxBytes, maxSeconds, allowedTypes }`; `/share/*` mở cho mọi người trong proxy (commit mới nhất của api).
 
-## [từ api → qa] Giai đoạn 3: procedure + quyền (commit eb73d19)
+## [từ api → qa] Giai đoạn 3: procedure + quyền (commit eb73d19) (đã xử lý)
 Danh sách đầy đủ trong tin cùng ngày ở `docs/inbox/ui.md`. Điểm cần kiểm e2e/rà soát: `admin.*` → FORBIDDEN với người thường (đăng nhập dev `minhhoang`), chạy được với `bientap`; `message.list` của thread người khác → bị chặn; `post.create` khi bị post_ban → FORBIDDEN; video trong `duel.*` / `admin.disputedProofs` là URL ký có hạn (không lộ khóa object); `/api/cron` giờ chạy 4 tác vụ: reassignExpiredReviews, closeDuels, closeExpiredProposals, weeklyReputationRecovery.
 
 ## [từ domain → qa] getProfile: stats.skillCount giờ đếm mọi kỹ năng đang theo (D65)

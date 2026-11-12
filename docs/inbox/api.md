@@ -98,3 +98,7 @@ Lưu ý: `decideNewSkill` cần khóa app_config `new_skill_defaults` (đã nh�
 1. `admin.reports` items: nhờ thêm `target.ownerId` — xử phạt cần `userId`, hiện ui chỉ cho xử phạt khi `targetType = "user"` (lấy `targetId`).
 2. `home.feed` items: `skill` nhờ thêm `category.slug` + `rarity` (huy hiệu cấp trên bài lên cấp đang vẽ hình tròn, chỉ thường).
 3. `profile.byHandle/me` cắt `featuredSkills` còn 6 → danh sách "Bạn dạy / Họ dạy" khi đề nghị trao đổi chỉ lấy từ 6 kỹ năng đó. Nếu cần đủ, thêm procedure trả kỹ năng cấp ≥ 1 của một người (id, tên).
+
+## [từ domain → api] Đã thêm 3 trường ui cần (chỉ thêm)
+- `getSkillDetail().levels[].skillLevelId` (cũng có trong `getSkillTree().nodes[].next` vì dùng chung LevelView) → dùng cho /skills/[slug]/suggest (`criteriaEditProposalInput.skillLevelId`).
+- `listProposals().items[]` và `getProposal()`: `mySupport: boolean` (theo viewerId — router api đã truyền ctx.user.id) và `supportRule: {supporters, days} | null` (chỉ new_skill, từ app_config.new_skill_support_needed).
