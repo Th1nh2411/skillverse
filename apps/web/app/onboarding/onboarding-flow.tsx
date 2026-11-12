@@ -202,7 +202,7 @@ export function OnboardingFlow() {
             />
             <div className="flex flex-col gap-1.5">
               <h2 className="text-[19px] font-bold leading-snug">{challenge.criteria[0]?.text ?? challenge.name}</h2>
-              <p className="text-[14px] text-[#d9c9a8]">{challenge.name}</p>
+              <p className="text-[14px] text-accent-ink">{challenge.name}</p>
             </div>
             <span className="tabular inline-flex items-center gap-1 text-[15px] font-bold text-accent">
               <Zap size={16} aria-hidden />+{challenge.xpReward} XP

@@ -113,13 +113,13 @@ export function SkillTreeView({ tree }: { tree: Tree }) {
       <ul className="flex gap-4 px-5 pb-1 pt-1 text-[12px] text-muted" aria-label="Chú giải">
         <li className="flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
-            <circle cx="7" cy="7" r="6" fill="var(--color-thread-common)" />
+            <circle cx="7" cy="7" r="6" fill="var(--color-trail)" />
           </svg>
           Đã đạt
         </li>
         <li className="flex items-center gap-1.5">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
-            <circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--color-thread-common)" strokeWidth="2" />
+            <circle cx="7" cy="7" r="5.5" fill="none" stroke="var(--color-trail)" strokeWidth="2" />
           </svg>
           Đang luyện
         </li>
@@ -153,7 +153,7 @@ export function SkillTreeView({ tree }: { tree: Tree }) {
                     key={`${e.parentSkillId}-${e.childSkillId}`}
                     d={d}
                     fill="none"
-                    stroke="var(--color-thread-common)"
+                    stroke="var(--color-trail)"
                     strokeOpacity={0.7}
                     strokeWidth={2.5}
                     strokeLinecap="round"

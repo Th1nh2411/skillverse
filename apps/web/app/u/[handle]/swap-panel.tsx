@@ -88,7 +88,7 @@ function ExistingSwap({ swap }: { swap: NonNullable<Existing> }) {
           Gặp lần đầu ở nơi công cộng. Sau buổi học, cả hai đánh giá nhau.
         </p>
       ) : null}
-      <Link href="/swaps" className="text-[14px] font-semibold text-accent hover:underline">
+      <Link href="/swaps" className="-mb-2 inline-flex min-h-11 items-center self-start text-[14px] font-semibold text-accent hover:underline">
         Quản lý trao đổi
       </Link>
     </div>

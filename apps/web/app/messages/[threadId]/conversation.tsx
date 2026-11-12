@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Send } from "lucide-react";
 import { useState } from "react";
 import { BackButton } from "@/components/ui/back-button";
-import { Avatar, Skeleton } from "@/components/ui/misc";
+import { Avatar, Skeleton, QueryError } from "@/components/ui/misc";
 import { clockTime } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
 
@@ -45,6 +45,10 @@ export function Conversation({
         {list.isPending ? (
           <li>
             <Skeleton className="h-10 w-2/3" />
+          </li>
+        ) : list.error && !list.data ? (
+          <li>
+            <QueryError onRetry={() => list.refetch()} message="Không tải được tin nhắn." />
           </li>
         ) : items.length === 0 ? (
           <li className="py-8 text-center text-[14px] text-muted">Gửi lời chào đầu tiên.</li>

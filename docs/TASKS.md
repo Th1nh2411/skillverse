@@ -145,8 +145,8 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 - [x] (api) A5.2 `vercel.json` (nếu cần) và kiểm tra Prisma + adapter-pg chạy trên Vercel serverless (Neon pooled)
 
 ### ui
-- [ ] U5.1 PWA: icon, manifest, trang offline tối giản; giao diện sáng "giấy sổ tay" nếu kịp; soát lần cuối 360/390/768px mọi màn
-- [ ] U5.2 Trạng thái rỗng / lỗi / đang tải cho mọi màn
+- [x] (ui) U5.1 PWA: icon, manifest, trang offline tối giản; giao diện sáng "giấy sổ tay" nếu kịp; soát lần cuối 360/390/768px mọi màn
+- [x] (ui) U5.2 Trạng thái rỗng / lỗi / đang tải cho mọi màn
 
 ### domain
 - [x] (domain) D5.1 Rà phủ test: assignReviewers, finalizeProof (cả thu hồi), uy tín, bỏ phiếu đề xuất, hòa phiếu/quá hạn/trùng hash; bổ sung chỗ thiếu

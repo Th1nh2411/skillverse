@@ -17,7 +17,7 @@ export function ProgressBar({
   label: string;
 }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
-  const fill = tone === "accent" ? "bg-accent" : tone === "teal" ? "bg-teal" : "bg-thread-common";
+  const fill = tone === "accent" ? "bg-accent" : tone === "teal" ? "bg-teal" : "bg-trail";
   const h = size === "sm" ? "h-[5px]" : "h-2";
   return (
     <div
@@ -53,7 +53,7 @@ export function Avatar({
   return (
     <span
       aria-hidden
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold text-text ${
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold text-[#f1eee4] ${
         ring ? "border-[3px] border-accent" : ""
       } ${className}`}
       style={{ width: size, height: size, background: bg, fontSize: Math.round(size * 0.36) }}
@@ -85,4 +85,20 @@ export function EmptyState({
 /** Khối chờ tải, giữ bố cục ổn định. */
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div aria-hidden className={`animate-pulse rounded-[12px] bg-surface-2 ${className}`} />;
+}
+
+/** Lỗi tải dữ liệu: câu ngắn + nút thử lại. */
+export function QueryError({ onRetry, message = "Không tải được dữ liệu." }: { onRetry: () => void; message?: string }) {
+  return (
+    <div role="alert" className="flex flex-col items-start gap-3 py-2">
+      <p className="text-[15px] text-danger">{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex min-h-11 items-center rounded-[12px] bg-surface-3 px-4 text-[14px] font-semibold text-text hover:bg-surface-hover"
+      >
+        Thử lại
+      </button>
+    </div>
+  );
 }

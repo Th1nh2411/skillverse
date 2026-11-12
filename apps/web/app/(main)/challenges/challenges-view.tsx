@@ -1,12 +1,21 @@
 "use client";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Clock, Crown, ShieldCheck, Swords, Trophy, Users, Zap } from "lucide-react";
+import {
+  Check,
+  Clock,
+  Crown,
+  ShieldCheck,
+  Swords,
+  Trophy,
+  Users,
+  Zap,
+} from "lucide-react";
 import { useId, useState } from "react";
 import type { RouterOutputs } from "@skillverse/api";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
-import { Avatar, EmptyState, Skeleton } from "@/components/ui/misc";
+import { Avatar, EmptyState, Skeleton, QueryError } from "@/components/ui/misc";
 import { InfoSheet } from "@/components/ui/sheet";
 import { formatNumber } from "@/lib/skill-visual";
 import { clockTime, timeLeft } from "@/lib/time";
@@ -33,9 +42,15 @@ export function ChallengesView({ initialTab }: { initialTab: Tab }) {
   return (
     <main className="flex flex-col">
       <header className="px-5 pt-5">
-        <h1 className="font-display text-[28px] font-extrabold leading-tight">Thử thách</h1>
+        <h1 className="font-display text-[28px] font-extrabold leading-tight">
+          Thử thách
+        </h1>
       </header>
-      <div role="tablist" aria-label="Loại thử thách" className="mx-5 mt-3 grid grid-cols-3 border-b border-border">
+      <div
+        role="tablist"
+        aria-label="Loại thử thách"
+        className="mx-5 mt-3 grid grid-cols-3 border-b border-border"
+      >
         {tabs.map((t) => {
           const on = t.key === tab;
           return (
@@ -48,22 +63,43 @@ export function ChallengesView({ initialTab }: { initialTab: Tab }) {
               aria-controls={`${id}-panel`}
               onClick={() => {
                 setTab(t.key);
-                window.history.replaceState(null, "", t.key === "active" ? "/challenges" : `/challenges?tab=${t.key}`);
+                window.history.replaceState(
+                  null,
+                  "",
+                  t.key === "active"
+                    ? "/challenges"
+                    : `/challenges?tab=${t.key}`,
+                );
               }}
               className={`-mb-px inline-flex min-h-12 items-center justify-center gap-1.5 border-b-2 text-[14px] font-semibold transition-colors ${
-                on ? "border-accent text-text" : "border-transparent text-muted hover:text-text"
+                on
+                  ? "border-accent text-text"
+                  : "border-transparent text-muted hover:text-text"
               }`}
             >
               {t.label}
               {t.count ? (
-                <span className="tabular rounded-full bg-surface-3 px-1.5 text-[12px] font-bold text-text">{t.count}</span>
+                <span className="tabular rounded-full bg-surface-3 px-1.5 text-[12px] font-bold text-text">
+                  {t.count}
+                </span>
               ) : null}
             </button>
           );
         })}
       </div>
-      <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="pt-4">
-        {tab === "active" ? <ActiveChallenges /> : tab === "duels" ? <Duels /> : <PendingProofs q={pending} />}
+      <div
+        role="tabpanel"
+        id={`${id}-panel`}
+        aria-labelledby={`${id}-${tab}`}
+        className="pt-4"
+      >
+        {tab === "active" ? (
+          <ActiveChallenges />
+        ) : tab === "duels" ? (
+          <Duels />
+        ) : (
+          <PendingProofs q={pending} />
+        )}
       </div>
     </main>
   );
@@ -82,6 +118,12 @@ function ActiveChallenges() {
   const trpc = useTRPC();
   const q = useQuery(trpc.challenge.list.queryOptions());
   if (q.isPending) return <Loading />;
+  if (q.error)
+    return (
+      <div className="px-5">
+        <QueryError onRetry={() => q.refetch()} />
+      </div>
+    );
   if (!q.data?.length)
     return (
       <div className="px-5">
@@ -101,7 +143,10 @@ function ChallengeCard({ c }: { c: Challenge }) {
   return (
     <li className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-accent-line bg-accent-soft p-4">
       <div className="flex items-center justify-between gap-2 text-[13px]">
-        <Link href={`/skills/${c.skill.slug}`} className="font-semibold text-accent hover:underline">
+        <Link
+          href={`/skills/${c.skill.slug}`}
+          className="-my-3 inline-flex min-h-11 items-center font-semibold text-accent hover:underline"
+        >
           {c.skill.name}
         </Link>
         <span className="tabular inline-flex items-center gap-1 text-muted">
@@ -110,14 +155,27 @@ function ChallengeCard({ c }: { c: Challenge }) {
         </span>
       </div>
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-[22px] font-extrabold leading-tight">{c.title}</h2>
-        {c.description ? <p className="text-[14px] leading-relaxed text-[#d9c9a8]">{c.description}</p> : null}
+        <h2 className="font-display text-[22px] font-extrabold leading-tight">
+          {c.title}
+        </h2>
+        {c.description ? (
+          <p className="text-[14px] leading-relaxed text-accent-ink">
+            {c.description}
+          </p>
+        ) : null}
       </div>
       {c.items.length > 0 ? (
         <ul className="flex flex-col gap-1">
           {c.items.map((it) => (
-            <li key={it} className="flex items-start gap-2 text-[14px] leading-snug">
-              <Check size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+            <li
+              key={it}
+              className="flex items-start gap-2 text-[14px] leading-snug"
+            >
+              <Check
+                size={16}
+                className="mt-0.5 shrink-0 text-accent"
+                aria-hidden
+              />
               {it}
             </li>
           ))}
@@ -140,7 +198,10 @@ function ChallengeCard({ c }: { c: Challenge }) {
             Đã tham gia
           </span>
         ) : (
-          <ButtonLink href={`/proof/new?skill=${c.skill.slug}&challenge=${c.id}`} size="md">
+          <ButtonLink
+            href={`/proof/new?skill=${c.skill.slug}&challenge=${c.id}`}
+            size="md"
+          >
             Tham gia
           </ButtonLink>
         )}
@@ -153,6 +214,12 @@ function Duels() {
   const trpc = useTRPC();
   const q = useQuery(trpc.duel.list.queryOptions());
   if (q.isPending) return <Loading />;
+  if (q.error)
+    return (
+      <div className="px-5">
+        <QueryError onRetry={() => q.refetch()} />
+      </div>
+    );
   if (!q.data?.length)
     return (
       <div className="px-5">
@@ -172,7 +239,10 @@ function DuelCard({ d }: { d: Duel }) {
   const trpc = useTRPC();
   const qc = useQueryClient();
   const vote = useMutation(
-    trpc.duel.vote.mutationOptions({ onSuccess: () => qc.invalidateQueries({ queryKey: trpc.duel.list.queryKey() }) }),
+    trpc.duel.vote.mutationOptions({
+      onSuccess: () =>
+        qc.invalidateQueries({ queryKey: trpc.duel.list.queryKey() }),
+    }),
   );
   const total = d.sides.reduce((n, s) => n + s.votes, 0);
   return (
@@ -205,17 +275,38 @@ function DuelCard({ d }: { d: Duel }) {
                   className="aspect-square w-full rounded-[10px] bg-black object-cover"
                 />
               ) : (
-                <div className="aspect-square w-full rounded-[10px] bg-surface-2" aria-hidden />
+                <div
+                  className="aspect-square w-full rounded-[10px] bg-surface-2"
+                  aria-hidden
+                />
               )}
-              <Link href={`/u/${s.handle}`} className="flex min-w-0 items-center gap-2">
+              <Link
+                href={`/u/${s.handle}`}
+                className="flex min-w-0 items-center gap-2"
+              >
                 <Avatar name={s.displayName} size={28} />
-                <span className="truncate text-[14px] font-semibold">{s.displayName}</span>
-                {won ? <Crown size={16} className="shrink-0 text-accent" aria-label="Thắng" /> : null}
+                <span className="truncate text-[14px] font-semibold">
+                  {s.displayName}
+                </span>
+                {won ? (
+                  <Crown
+                    size={16}
+                    className="shrink-0 text-accent"
+                    aria-label="Thắng"
+                  />
+                ) : null}
               </Link>
-              {s.caption ? <p className="line-clamp-2 text-[13px] text-muted">{s.caption}</p> : null}
+              {s.caption ? (
+                <p className="line-clamp-2 text-[13px] text-muted">
+                  {s.caption}
+                </p>
+              ) : null}
               {d.myVote || d.closed ? (
                 <p className="tabular text-[13px] font-semibold">
-                  {pct}% <span className="font-normal text-muted">({s.votes} phiếu)</span>
+                  {pct}%{" "}
+                  <span className="font-normal text-muted">
+                    ({s.votes} phiếu)
+                  </span>
                 </p>
               ) : null}
               {d.canVote && !d.myVote ? (
@@ -223,7 +314,9 @@ function DuelCard({ d }: { d: Duel }) {
                   size="sm"
                   variant="secondary"
                   disabled={vote.isPending}
-                  onClick={() => vote.mutate({ duelId: d.id, choice: s.userId })}
+                  onClick={() =>
+                    vote.mutate({ duelId: d.id, choice: s.userId })
+                  }
                 >
                   Bầu {s.displayName.split(" ").at(-1)}
                 </Button>
@@ -246,13 +339,31 @@ function DuelCard({ d }: { d: Duel }) {
   );
 }
 
-function PendingProofs({ q }: { q: { isPending: boolean; data?: RouterOutputs["challenge"]["pendingProofs"] } }) {
+function PendingProofs({
+  q,
+}: {
+  q: {
+    isPending: boolean;
+    error: unknown;
+    refetch: () => unknown;
+    data?: RouterOutputs["challenge"]["pendingProofs"];
+  };
+}) {
   if (q.isPending) return <Loading />;
+  if (q.error)
+    return (
+      <div className="px-5">
+        <QueryError onRetry={() => q.refetch()} />
+      </div>
+    );
   const items = q.data?.items ?? [];
   if (!items.length)
     return (
       <div className="px-5">
-        <EmptyState icon={ShieldCheck} title="Không có bằng chứng nào đang chờ duyệt" />
+        <EmptyState
+          icon={ShieldCheck}
+          title="Không có bằng chứng nào đang chờ duyệt"
+        />
       </div>
     );
   return (
@@ -260,14 +371,21 @@ function PendingProofs({ q }: { q: { isPending: boolean; data?: RouterOutputs["c
       <div className="flex items-center gap-1 px-5 pb-1 text-[13px] text-muted">
         <ShieldCheck size={15} className="text-teal" aria-hidden />
         Người nộp ẩn danh
-        <InfoSheet title="Chờ duyệt" label="Cách hoạt động của bằng chứng chờ duyệt">
-          Ai cũng xem được bằng chứng đang chờ, nhưng chỉ người được hệ thống chọn ngẫu nhiên mới chấm được. Tên người nộp được ẩn để
-          việc duyệt công bằng.
+        <InfoSheet
+          title="Chờ duyệt"
+          label="Cách hoạt động của bằng chứng chờ duyệt"
+        >
+          Ai cũng xem được bằng chứng đang chờ, nhưng chỉ người được hệ thống
+          chọn ngẫu nhiên mới chấm được. Tên người nộp được ẩn để việc duyệt
+          công bằng.
         </InfoSheet>
       </div>
       <ul className="flex flex-col">
         {items.map((p) => (
-          <PendingRow key={p.anonymousCode + p.submittedAt.toISOString()} p={p} />
+          <PendingRow
+            key={p.anonymousCode + p.submittedAt.toISOString()}
+            p={p}
+          />
         ))}
       </ul>
     </>
@@ -277,11 +395,20 @@ function PendingProofs({ q }: { q: { isPending: boolean; data?: RouterOutputs["c
 function PendingRow({ p }: { p: Pending }) {
   return (
     <li className="flex items-center gap-3.5 border-b border-border px-5 py-3 last:border-0">
-      <LevelPatch categorySlug={p.skill.category.slug} rarity={p.skill.rarity} state="practicing" level={p.targetLevel} size={48} />
+      <LevelPatch
+        categorySlug={p.skill.category.slug}
+        rarity={p.skill.rarity}
+        state="practicing"
+        level={p.targetLevel}
+        size={48}
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-[15px] font-semibold">{p.skill.name}</span>
+        <span className="truncate text-[15px] font-semibold">
+          {p.skill.name}
+        </span>
         <span className="tabular truncate text-[13px] text-muted">
-          {p.isMine ? "Của bạn" : `Ẩn danh ${p.anonymousCode}`}, lên cấp {p.targetLevel}
+          {p.isMine ? "Của bạn" : `Ẩn danh ${p.anonymousCode}`}, lên cấp{" "}
+          {p.targetLevel}
         </span>
         <span className="tabular text-[12px] text-muted">
           {p.votes}/{p.required} đã duyệt

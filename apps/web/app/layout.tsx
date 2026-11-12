@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
+import { SwRegister } from "@/components/sw-register";
+import { THEME_COLOR, THEME_COOKIE, themeFrom } from "@/lib/theme";
 import { Be_Vietnam_Pro, Bitter } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
@@ -24,20 +27,21 @@ export const metadata: Metadata = {
   description: "Lên level kỹ năng bằng bằng chứng được cộng đồng xác thực.",
   applicationName: "SkillVerse",
   appleWebApp: { capable: true, title: "SkillVerse", statusBarStyle: "black-translucent" },
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], apple: "/icons/apple-touch-icon.png" },
 };
 
-export const viewport: Viewport = {
-  themeColor: "#0e1611",
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-};
+export async function generateViewport(): Promise<Viewport> {
+  const theme = themeFrom((await cookies()).get(THEME_COOKIE)?.value);
+  return { themeColor: THEME_COLOR[theme], width: "device-width", initialScale: 1, viewportFit: "cover" };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = themeFrom((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang="vi" className={`${beVietnam.variable} ${bitter.variable}`}>
+    <html lang="vi" data-theme={theme} className={`${beVietnam.variable} ${bitter.variable}`}>
       <body className="min-h-dvh">
         <Providers>{children}</Providers>
+        <SwRegister />
       </body>
     </html>
   );

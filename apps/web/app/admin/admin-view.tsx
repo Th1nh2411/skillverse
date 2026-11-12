@@ -7,7 +7,7 @@ import type { RouterOutputs } from "@skillverse/api";
 import { REPORT_REASON_LABELS, SANCTION_KIND_LABELS, sanctionKindInput } from "@skillverse/validation";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
-import { EmptyState, Skeleton } from "@/components/ui/misc";
+import { EmptyState, Skeleton, QueryError } from "@/components/ui/misc";
 import { timeAgo } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
 
@@ -88,6 +88,7 @@ function Reports() {
   const trpc = useTRPC();
   const q = useQuery(trpc.admin.reports.queryOptions({}));
   if (q.isPending) return <Loading />;
+  if (q.error) return <QueryError onRetry={() => q.refetch()} />;
   if (!q.data?.items.length) return <EmptyState icon={Inbox} title="Không có báo cáo nào đang mở" />;
   return (
     <ul className="flex flex-col gap-3">
@@ -252,6 +253,7 @@ function DisputedList() {
   const trpc = useTRPC();
   const q = useQuery(trpc.admin.disputedProofs.queryOptions());
   if (q.isPending) return <Loading />;
+  if (q.error) return <QueryError onRetry={() => q.refetch()} />;
   if (!q.data?.length) return <EmptyState icon={Copy} title="Không có video trùng nào cần xem" />;
   return (
     <ul className="flex flex-col gap-3">
@@ -316,6 +318,7 @@ function Appeals() {
   const trpc = useTRPC();
   const q = useQuery(trpc.admin.appeals.queryOptions());
   if (q.isPending) return <Loading />;
+  if (q.error) return <QueryError onRetry={() => q.refetch()} />;
   if (!q.data?.length) return <EmptyState icon={Scale} title="Không có kháng nghị nào đang mở" />;
   return (
     <ul className="flex flex-col gap-3">
@@ -370,6 +373,7 @@ function SkillProposals() {
   const trpc = useTRPC();
   const q = useQuery(trpc.admin.proposals.queryOptions());
   if (q.isPending) return <Loading />;
+  if (q.error) return <QueryError onRetry={() => q.refetch()} />;
   if (!q.data?.items.length) return <EmptyState icon={Lightbulb} title="Không có đề xuất kỹ năng nào chờ biên tập" />;
   return (
     <ul className="flex flex-col gap-3">

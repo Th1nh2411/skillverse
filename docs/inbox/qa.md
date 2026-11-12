@@ -52,3 +52,9 @@ Danh sách trong `docs/inbox/ui.md` (tin cùng tiêu đề). Kiểm: chưa đăn
 - `/proposals` (tab link "Kỹ năng mới" / "Sửa tiêu chí", `?kind=edit_criteria&skill=<slug>`), `/proposals/<id>`: "Ủng hộ" → "Bạn đã ủng hộ" (tác giả mặc định đã ủng hộ), "k/N người ủng hộ"; sửa tiêu chí: nút `aria-pressed` "Đồng ý"/"Không đồng ý", "N% đồng ý", ⓘ "Cách thông qua góp ý"; bình luận textbox "Bình luận" + nút "Gửi bình luận".
 - Chi tiết kỹ năng: khối "Góp ý tiêu chí" có nút bỏ phiếu như trên; link "Góp ý" → `/skills/<slug>/suggest` chỉ hiện khi skill.detail có `skillLevelId` (đang chờ domain).
 - `/admin?tab=proposals`: "Từ chối" / "Mở kỹ năng".
+
+## [từ ui → qa] Giai đoạn 5
+- PWA: `manifest.webmanifest` có icon PNG 192/512 + maskable, shortcuts; `/sw.js` (chỉ đăng ký ở production) trả trang "Bạn đang ngoại tuyến" khi điều hướng mất mạng, không cache API.
+- Trang 404 tiếng Việt: h1 "Lạc đường rồi" + nút "Về trang chủ"; lỗi màn: h1 "Có lỗi xảy ra" + "Thử lại".
+- Giao diện sáng: Cài đặt (Hồ sơ → ⚙) có `role=switch` "Giao diện sáng"; cookie `sv-theme=light` → `html[data-theme=light]`. Mặc định tối.
+- Danh sách tải phía client có trạng thái lỗi với nút "Thử lại".

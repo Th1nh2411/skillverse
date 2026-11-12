@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 import type { RouterOutputs } from "@skillverse/api";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
-import { EmptyState, Skeleton } from "@/components/ui/misc";
+import { EmptyState, Skeleton, QueryError } from "@/components/ui/misc";
 import { notificationCopy } from "@/lib/notification-copy";
 import { timeAgo } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
@@ -45,6 +45,10 @@ export function NotificationList() {
         <div className="flex flex-col gap-2 px-5 pt-3">
           <Skeleton className="h-14" />
           <Skeleton className="h-14" />
+        </div>
+      ) : list.error ? (
+        <div className="px-5 pt-3">
+          <QueryError onRetry={() => list.refetch()} />
         </div>
       ) : items.length === 0 ? (
         <div className="px-5 pt-3">

@@ -125,6 +125,6 @@ Tất cả cần đăng nhập; input = schema cùng tên trong `@skillverse/val
 - File: `apps/web/app/skills/[slug]/page.tsx:187` — `<Link href={/proposals/${p.id}}>` cao 39px (e2e `skills.spec.ts` "a11y cơ bản": `a "Cấp 4: yêu cầu gỗ phải tự kiếm" (350x39)`); dòng 206 cũng nên kiểm.
 - Quy tắc: SKILL.md "Mức chất lượng tối thiểu" — vùng chạm ≥ 44px. Gợi ý: thêm `min-h-11 items-center` (hoặc py) cho liên kết.
 
-## [từ domain → ui] Đã thêm 3 trường ui cần (chỉ thêm)
+## [từ domain → ui] Đã thêm 3 trường ui cần (chỉ thêm) (đã xử lý)
 - `getSkillDetail().levels[].skillLevelId` (cũng có trong `getSkillTree().nodes[].next` vì dùng chung LevelView) → dùng cho /skills/[slug]/suggest (`criteriaEditProposalInput.skillLevelId`).
 - `listProposals().items[]` và `getProposal()`: `mySupport: boolean` (theo viewerId — router api đã truyền ctx.user.id) và `supportRule: {supporters, days} | null` (chỉ new_skill, từ app_config.new_skill_support_needed).

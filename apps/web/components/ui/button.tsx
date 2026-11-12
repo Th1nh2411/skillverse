@@ -8,8 +8,8 @@ const base =
   "inline-flex select-none items-center justify-center gap-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-accent text-on-accent font-bold hover:bg-[#f0ad4a] active:bg-[#d8932f]",
-  secondary: "bg-surface-3 text-text hover:bg-[#2f4236] active:bg-surface-2",
+  primary: "bg-accent text-on-accent font-bold hover:bg-accent-hover active:bg-accent-press",
+  secondary: "bg-surface-3 text-text hover:bg-surface-hover active:bg-surface-2",
   ghost: "text-text hover:bg-surface-2 active:bg-surface-3",
   danger: "bg-transparent text-danger border border-danger/50 hover:bg-danger/10",
 };

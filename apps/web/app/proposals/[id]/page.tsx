@@ -74,7 +74,7 @@ function NewSkillBody({ p, isAuthor }: { p: Detail; isAuthor: boolean }) {
         <div className="flex items-center gap-1">
           <ProposalSteps current={step.current} failed={step.failed} />
           <InfoSheet title="Đề xuất kỹ năng mới" label="Cách đề xuất được mở">
-            Cần {formatNumber(need)} người ủng hộ trước hạn. Đủ thì biên tập viên kiểm tra an toàn và tiêu chí, rồi mở kỹ năng cho
+            Cần {formatNumber(need)} người ủng hộ{p.supportRule ? ` trong ${p.supportRule.days} ngày` : " trước hạn"}. Đủ thì biên tập viên kiểm tra an toàn và tiêu chí, rồi mở kỹ năng cho
             mọi người. Người đề xuất là người ủng hộ đầu tiên.
           </InfoSheet>
         </div>
@@ -92,7 +92,7 @@ function NewSkillBody({ p, isAuthor }: { p: Detail; isAuthor: boolean }) {
                 </span>
               ) : null}
             </div>
-            <SupportButton proposalId={p.id} supported={isAuthor} />
+            <SupportButton proposalId={p.id} supported={p.mySupport || isAuthor} />
           </>
         ) : p.status === "accepted" && p.createdSkillSlug ? (
           <ButtonLink href={`/skills/${p.createdSkillSlug}`} size="md" variant="secondary">

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Send } from "lucide-react";
 import { useState } from "react";
-import { Avatar } from "@/components/ui/misc";
+import { Avatar, QueryError } from "@/components/ui/misc";
 import { timeAgo } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
 
@@ -57,6 +57,7 @@ export function Comments({ proposalId, count }: { proposalId: string; count: num
           {send.error.message}
         </p>
       ) : null}
+      {list.error ? <QueryError onRetry={() => list.refetch()} message="Không tải được bình luận." /> : null}
       <ul className="flex flex-col gap-3">
         {items.map((c) => (
           <li key={c.id} className="flex gap-2.5">

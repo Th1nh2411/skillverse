@@ -124,7 +124,7 @@ export function ProofComposer({ limits, challengeId, skill, myLevel, target }: P
         <ul className="flex flex-col gap-1">
           {target.criteria.map((c) => (
             <li key={c.id} className="flex items-start gap-2 text-[14px] leading-snug">
-              <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-thread-common" aria-hidden />
+              <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-trail" aria-hidden />
               {c.text}
             </li>
           ))}
