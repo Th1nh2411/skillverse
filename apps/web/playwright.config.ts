@@ -8,6 +8,8 @@ import { E2E_BASE_URL, E2E_PORT, e2eEnv } from "./e2e/env";
  * Chạy: pnpm e2e  (hoặc pnpm --filter @skillverse/web exec playwright test)
  * E2E_REUSE_SERVER=1 để dùng lại server đang chạy ở cổng 3200.
  */
+const PROD = process.env.E2E_PROD === "1";
+
 export default defineConfig({
   testDir: "./e2e",
   testMatch: /.*\.spec\.ts$/,
@@ -38,11 +40,15 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm exec next dev -p ${E2E_PORT}`,
+    // E2E_PROD=1: build một lần rồi `next start` (miễn nhiễm HMR khi đồng đội đang sửa file — dev server bị
+    // full reload giữa test làm "navigation interrupted"). Mặc định: next dev (nhanh khi lặp test).
+    command: PROD
+      ? `pnpm exec next build && pnpm exec next start -p ${E2E_PORT}`
+      : `pnpm exec next dev -p ${E2E_PORT}`,
     // Không dùng / (redirect tới /login có thể 404 khi màn chưa dựng) — manifest luôn 200 và không cần đăng nhập
     url: `${E2E_BASE_URL}/manifest.webmanifest`,
     // Next dev biên dịch lần đầu khá lâu
-    timeout: 300_000,
+    timeout: PROD ? 900_000 : 300_000,
     reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     stdout: process.env.E2E_SERVER_LOG === "1" ? "pipe" : "ignore",
     stderr: "pipe",

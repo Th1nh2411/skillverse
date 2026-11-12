@@ -9,6 +9,7 @@ pnpm e2e                                   # reset + seed DB skillverse_e2e, t�
 E2E_REUSE_SERVER=1 pnpm e2e                # dùng lại server đang chạy ở :3200
 E2E_SKIP_SEED=1 ... playwright test skills # bỏ reset/seed khi chạy lặp test không đổi dữ liệu
 E2E_SERVER_LOG=1 pnpm e2e                  # in log của next dev
+E2E_PROD=1 pnpm e2e                        # next build && next start (ổn định khi đồng đội đang sửa file; dùng để chốt giai đoạn)
 ```
 
 - Cấu hình: `apps/web/playwright.config.ts`, môi trường `apps/web/e2e/env.ts` (từ chối mọi DB không có hậu tố `_e2e`).
@@ -45,6 +46,11 @@ Lead chạy toàn bộ thấy fail không ổn định (discover :14/:24/:37/:48
 | revoke.spec.ts (Q3.2) | Chuẩn bị qua API (`helpers/verification.ts`: createUpload → PUT presigned MinIO → proof.submit → 3 người review.task/review.submit Đạt): ngoclan Tung hứng 3 → 4 → quocbao `report.create` (not_self) → minhhoang gọi `admin.reports`/`admin.resolveReport` → 403, level giữ 4 → bientap xác nhận → level 3, proof `removed`, report `confirmed`, `sanctions(level_revoked, proof_id)`, `xp_ledger` dòng `revoked` = −XP đã cộng, `users.total_xp` = tổng sổ cái, mỗi người duyệt Đạt có `reputation_events approved_fraud` = −15 (đọc từ app_config, kẹp [0,100]) và cache khớp, bài level_up ẩn bằng `deleted_at`, số dòng proofs/reviews/review_marks/xp_ledger/reputation_events/user_skills/posts/assignments không giảm → xác nhận lần hai không hạ thêm (already_revoked) → UI `/admin`: biên tập viên vào được, người thường không |
 | social.spec.ts (Q3.1, Q3.3, Q3.4) | `home.quests` = số nhiệm vụ trong app_config.daily_quests; `home.feed` có bài; cheer bật hai lần chỉ 1 dòng, tắt về 0, like_count = tổng reactions · theo dõi theo handle, không tự theo dõi · nhắn tin: người nhận đọc được, người ngoài `message.list/send` 403/404 · trao đổi: người đề nghị không tự chấp nhận, người nhận chấp nhận → accepted · `admin.sanction` post_ban → `post.create` 403; người thường gọi admin.sanction 403 · đấu 1v1: video URL ký, không lộ khóa object, phiếu thứ hai bị chặn, người tham gia không tự bầu, lựa chọn ngoài trận bị chặn · UI: `/home` nhiệm vụ + cheer, `/u/<handle>` theo dõi/nhắn tin, `/challenges` tab Đấu 1v1 "Bầu …" → "Bạn đã bầu" |
 | onboarding.spec.ts | thêm: sau onboarding thống kê "Kỹ năng" ≥ 3 (D65) |
+
+### Ổn định và kết quả (2026-11-12)
+- Chạy trên `next dev` lúc máy tải cao và đồng đội đang sửa file: dev server full-reload giữa test ("navigation interrupted", "Execution context was destroyed"), một lượt 22–29 phút, 2–14 test lỗi ngẫu nhiên — loại (b), không phải lỗi ứng dụng.
+- Thêm chế độ `E2E_PROD=1 pnpm e2e`: `next build && next start` (thư mục `.next-e2e-prod`, bật `AUTH_DEV_LOGIN_ALLOW_PRODUCTION=true` chỉ cho e2e). Bản build cố định nên không bị HMR.
+- Kết quả: toàn bộ e2e giai đoạn 1+2+3 (61 test) xanh 2 lần liên tiếp ở chế độ E2E_PROD (55.8 s và 51.8 s, chưa tính thời gian build). Khuyến nghị lead chốt giai đoạn bằng `E2E_PROD=1`.
 
 ### Rà soát (Q3.5)
 | Quy tắc | Kết quả |

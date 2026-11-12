@@ -24,12 +24,14 @@ export function e2eEnv(): Record<string, string> {
   for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
   return {
     ...env,
-    NEXT_DIST_DIR: ".next-e2e",
+    NEXT_DIST_DIR: process.env.E2E_PROD === "1" ? ".next-e2e-prod" : ".next-e2e",
     DATABASE_URL: E2E_DATABASE_URL,
     DIRECT_URL: E2E_DATABASE_URL,
     AUTH_URL: E2E_BASE_URL,
     NEXT_PUBLIC_APP_URL: E2E_BASE_URL,
     AUTH_DEV_LOGIN: "true",
+    // E2E_PROD (next start, NODE_ENV=production) vẫn cần đăng nhập dev — cờ opt-in riêng của api, chỉ ở máy local/e2e
+    ...(process.env.E2E_PROD === "1" ? { AUTH_DEV_LOGIN_ALLOW_PRODUCTION: "true" } : {}),
     AUTH_TRUST_HOST: "true",
     NEXT_TELEMETRY_DISABLED: "1",
     CRON_SECRET: E2E_CRON_SECRET,
