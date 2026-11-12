@@ -1,0 +1,24 @@
+{
+  // Cmd+Shift+B (hoặc Tasks: Run Task → "SkillVerse: Run local").
+  // Tự làm: cài package → tạo .env nếu thiếu → bật Postgres + MinIO → migrate → seed (bỏ qua nếu đã có dữ liệu) → pnpm dev.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "SkillVerse: Run local",
+      "type": "shell",
+      "command": "set -e; pnpm install; [ -f .env ] || cp .env.example .env; pnpm db:up; echo 'Chờ Postgres...'; until docker compose exec -T postgres pg_isready -U skillverse >/dev/null 2>&1; do sleep 1; done; pnpm db:deploy; pnpm db:seed; pnpm dev",
+      "group": { "kind": "build", "isDefault": true },
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "reveal": "always", "clear": true },
+      "problemMatcher": {
+        "owner": "skillverse",
+        "pattern": { "regexp": "^x{100}$" },
+        "background": {
+          "activatesOnStart": true,
+          "beginsPattern": "Chờ Postgres",
+          "endsPattern": "Ready in"
+        }
+      }
+    }
+  ]
+}

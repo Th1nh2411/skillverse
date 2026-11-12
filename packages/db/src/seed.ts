@@ -22,7 +22,7 @@ type SkillSeed = {
   description: string;
   risk?: "none" | "low" | "high";
   holderCount?: number;
-  levels?: string[][]; // tiêu chí cho từng cấp (5 cấp)
+  steps: Array<[title: string, task: string, guide: string]>; // 5 mốc: [tên, việc cần làm (để chấm), mô tả hướng dẫn]
 };
 
 const CATEGORIES = [
@@ -32,56 +32,221 @@ const CATEGORIES = [
   { slug: "the-chat", name: "Thể chất" },
 ];
 
-const LEVEL_TITLES = ["Mới bắt đầu", "Tập sự", "Thành thạo", "Chuyên gia", "Bậc thầy"];
-
+// Mỗi kỹ năng là chuỗi 5 mốc. Mốc N = skill_levels.level N; title = tên mốc, tiêu chí duy nhất = việc cần làm.
+// Luật chung (video liên tục, thấy rõ người làm) nằm ở UI dạng ⓘ, không lặp ở từng mốc.
 const SKILLS: SkillSeed[] = [
-  { slug: "sinh-ton-co-ban", name: "Sinh tồn cơ bản", category: "sinh-ton", description: "Nền tảng sinh tồn ngoài trời: an toàn, định hướng, chuẩn bị.", holderCount: 820 },
-  { slug: "nhom-lua", name: "Nhóm lửa", category: "sinh-ton", description: "Nhóm và giữ lửa bằng nhiều phương pháp.", risk: "low", holderCount: 640 },
-  { slug: "tim-nguon-nuoc", name: "Tìm nguồn nước", category: "sinh-ton", description: "Tìm và đánh giá nguồn nước tự nhiên.", holderCount: 530 },
-  { slug: "dung-trai", name: "Dựng trại", category: "sinh-ton", description: "Dựng nơi trú ẩn tạm từ vật liệu tại chỗ.", holderCount: 700 },
   {
-    slug: "lua-bang-que",
-    name: "Lửa bằng que",
-    category: "sinh-ton",
+    slug: "sinh-ton-co-ban", name: "Sinh tồn cơ bản", category: "sinh-ton", holderCount: 820,
+    description: "Nền tảng sinh tồn ngoài trời: an toàn, định hướng, chuẩn bị.",
+    steps: [
+      ["Ba lô", "Chuẩn bị ba lô với 10 món thiết yếu", "Bày đủ 10 món lên tấm bạt rồi cho vào ba lô: nước, đồ ăn, dao, đèn, bật lửa, áo mưa, bộ sơ cứu, còi, bản đồ, áo ấm."],
+      ["La bàn", "Tìm hướng Bắc bằng la bàn", "Đặt la bàn nằm ngang, chờ kim đứng yên rồi chỉ tay về hướng Bắc. Tránh xa vật kim loại và điện thoại."],
+      ["Bóng nắng", "Tìm hướng bằng bóng một cây gậy", "Cắm gậy thẳng, đánh dấu đầu bóng, chờ 15 phút đánh dấu lần nữa. Nối hai điểm là trục Tây–Đông."],
+      ["Tín hiệu", "Làm tín hiệu cầu cứu nhìn thấy từ xa", "Xếp đá, cành hoặc vải sáng màu thành chữ SOS lớn trên chỗ trống. Quay từ xa cho thấy rõ cả ký hiệu."],
+      ["Một đêm", "Ngủ một đêm ngoài trời an toàn", "Chọn chỗ cao ráo, tránh cây khô và lòng suối. Quay lúc dựng chỗ ngủ, lúc tối và sáng hôm sau."],
+    ],
+  },
+  {
+    slug: "nhom-lua", name: "Nhóm lửa", category: "sinh-ton", risk: "low", holderCount: 640,
+    description: "Nhóm và giữ lửa bằng nhiều phương pháp.",
+    steps: [
+      ["Bật lửa", "Nhóm bằng bật lửa, giữ cháy 5 phút", "Chuẩn bị bùi nhùi, que nhỏ, củi to theo ba đống. Nhóm từ nhỏ đến lớn, giữ lửa cháy đều 5 phút."],
+      ["Đá lửa", "Nhóm bằng đá lửa, không dùng giấy", "Cạo đá lửa cho tia rơi vào bùi nhùi khô như xơ dừa, vỏ cây. Không dùng giấy, cồn hay viên mồi lửa."],
+      ["Trời gió", "Nhóm khi có gió, giữ cháy 5 phút", "Chắn gió bằng thân người, đá hoặc hố nông. Quay rõ lá cây, khói bay để thấy có gió."],
+      ["Trời mưa", "Nhóm bằng củi ướt sau mưa", "Chẻ củi ướt lấy lõi khô bên trong, làm phoi bào mỏng. Quay cảnh củi ướt trước khi nhóm."],
+      ["Một que diêm", "Một que diêm, thành ngọn dưới 3 phút", "Chỉ dùng đúng một que diêm và vật liệu nhặt tại chỗ. Bấm giờ từ lúc quẹt diêm."],
+    ],
+  },
+  {
+    slug: "tim-nguon-nuoc", name: "Tìm nguồn nước", category: "sinh-ton", holderCount: 530,
+    description: "Tìm và đánh giá nguồn nước tự nhiên.",
+    steps: [
+      ["Đọc địa hình", "Chỉ ra 3 nơi có thể có nước", "Tìm thung lũng, chỗ cây xanh rậm, dấu chân thú, đàn côn trùng. Chỉ từng chỗ và nói vì sao."],
+      ["Hứng sương", "Thu nước từ sương trên lá buổi sáng", "Lau sương trên cỏ, lá bằng vải sạch lúc sáng sớm rồi vắt vào bình. Quay lượng nước thu được."],
+      ["Túi lá", "Trùm túi ni lông lên cành lá để thu nước", "Trùm túi trong lên cành lá còn xanh dưới nắng, buộc kín miệng. Sau vài giờ nước đọng ở góc túi."],
+      ["Suối khô", "Đào hố lấy nước ở lòng suối khô", "Đào ở chỗ trũng nhất phía ngoài khúc cua của suối khô. Chờ nước rỉ vào, để lắng cho trong."],
+      ["Một lít", "Tìm đủ 1 lít nước trong 2 giờ", "Kết hợp các cách đã học. Đồng hồ bấm giờ phải thấy được trong video, nước cuối cùng đổ vào bình đo."],
+    ],
+  },
+  {
+    slug: "dung-trai", name: "Dựng trại", category: "sinh-ton", holderCount: 700,
+    description: "Dựng nơi trú ẩn tạm từ vật liệu tại chỗ.",
+    steps: [
+      ["Lều", "Dựng lều có sẵn dưới 10 phút", "Dùng lều mua sẵn, bấm giờ từ lúc mở túi. Cọc đóng chắc, vải lều căng phẳng."],
+      ["Tấm bạt", "Dựng mái che bằng bạt và dây", "Căng dây giữa hai cây, vắt bạt lên, chằng bốn góc xuống đất. Mái phải dốc để thoát nước."],
+      ["Không dột", "Đổ nước lên mái che, bên dưới vẫn khô", "Đổ một xô nước lên mái che, quay cận cảnh bên dưới vẫn khô."],
+      ["Lều lá", "Dựng lều chữ A từ cành lá tại chỗ", "Dùng một cành dài làm sống lều, dựng cành nhỏ hai bên rồi phủ lá dày từ dưới lên như lợp ngói."],
+      ["Qua đêm", "Ngủ qua đêm trong lều tự dựng", "Ngủ trong lều tự dựng từ tối đến sáng. Quay lúc vào lều, giữa đêm và lúc thức dậy."],
+    ],
+  },
+  {
+    slug: "lua-bang-que", name: "Lửa bằng que", category: "sinh-ton", risk: "high", holderCount: 214,
     description: "Tạo lửa bằng ma sát que (bow drill / hand drill).",
-    risk: "high",
-    holderCount: 214,
-    levels: [
-      ["Tạo khói bằng que trong 10 phút", "Video quay liên tục, không cắt ghép"],
-      ["Tạo than hồng, chuyển vào bùi nhùi", "Video quay liên tục, không cắt ghép"],
-      ["Lửa cháy thành ngọn trong 8 phút", "Video quay liên tục, không cắt ghép"],
-      ["Lửa thành ngọn dưới 5 phút, video liên tục", "Có nước dập lửa trong khung hình"],
-      ["Tự làm bộ dụng cụ từ cây tại chỗ", "Lửa thành ngọn dưới 5 phút", "Video quay liên tục, không cắt ghép"],
+    steps: [
+      ["Ra khói", "Tạo khói bằng que trong 10 phút", "Dùng cung và que khoan, giữ que thẳng đứng, kéo đều tay. Chỉ cần ra khói liên tục."],
+      ["Than hồng", "Tạo than hồng, chuyển vào bùi nhùi", "Khoét rãnh chữ V trên tấm đế để bột gỗ dồn lại thành than. Chuyển than vào tổ bùi nhùi, thổi nhẹ."],
+      ["Thành ngọn", "Lửa cháy thành ngọn trong 8 phút", "Từ lúc bắt đầu khoan đến khi có ngọn lửa. Đồng hồ bấm giờ phải thấy trong khung hình."],
+      ["Dưới 5 phút", "Thành ngọn dưới 5 phút, có nước dập lửa bên cạnh", "Như mốc trước nhưng nhanh hơn. Luôn để sẵn nước dập lửa trong khung hình."],
+      ["Tự chế", "Tự làm bộ que từ cây tại chỗ, thành ngọn dưới 5 phút", "Tự làm cung, que và đế từ gỗ nhặt tại chỗ, quay cả lúc làm dụng cụ. Không dùng gỗ mua sẵn."],
     ],
   },
-  { slug: "loc-nuoc", name: "Lọc nước", category: "sinh-ton", description: "Lọc và khử khuẩn nước bằng dụng cụ tự chế.", risk: "low", holderCount: 410 },
-  { slug: "bay-don-gian", name: "Bẫy đơn giản", category: "sinh-ton", description: "Dựng bẫy đơn giản, đúng quy định địa phương.", risk: "low", holderCount: 300 },
-  { slug: "song-sot-72-gio", name: "Sống sót 72 giờ", category: "sinh-ton", description: "Tự lập ngoài trời 72 giờ với bộ đồ tối thiểu.", risk: "high", holderCount: 18 },
   {
-    slug: "that-nut-day",
-    name: "Thắt nút dây",
-    category: "sinh-ton",
-    description: "Các nút dây thông dụng: Bowline, Clove hitch, Figure-8...",
-    holderCount: 960,
-    levels: [
-      ["Thắt nút Bowline trong 30 giây", "Nút chịu lực khi kéo căng"],
-      ["Thắt 3 nút cơ bản (Bowline, Clove hitch, Figure-8) trong 2 phút"],
-      ["Thắt Bowline bằng một tay trong 20 giây"],
-      ["Thắt 8 nút khác nhau liên tục trong 5 phút"],
-      ["Thắt Bowline bịt mắt dưới 10 giây"],
+    slug: "loc-nuoc", name: "Lọc nước", category: "sinh-ton", risk: "low", holderCount: 410,
+    description: "Lọc và khử khuẩn nước bằng dụng cụ tự chế.",
+    steps: [
+      ["Lọc vải", "Lọc nước đục qua nhiều lớp vải", "Gấp vải sạch nhiều lớp, đổ nước đục qua. Đặt hai cốc trước và sau cạnh nhau để so."],
+      ["Đun sôi", "Đun sôi nước đủ 1 phút", "Đun đến khi sôi sùng sục rồi giữ thêm 1 phút. Đây là cách diệt khuẩn chắc chắn nhất."],
+      ["Bình lọc", "Làm bình lọc cát, than, sỏi", "Cắt đáy chai nhựa, xếp từ dưới lên: vải, than, cát mịn, sỏi. Quay từng lớp khi xếp."],
+      ["Nước bùn", "Lọc nước bùn thành nước trong", "Dùng bình lọc tự làm với nước bùn thật. Đặt cốc trước và sau cạnh nhau."],
+      ["Phơi nắng", "Khử khuẩn bằng chai nhựa phơi nắng 6 giờ", "Đổ nước trong vào chai nhựa trong suốt, phơi nắng gắt 6 giờ. Video tua nhanh có đồng hồ."],
     ],
   },
-  { slug: "so-cuu", name: "Sơ cứu", category: "sinh-ton", description: "Sơ cứu vết thương, băng bó, xử lý tình huống cơ bản.", risk: "low", holderCount: 1200 },
-  { slug: "huyt-sao-bang-la", name: "Huýt sáo bằng lá", category: "ky-nang-di", description: "Tạo âm thanh, giai điệu bằng một chiếc lá.", holderCount: 41 },
-  { slug: "viet-chu-nguoc-guong", name: "Viết chữ ngược gương", category: "ky-nang-di", description: "Viết chữ ngược như phản chiếu trong gương.", holderCount: 27 },
-  { slug: "tung-hung", name: "Tung hứng", category: "ky-nang-di", description: "Tung hứng bóng từ 3 đến 5 quả.", holderCount: 350 },
-  { slug: "giai-rubik-bit-mat", name: "Giải rubik bịt mắt", category: "ky-nang-di", description: "Ghi nhớ và giải khối rubik khi bịt mắt.", holderCount: 64 },
-  { slug: "mo-khoa-the-thao", name: "Mở khóa thể thao", category: "ky-nang-di", description: "Mở khóa thể thao trên ổ khóa của chính mình.", holderCount: 38 },
-  { slug: "thoi-thuy-tinh", name: "Thổi thủy tinh", category: "thu-cong", description: "Tạo hình thủy tinh nóng chảy.", risk: "high", holderCount: 12 },
-  { slug: "ben-day-paracord", name: "Bện dây paracord", category: "thu-cong", description: "Bện vòng tay, dây đeo từ paracord.", holderCount: 520 },
-  { slug: "dan-len", name: "Đan len", category: "thu-cong", description: "Đan khăn, mũ và họa tiết len.", holderCount: 900 },
-  { slug: "leo-nui", name: "Leo núi", category: "the-chat", description: "Leo vách tự nhiên và nhân tạo an toàn.", risk: "high", holderCount: 150 },
+  {
+    slug: "bay-don-gian", name: "Bẫy đơn giản", category: "sinh-ton", risk: "low", holderCount: 300,
+    description: "Dựng bẫy đơn giản, thử bằng đồ vật, đúng quy định địa phương.",
+    steps: [
+      ["Nút trượt", "Thắt nút thòng lọng trượt", "Thắt vòng trượt bằng dây dù, kéo thử để vòng siết lại và nới ra được."],
+      ["Cò số 4", "Làm cò bẫy hình số 4 từ que", "Gọt ba que thành chữ số 4 lồng vào nhau. Chạm nhẹ là sập."],
+      ["Bẫy hộp", "Dựng bẫy hộp, sập khi chạm cò", "Dùng hộp hoặc rổ chống bằng cò số 4. Thử bằng đồ vật, không dùng con vật thật."],
+      ["Ngụy trang", "Ngụy trang bẫy khó nhận ra", "Phủ lá, đất cho bẫy hòa vào xung quanh. Quay toàn cảnh rồi chỉ ra chỗ đặt bẫy."],
+      ["Gỡ sạch", "Dựng, kích hoạt rồi gỡ sạch không để lại dấu", "Dựng, kích hoạt rồi tháo bỏ hoàn toàn. Quay chỗ cũ sạch như ban đầu. Chỉ làm nơi được phép."],
+    ],
+  },
+  {
+    slug: "song-sot-72-gio", name: "Sống sót 72 giờ", category: "sinh-ton", risk: "high", holderCount: 18,
+    description: "Tự lập ngoài trời 72 giờ với bộ đồ tối thiểu.",
+    steps: [
+      ["6 giờ", "Tự lập ngoài trời 6 giờ, video có mốc giờ", "Chỉ mang dao, bình nước, áo mưa và bộ sơ cứu. Có người biết bạn ở đâu và khi nào về."],
+      ["12 giờ", "Tự lập ngoài trời 12 giờ, video có mốc giờ", "Như mốc trước, kéo dài 12 giờ, qua cả lúc trời tối. Quay ngắn mỗi 2 giờ, có đồng hồ."],
+      ["24 giờ", "Tự lập ngoài trời 24 giờ, video có mốc giờ", "Một ngày một đêm. Video tóm tắt: chỗ ngủ, lửa, nước, bữa ăn."],
+      ["48 giờ", "Tự lập ngoài trời 48 giờ, video có mốc giờ", "Hai ngày hai đêm. Báo vị trí cho người thân mỗi ngày."],
+      ["72 giờ", "Tự lập ngoài trời 72 giờ, video có mốc giờ", "Ba ngày ba đêm với bộ đồ tối thiểu. Mỗi ngày quay một đoạn có ngày giờ rõ ràng."],
+    ],
+  },
+  {
+    slug: "that-nut-day", name: "Thắt nút dây", category: "sinh-ton", holderCount: 960,
+    description: "Các nút dây thông dụng: Bowline, Clove hitch, Figure-8...",
+    steps: [
+      ["Bowline", "Thắt Bowline trong 30 giây, kéo căng không tuột", "Còn gọi là nút ghế đơn: tạo vòng cố định không siết. Thắt xong kéo căng hai đầu để thấy nút giữ chắc."],
+      ["Ba nút", "Bowline, Clove hitch, Figure-8 trong 2 phút", "Thắt lần lượt ba nút, mỗi nút xong giơ lên camera."],
+      ["Một tay", "Thắt Bowline bằng một tay trong 20 giây", "Quấn dây quanh eo, chỉ dùng một tay để thắt. Tay kia để yên trong khung hình."],
+      ["Tám nút", "Thắt 8 nút khác nhau trong 5 phút", "Tự chọn 8 nút khác nhau, nói tên từng nút khi thắt."],
+      ["Bịt mắt", "Thắt Bowline bịt mắt dưới 10 giây", "Bịt mắt kín, bấm giờ từ lúc cầm dây. Quay rõ khăn bịt mắt trước khi bắt đầu."],
+    ],
+  },
+  {
+    slug: "so-cuu", name: "Sơ cứu", category: "sinh-ton", risk: "low", holderCount: 1200,
+    description: "Sơ cứu vết thương, băng bó, xử lý tình huống cơ bản.",
+    steps: [
+      ["Rửa vết thương", "Rửa và dán băng vết xước", "Rửa tay, rửa vết xước bằng nước sạch, thấm khô rồi dán băng. Có thể làm trên chính mình."],
+      ["Băng tay", "Băng vết thương ở bàn tay", "Đặt gạc lên vết thương, quấn băng cuộn từ cổ tay ra, vừa chặt nhưng không làm tím ngón."],
+      ["Nẹp", "Cố định tay gãy bằng nẹp tạm", "Dùng thước, bìa cứng hoặc que làm nẹp, cố định khớp trên và dưới chỗ gãy. Thử trên bạn đồng hành."],
+      ["Nằm nghiêng", "Đặt người bất tỉnh nằm nghiêng an toàn", "Kiểm tra thở, đặt người nằm nghiêng, tay đỡ đầu, chân trên co lại. Làm trên bạn đồng hành."],
+      ["Ép tim", "Ép tim trên hình nộm, đúng nhịp 30:2", "Chỉ thực hành trên hình nộm. 30 lần ép, 2 lần thổi, nhịp khoảng 100–120 lần mỗi phút."],
+    ],
+  },
+  {
+    slug: "huyt-sao-bang-la", name: "Huýt sáo bằng lá", category: "ky-nang-di", holderCount: 41,
+    description: "Tạo âm thanh, giai điệu bằng một chiếc lá.",
+    steps: [
+      ["Ra tiếng", "Thổi lá ra tiếng", "Chọn lá mỏng, mềm như lá chuối non. Kẹp lá giữa môi, thổi mạnh cho lá rung ra tiếng."],
+      ["Giữ tiếng", "Giữ tiếng liên tục 5 giây", "Giữ một tiếng đều liên tục ít nhất 5 giây."],
+      ["Hai nốt", "Thổi được nốt cao và nốt thấp", "Thay đổi lực thổi và độ căng của lá để có một nốt cao và một nốt thấp rõ ràng."],
+      ["Một câu", "Thổi một câu nhạc nghe ra bài gì", "Thổi một câu nhạc quen thuộc. Ghi tên bài ở chú thích để người duyệt dễ nhận ra."],
+      ["Trọn bài", "Thổi trọn một bài hát ngắn", "Thổi trọn một bài ngắn từ đầu đến cuối, không dừng giữa chừng."],
+    ],
+  },
+  {
+    slug: "viet-chu-nguoc-guong", name: "Viết chữ ngược gương", category: "ky-nang-di", holderCount: 27,
+    description: "Viết chữ ngược như phản chiếu trong gương.",
+    steps: [
+      ["Tên mình", "Viết ngược tên của bạn", "Viết ngược tên bạn trên giấy, sau đó đưa lên gương để thấy chữ xuôi."],
+      ["Một câu", "Viết ngược một câu 10 chữ", "Tự chọn một câu khoảng 10 chữ, viết ngược rồi soi gương kiểm tra."],
+      ["Một đoạn", "Viết ngược 50 chữ trong 3 phút", "Chép ngược một đoạn khoảng 50 chữ, có đồng hồ bấm giờ trong khung hình."],
+      ["Hai tay", "Tay phải viết xuôi, tay trái viết ngược cùng lúc", "Hai tay cùng cầm bút, một tay viết xuôi, một tay viết ngược cùng một câu."],
+      ["Bài thơ", "Viết ngược trọn một bài thơ, không nhìn gương", "Viết ngược trọn một bài thơ từ trí nhớ, không nhìn gương khi viết. Soi gương ở cuối video."],
+    ],
+  },
+  {
+    slug: "tung-hung", name: "Tung hứng", category: "ky-nang-di", holderCount: 350,
+    description: "Tung hứng bóng từ 3 đến 5 quả.",
+    steps: [
+      ["Hai bóng", "Tung 2 bóng một tay, 20 lần", "Hai bóng trong một tay, tung xoay vòng. Đếm to đủ 20 lần bắt."],
+      ["Ba bóng", "Tung 3 bóng, 30 lần liên tục", "Kiểu tung cơ bản, bóng bay hình số 8 nằm. Đếm đủ 30 lần bắt không rơi."],
+      ["Một phút", "Tung 3 bóng liên tục 1 phút", "Tung ba bóng liên tục 1 phút, có đồng hồ bấm giờ trong khung hình."],
+      ["Bốn bóng", "Tung 4 bóng, 20 lần liên tục", "Bốn bóng, mỗi tay hai bóng. Đếm đủ 20 lần bắt không rơi."],
+      ["Năm bóng", "Tung 5 bóng, 10 lần liên tục", "Năm bóng, tung cao và đều. Đếm đủ 10 lần bắt không rơi."],
+    ],
+  },
+  {
+    slug: "giai-rubik-bit-mat", name: "Giải rubik bịt mắt", category: "ky-nang-di", holderCount: 64,
+    description: "Ghi nhớ và giải khối rubik khi bịt mắt.",
+    steps: [
+      ["Mở mắt", "Giải rubik 3x3 khi mở mắt", "Xáo khối trước camera rồi giải xong cả sáu mặt."],
+      ["Hai phút", "Giải mở mắt dưới 2 phút", "Xáo trước camera, bấm giờ đến khi giải xong."],
+      ["Các góc", "Bịt mắt, giải xong các góc", "Nhìn và nhớ khối, bịt mắt rồi giải xong tám góc. Quay khăn bịt mắt rõ ràng."],
+      ["Bịt mắt", "Bịt mắt, giải xong cả khối", "Nhớ khối, bịt mắt, giải xong cả khối. Mở mắt cho camera xem kết quả."],
+      ["Ba phút", "Bịt mắt, cả nhớ và giải dưới 3 phút", "Bấm giờ từ lúc bắt đầu nhìn khối đến khi giải xong khi bịt mắt."],
+    ],
+  },
+  {
+    slug: "mo-khoa-the-thao", name: "Mở khóa thể thao", category: "ky-nang-di", holderCount: 38,
+    description: "Mở khóa thể thao trên ổ khóa của chính mình.",
+    steps: [
+      ["Ổ trong suốt", "Mở ổ khóa tập trong suốt", "Dùng bộ ổ khóa tập trong suốt và bộ cây mở. Chỉ mở ổ khóa của chính bạn."],
+      ["Ổ thường", "Mở ổ khóa móc thường của bạn", "Mở một ổ khóa móc của bạn. Quay chìa khóa của ổ để chứng minh là ổ của bạn."],
+      ["Một phút", "Mở ổ khóa thường dưới 1 phút", "Như mốc trước, có đồng hồ bấm giờ trong khung hình."],
+      ["Chốt chống mở", "Mở ổ có chốt chống mở", "Ổ có chốt chống mở khó hơn, cần cảm nhận chốt kỹ."],
+      ["Không nhìn", "Mở ổ mà không nhìn vào ổ", "Mở trong lúc mắt nhìn ra chỗ khác hoặc ổ được che. Chỉ mở ổ khóa của chính bạn."],
+    ],
+  },
+  {
+    slug: "thoi-thuy-tinh", name: "Thổi thủy tinh", category: "thu-cong", risk: "high", holderCount: 12,
+    description: "Tạo hình thủy tinh nóng chảy.",
+    steps: [
+      ["Hạt", "Tạo một hạt thủy tinh tròn", "Chỉ làm tại xưởng có người hướng dẫn và đồ bảo hộ. Nung đầu que thủy tinh, quấn quanh trục thành hạt tròn."],
+      ["Que xoắn", "Kéo một que thủy tinh xoắn", "Nung hai màu, vừa xoay vừa kéo thành que xoắn đều."],
+      ["Bong bóng", "Thổi một bong bóng thủy tinh nhỏ", "Thổi qua ống cho thủy tinh nóng phồng thành bong bóng tròn, thành đều."],
+      ["Cốc", "Thổi một chiếc cốc nhỏ", "Thổi rồi tạo đáy và miệng cốc, cốc đứng vững trên bàn."],
+      ["Bình", "Thổi một chiếc bình có quai", "Thổi thân bình rồi gắn quai. Quay cả lúc gắn quai."],
+    ],
+  },
+  {
+    slug: "ben-day-paracord", name: "Bện dây paracord", category: "thu-cong", holderCount: 520,
+    description: "Bện vòng tay, dây đeo từ paracord.",
+    steps: [
+      ["Vòng rắn", "Bện vòng tay kiểu rắn hổ mang", "Kiểu bện cơ bản cho người mới. Chuẩn bị khoảng 3 mét dây và một khóa nhựa."],
+      ["Móc khóa", "Bện dây móc chìa khóa", "Bện một dây móc chìa khóa có vòng treo, đầu dây khò gọn."],
+      ["Xương cá", "Bện vòng tay kiểu xương cá", "Bện vòng tay kiểu xương cá, các mắt bện đều nhau."],
+      ["Hai màu", "Bện vòng tay hai màu có khóa", "Dùng hai dây khác màu, có khóa nhựa. Thành phẩm đeo vừa tay."],
+      ["Dây nịt", "Bện dây nịt dài 1 mét", "Bện dây nịt dài 1 mét, đặt thước cạnh thành phẩm."],
+    ],
+  },
+  {
+    slug: "dan-len", name: "Đan len", category: "thu-cong", holderCount: 900,
+    description: "Đan khăn, mũ và họa tiết len.",
+    steps: [
+      ["Mũi lên", "Đan 10 hàng mũi lên đều tay", "Bắt mũi rồi đan 10 hàng mũi lên. Các mũi đều tay, không lỏng chặt khác nhau."],
+      ["Khăn ngắn", "Đan một khăn dài 30 cm", "Đan một khăn ngắn dài khoảng 30 cm, đặt thước cạnh thành phẩm."],
+      ["Vặn thừng", "Đan họa tiết vặn thừng", "Dùng kim phụ bắt chéo mũi để tạo họa tiết vặn thừng nổi."],
+      ["Mũ len", "Đan một chiếc mũ len", "Đan mũ vòng tròn, thu đầu gọn. Đội thử ở cuối video."],
+      ["Hai màu", "Đan họa tiết hai màu", "Đan họa tiết với hai màu len, mặt trái gọn gàng."],
+    ],
+  },
+  {
+    slug: "leo-nui", name: "Leo núi", category: "the-chat", risk: "high", holderCount: 150,
+    description: "Leo vách tự nhiên và nhân tạo an toàn.",
+    steps: [
+      ["Tuyến dễ", "Leo hết một tuyến dễ ở phòng tập, có dây", "Leo tại phòng tập, có dây an toàn và người giữ dây. Leo đến đỉnh tuyến dễ nhất."],
+      ["Nút số 8", "Thắt nút số 8 và kiểm tra chéo với bạn leo", "Thắt nút số 8 vào đai, sau đó bạn leo kiểm tra lại cho bạn và ngược lại."],
+      ["Tuyến khó", "Leo hết tuyến độ khó 5c", "Leo tuyến độ khó 5c từ đầu đến đỉnh, không nghỉ trên dây."],
+      ["Đá thật", "Leo vách đá tự nhiên, có người bảo hộ", "Leo vách đá thật, có người bảo hộ và đủ đồ an toàn. Quay cả lúc kiểm tra đồ."],
+      ["Dẫn dây", "Leo dẫn dây hết một tuyến", "Leo dẫn dây, tự móc dây vào từng điểm neo. Chỉ làm khi đã được hướng dẫn."],
+    ],
+  },
 ];
+
+const stepTitle = (slug: string, level: number) => SKILLS.find((x) => x.slug === slug)!.steps[level - 1]![0];
 
 const EDGES: Array<[string, string, number]> = [
   ["sinh-ton-co-ban", "nhom-lua", 1],
@@ -146,15 +311,6 @@ function accountLevelForXp(totalXp: number, step: number): number {
   return level;
 }
 
-function criteriaFor(skill: SkillSeed, level: number): string[] {
-  const custom = skill.levels?.[level - 1];
-  if (custom) return custom;
-  return [
-    `${skill.name}: hoàn thành bài kiểm tra cấp ${level} (${LEVEL_TITLES[level - 1]})`,
-    "Video quay liên tục, không cắt ghép",
-    "Thấy rõ tay hoặc mặt người thực hiện",
-  ];
-}
 
 async function reset() {
   // Thứ tự xóa theo khóa ngoại. Chỉ dùng ở local.
@@ -222,7 +378,8 @@ async function main() {
         data: {
           skillId: skill.id,
           level: lv,
-          title: LEVEL_TITLES[lv - 1],
+          title: s.steps[lv - 1]![0],
+          description: s.steps[lv - 1]![2],
           xpReward: 100 * lv,
           minReviewers: 3,
           minReviewerLevel: Math.max(1, lv - 1),
@@ -233,7 +390,7 @@ async function main() {
           skillLevelId: sl.id,
           version: 1,
           criteria: {
-            create: criteriaFor(s, lv).map((text, i) => ({ position: i + 1, text, kind: "checklist" as const })),
+            create: [{ position: 1, text: s.steps[lv - 1]![1], kind: "checklist" as const }],
           },
         },
         include: { criteria: true },
@@ -339,14 +496,14 @@ async function main() {
         kind: "level_up",
         proofId: proof.id,
         skillId: s.id,
-        body: `Lên cấp ${level} · ${SKILLS.find((x) => x.slug === slug)!.name}`,
+        body: `${SKILLS.find((x) => x.slug === slug)!.name}: xong mốc ${stepTitle(slug, level)}`,
         // like_count / comment_count là cache: đặt 0 rồi tạo dòng thật ở reactPost bên dưới
         createdAt: new Date(now - hoursAgo * 3600000),
       },
     });
     return proof;
   };
-  await passedProof("quocbao", "ben-day-paracord", 4, "Bện xong vòng cobra trong 6 phút.", 0.25);
+  await passedProof("quocbao", "ben-day-paracord", 4, "Vòng hai màu có khóa, bện xong trong 40 phút.", 0.25);
   await passedProof("thuha", "viet-chu-nguoc-guong", 5, "Chép nguyên bài thơ lục bát bằng tay trái, ngược gương.", 1);
   await prisma.post.create({
     data: {
@@ -384,7 +541,7 @@ async function main() {
       mediaUrl: "seed/tung-hung-4.mp4",
       mediaHash: "seed-lanphuong-tung-hung-4",
       durationS: 64,
-      caption: "Tung hứng 5 bóng liên tục 60 giây",
+      caption: "Bốn bóng, 20 lần liên tục",
       safetyAck: true,
       status: "pending",
       createdAt: new Date(now - 2 * 3600000),
@@ -452,11 +609,9 @@ async function main() {
       skillLevelId: lbq.levels.get(4)!.levelId,
       payload: {
         criteria: [
-          { text: "Lửa thành ngọn dưới 5 phút, video liên tục", kind: "checklist" },
-          { text: "Có nước dập lửa trong khung hình", kind: "checklist" },
-          { text: "Gỗ phải tự kiếm tại chỗ, không dùng gỗ mua sẵn", kind: "checklist" },
+          { text: "Thành ngọn dưới 5 phút, có nước dập lửa bên cạnh, gỗ tự kiếm tại chỗ", kind: "checklist" },
         ],
-        summary: "Cấp 4: yêu cầu gỗ phải tự kiếm tại chỗ, không dùng gỗ mua sẵn",
+        summary: "Mốc Dưới 5 phút: gỗ phải tự kiếm tại chỗ",
       } satisfies Prisma.InputJsonValue,
       rationale: "Gỗ mua sẵn đã được sấy khô, làm bài kiểm tra dễ hơn nhiều so với thực tế.",
       status: "voting",
@@ -483,7 +638,13 @@ async function main() {
         categorySlug: "thu-cong",
         description: "Gấp mô hình phức tạp từ một tờ giấy, không cắt, không dán.",
         riskLevel: "none",
-        levels: [1, 2, 3, 4, 5].map((lv) => ({ level: lv, criteria: [`Gấp mô hình độ khó ${lv}`] })),
+        levels: [
+          ["Con hạc", "Gấp con hạc giấy", "Mẫu kinh điển cho người mới, từ một tờ giấy vuông."],
+          ["Ếch nhảy", "Gấp con ếch bật nhảy được", "Ấn nhẹ lưng ếch cho nó bật lên trong video."],
+          ["Hoa sen", "Gấp bông hoa sen", "Gấp nhiều lớp cánh rồi lộn ra, cánh đều nhau."],
+          ["Con rồng", "Gấp con rồng có cánh", "Mẫu nhiều nếp gấp, cần giấy mỏng khổ lớn."],
+          ["Bọ cánh cứng", "Gấp bọ cánh cứng đủ 6 chân", "Mẫu khó, đếm đủ chân và râu ở cuối video."],
+        ].map(([title, text, description], i) => ({ level: i + 1, title, description, criteria: [{ text, kind: "checklist" }] })),
       } satisfies Prisma.InputJsonValue,
       rationale: "Kỹ năng phổ biến, dễ xác thực bằng video.",
       status: "gathering",

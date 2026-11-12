@@ -529,6 +529,7 @@ model SkillLevel {
   skillId                    String            @map("skill_id") @db.Uuid
   level                      Int
   title                      String?
+  description                String?
   xpReward                   Int               @default(100) @map("xp_reward")
   minReviewers               Int               @default(3) @map("min_reviewers")
   minReviewerLevel           Int               @default(1) @map("min_reviewer_level")
