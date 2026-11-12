@@ -1,6 +1,7 @@
 import { getAccountLevelCurve, getRarityThresholds } from "./config";
 import type { Db } from "./db";
 import { DomainError } from "./errors";
+import { loadLevelTitles } from "./milestones";
 import { rarityOf, rarityRank, type Rarity } from "./rarity";
 import { xpProgress, type XpProgress } from "./xp";
 
@@ -10,13 +11,19 @@ export type FeaturedSkill = {
   name: string;
   category: { slug: string; name: string };
   level: number;
+  /** Tên mốc đã đạt (null khi level 0). */
+  levelTitle: string | null;
   maxLevel: number;
+  /** Tên mốc kế tiếp (null khi đã đạt mốc cuối). */
+  nextLevelTitle: string | null;
   holderCount: number;
   rarity: Rarity;
   /** Số người duyệt khác nhau đã chấm đạt các bằng chứng đã đạt của người này ở kỹ năng này. */
   verifiedByCount: number;
   /** Bằng chứng đang chờ duyệt (pending / in_review / disputed), nếu có. */
   pendingTargetLevel: number | null;
+  /** Tên mốc của pendingTargetLevel. */
+  pendingLevelTitle: string | null;
 };
 
 export type Profile = {
@@ -112,6 +119,10 @@ export async function getProfile(
     verifiers.set(r.proof.skillId, set);
   }
 
+  const titleOf = await loadLevelTitles(
+    db,
+    userSkills.map((us) => us.skill.id),
+  );
   const featured: FeaturedSkill[] = userSkills
     .filter((us) => us.level >= 1 || pendingBySkill.has(us.skill.id))
     .map((us) => ({
@@ -120,11 +131,14 @@ export async function getProfile(
       name: us.skill.name,
       category: us.skill.category,
       level: us.level,
+      levelTitle: titleOf(us.skill.id, us.level),
       maxLevel: us.skill.maxLevel,
+      nextLevelTitle: us.level < us.skill.maxLevel ? titleOf(us.skill.id, us.level + 1) : null,
       holderCount: us.skill.holderCount,
       rarity: rarityOf(us.skill.holderCount, thresholds),
       verifiedByCount: verifiers.get(us.skill.id)?.size ?? 0,
       pendingTargetLevel: pendingBySkill.get(us.skill.id) ?? null,
+      pendingLevelTitle: titleOf(us.skill.id, pendingBySkill.get(us.skill.id)),
     }))
     .sort((a, b) => rarityRank(a.rarity) - rarityRank(b.rarity) || b.level - a.level || a.name.localeCompare(b.name));
 
@@ -167,7 +181,9 @@ export type UserSkillItem = {
   slug: string;
   name: string;
   level: number;
+  levelTitle: string | null;
   maxLevel: number;
+  nextLevelTitle: string | null;
   category: { slug: string; name: string };
   rarity: Rarity;
 };
@@ -195,13 +211,19 @@ export async function listUserSkills(db: Db, input: { handle?: string; userId?: 
     }),
     getRarityThresholds(db),
   ]);
+  const titleOf = await loadLevelTitles(
+    db,
+    rows.map((r) => r.skill.id),
+  );
   return rows
     .map((r) => ({
       skillId: r.skill.id,
       slug: r.skill.slug,
       name: r.skill.name,
       level: r.level,
+      levelTitle: titleOf(r.skill.id, r.level),
       maxLevel: r.skill.maxLevel,
+      nextLevelTitle: r.level < r.skill.maxLevel ? titleOf(r.skill.id, r.level + 1) : null,
       category: r.skill.category,
       rarity: rarityOf(r.skill.holderCount, thresholds),
     }))

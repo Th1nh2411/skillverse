@@ -5,6 +5,7 @@
 import type { AppealStatus, ReportReason, ReportStatus, ReportTarget, SanctionKind } from "@skillverse/db";
 import { withTx, type Db } from "./db";
 import { DomainError } from "./errors";
+import { loadLevelTitles, milestoneLabel } from "./milestones";
 import { assignReviewers, finalizeProof, type FinalizeProofResult } from "./proofs";
 
 const DAY_MS = 86_400_000;
@@ -135,6 +136,9 @@ export type ReportListItem = {
     ownerHandle: string | null;
     title: string;
     proofStatus?: string;
+    /** Chỉ với bằng chứng: cấp + tên mốc. */
+    targetLevel?: number;
+    levelTitle?: string | null;
   };
 };
 
@@ -181,11 +185,18 @@ async function describeTarget(db: Db, type: ReportTarget, id: string): Promise<R
     case "proof": {
       const p = await db.proof.findUnique({
         where: { id },
-        select: { targetLevel: true, status: true, user: { select: { id: true, handle: true } }, skill: { select: { name: true } } },
+        select: { skillId: true, targetLevel: true, status: true, user: { select: { id: true, handle: true } }, skill: { select: { name: true } } },
       });
-      return p
-        ? { ownerId: p.user.id, ownerHandle: p.user.handle, title: `${p.skill.name}: cấp ${p.targetLevel}`, proofStatus: p.status }
-        : { ownerId: null, ownerHandle: null, title: "(không còn)" };
+      if (!p) return { ownerId: null, ownerHandle: null, title: "(không còn)" };
+      const levelTitle = (await loadLevelTitles(db, [p.skillId]))(p.skillId, p.targetLevel);
+      return {
+        ownerId: p.user.id,
+        ownerHandle: p.user.handle,
+        title: `${p.skill.name}: ${milestoneLabel(levelTitle, p.targetLevel)}`,
+        proofStatus: p.status,
+        targetLevel: p.targetLevel,
+        levelTitle,
+      };
     }
     case "user": {
       const u = await db.user.findUnique({ where: { id }, select: { id: true, handle: true, displayName: true } });
@@ -350,6 +361,7 @@ export async function listDisputedProofs(db: Db, p: { editorId: string; limit?: 
     take: p.limit ?? 50,
     select: {
       id: true,
+      skillId: true,
       targetLevel: true,
       mediaUrl: true,
       mediaHash: true,
@@ -359,6 +371,10 @@ export async function listDisputedProofs(db: Db, p: { editorId: string; limit?: 
       fraudSignals: { select: { signal: true, score: true, createdAt: true } },
     },
   });
+  const titleOf = await loadLevelTitles(
+    db,
+    rows.map((r) => r.skillId),
+  );
   const out = [];
   for (const r of rows) {
     const matches = await db.proof.findMany({
@@ -368,6 +384,7 @@ export async function listDisputedProofs(db: Db, p: { editorId: string; limit?: 
     out.push({
       proofId: r.id,
       targetLevel: r.targetLevel,
+      levelTitle: titleOf(r.skillId, r.targetLevel),
       mediaKey: r.mediaUrl,
       createdAt: r.createdAt,
       user: r.user,
@@ -417,6 +434,7 @@ export async function listAppeals(db: Db, p: { editorId: string; status?: Appeal
       proof: {
         select: {
           id: true,
+          skillId: true,
           targetLevel: true,
           mediaUrl: true,
           decidedAt: true,
@@ -426,6 +444,10 @@ export async function listAppeals(db: Db, p: { editorId: string; status?: Appeal
       },
     },
   });
+  const titleOf = await loadLevelTitles(
+    db,
+    rows.map((a) => a.proof.skillId),
+  );
   return rows.map((a) => ({
     appealId: a.id,
     reason: a.reason,
@@ -435,6 +457,7 @@ export async function listAppeals(db: Db, p: { editorId: string; status?: Appeal
     proof: {
       proofId: a.proof.id,
       targetLevel: a.proof.targetLevel,
+      levelTitle: titleOf(a.proof.skillId, a.proof.targetLevel),
       mediaKey: a.proof.mediaUrl,
       decidedAt: a.proof.decidedAt,
       skill: a.proof.skill,

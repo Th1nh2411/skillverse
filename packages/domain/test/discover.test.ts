@@ -106,7 +106,7 @@ describe("nearbyPeople", () => {
     expect(r.people.map((p) => p.handle).sort()).toEqual(["gan_a", "gan_b"]);
     expect(JSON.stringify(r)).not.toContain("cell-A");
     expect(r.people.find((p) => p.handle === "gan_a")?.topSkills).toEqual([
-      { slug: "giai-rubik", name: "Giải rubik bịt mắt", level: 3 },
+      { slug: "giai-rubik", name: "Giải rubik bịt mắt", level: 3, levelTitle: "Cấp 3" },
     ]);
 
     const bySkill = await nearbyPeople(db, { userId: me.id, skillSlug: "giai-rubik" });

@@ -212,7 +212,7 @@ describe("D5.2 — recomputeUserCaches", () => {
         name: `Kỹ năng ${randomBytes(3).toString("hex")}`,
         categorySlug: catSlug,
         riskLevel: "none",
-        levels: [[{ text: "Một" }], [{ text: "Hai" }], [{ text: "Ba" }]],
+        levels: ["Một", "Hai", "Ba"].map((t) => ({ title: `Mốc ${t}`, criteria: [{ text: t }] })),
         now: NOW,
       });
       await supportProposal(db, { proposalId: np.proposalId, userId: (await fx.user(db)).id, now: NOW });

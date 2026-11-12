@@ -2,6 +2,7 @@ import type { CriterionKind, RiskLevel, VoteValue } from "@skillverse/db";
 import { getConfig, getRarityThresholds, type CriteriaChangeRule } from "./config";
 import type { Db } from "./db";
 import { DomainError } from "./errors";
+import { loadLevelTitles, type LevelTitleLookup } from "./milestones";
 import { rarityOf, type Rarity } from "./rarity";
 
 export type CriterionView = {
@@ -16,7 +17,12 @@ export type LevelView = {
   /** skill_levels.id — dùng tạo đề xuất sửa tiêu chí cho cấp này. */
   skillLevelId: string;
   level: number;
+  /** Tên mốc (vd. "Trời gió"). */
   title: string | null;
+  /** Hướng dẫn cách đạt mốc — không phải tiêu chí chấm. */
+  description: string | null;
+  /** Việc cần làm để chấm = text tiêu chí đầu tiên của phiên bản hiện tại (null nếu chưa có tiêu chí). */
+  task: string | null;
   xpReward: number;
   minReviewers: number;
   minReviewerLevel: number;
@@ -26,7 +32,13 @@ export type LevelView = {
 };
 
 /** Trạng thái chờ duyệt của người xem trên một kỹ năng. */
-export type PendingProofView = { proofId: string; targetLevel: number; status: "pending" | "in_review" | "disputed" };
+export type PendingProofView = {
+  proofId: string;
+  targetLevel: number;
+  /** Tên mốc của targetLevel. */
+  levelTitle: string | null;
+  status: "pending" | "in_review" | "disputed";
+};
 
 const PENDING_STATUSES = ["pending", "in_review", "disputed"] as const;
 
@@ -38,6 +50,7 @@ type LevelRow = {
   id: string;
   level: number;
   title: string | null;
+  description: string | null;
   xpReward: number;
   minReviewers: number;
   minReviewerLevel: number;
@@ -50,16 +63,19 @@ type LevelRow = {
 };
 
 function toLevelView(l: LevelRow): LevelView {
+  const criteria = l.currentVersion?.criteria ?? [];
   return {
     skillLevelId: l.id,
     level: l.level,
     title: l.title,
+    description: l.description,
+    task: criteria[0]?.text ?? null,
     xpReward: l.xpReward,
     minReviewers: l.minReviewers,
     minReviewerLevel: l.minReviewerLevel,
     criteriaVersionId: l.currentVersionId,
     criteriaVersion: l.currentVersion?.version ?? null,
-    criteria: (l.currentVersion?.criteria ?? []).map((c) => ({
+    criteria: criteria.map((c) => ({
       id: c.id,
       position: c.position,
       text: c.text,
@@ -69,7 +85,7 @@ function toLevelView(l: LevelRow): LevelView {
   };
 }
 
-async function pendingProofsFor(db: Db, userId: string | null | undefined, skillIds: string[]) {
+async function pendingProofsFor(db: Db, userId: string | null | undefined, skillIds: string[], titleOf: LevelTitleLookup) {
   const map = new Map<string, PendingProofView>();
   if (!userId || skillIds.length === 0) return map;
   const rows = await db.proof.findMany({
@@ -79,7 +95,12 @@ async function pendingProofsFor(db: Db, userId: string | null | undefined, skill
   });
   for (const r of rows) {
     if (!map.has(r.skillId)) {
-      map.set(r.skillId, { proofId: r.id, targetLevel: r.targetLevel, status: r.status as PendingProofView["status"] });
+      map.set(r.skillId, {
+        proofId: r.id,
+        targetLevel: r.targetLevel,
+        levelTitle: titleOf(r.skillId, r.targetLevel),
+        status: r.status as PendingProofView["status"],
+      });
     }
   }
   return map;
@@ -102,12 +123,26 @@ export type SkillTreeNode = {
   name: string;
   riskLevel: RiskLevel;
   level: number;
+  /** Tên mốc đã đạt (null khi level 0). */
+  levelTitle: string | null;
   maxLevel: number;
+  /** Tên mốc kế tiếp (null khi đã đạt mốc cuối). */
+  nextLevelTitle: string | null;
   state: SkillNodeState;
   holderCount: number;
   rarity: Rarity;
   /** Kỹ năng cha (trong toàn hệ thống) và đã thỏa chưa. */
-  prerequisites: { skillId: string; slug: string; name: string; requiredLevel: number; userLevel: number; met: boolean }[];
+  prerequisites: {
+    skillId: string;
+    slug: string;
+    name: string;
+    requiredLevel: number;
+    /** Tên mốc cần đạt của kỹ năng cha. */
+    requiredLevelTitle: string | null;
+    userLevel: number;
+    userLevelTitle: string | null;
+    met: boolean;
+  }[];
   /** Yêu cầu cấp kế tiếp (null nếu đã đạt cấp cao nhất). */
   next: (LevelView & { holdersAtOrAbove: number }) | null;
   pendingProof: PendingProofView | null;
@@ -117,7 +152,7 @@ export type SkillTree = {
   category: { id: string; slug: string; name: string };
   nodes: SkillTreeNode[];
   /** Cạnh giữa các nút trong danh mục này. */
-  edges: { parentSkillId: string; childSkillId: string; requiredLevel: number }[];
+  edges: { parentSkillId: string; childSkillId: string; requiredLevel: number; requiredLevelTitle: string | null }[];
   unlockedCount: number;
   totalCount: number;
 };
@@ -158,7 +193,8 @@ export async function getSkillTree(
   const holdersAtOrAbove = (skillId: string, level: number) =>
     levelCounts.filter((r) => r.skillId === skillId && r.level >= level).reduce((n, r) => n + r._count._all, 0);
 
-  const pending = await pendingProofsFor(db, input.userId, skillIds);
+  const titleOf = await loadLevelTitles(db, [...skillIds, ...parentIds]);
+  const pending = await pendingProofsFor(db, input.userId, skillIds, titleOf);
 
   const nodes: SkillTreeNode[] = skills.map((s) => {
     const level = myLevels.get(s.id) ?? 0;
@@ -169,7 +205,9 @@ export async function getSkillTree(
         slug: e.parentSkill.slug,
         name: e.parentSkill.name,
         requiredLevel: e.requiredLevel,
+        requiredLevelTitle: titleOf(e.parentSkillId, e.requiredLevel),
         userLevel,
+        userLevelTitle: titleOf(e.parentSkillId, userLevel),
         met: userLevel >= e.requiredLevel,
       };
     });
@@ -182,7 +220,9 @@ export async function getSkillTree(
       name: s.name,
       riskLevel: s.riskLevel,
       level,
+      levelTitle: titleOf(s.id, level),
       maxLevel: s.maxLevel,
+      nextLevelTitle: nextRow?.title ?? null,
       state,
       holderCount: s.holderCount,
       rarity: rarityOf(s.holderCount, thresholds),
@@ -196,7 +236,12 @@ export async function getSkillTree(
   const edges = skills.flatMap((s) =>
     s.skillEdgesChildSkill
       .filter((e) => inCat.has(e.parentSkillId))
-      .map((e) => ({ parentSkillId: e.parentSkillId, childSkillId: e.childSkillId, requiredLevel: e.requiredLevel })),
+      .map((e) => ({
+        parentSkillId: e.parentSkillId,
+        childSkillId: e.childSkillId,
+        requiredLevel: e.requiredLevel,
+        requiredLevelTitle: titleOf(e.parentSkillId, e.requiredLevel),
+      })),
   );
 
   return {
@@ -216,6 +261,8 @@ export type CriteriaProposalView = {
   id: string;
   skillLevelId: string | null;
   targetLevel: number | null;
+  /** Tên mốc của targetLevel. */
+  levelTitle: string | null;
   summary: string | null;
   rationale: string | null;
   proposedCriteria: { text: string; kind: string }[];
@@ -231,6 +278,15 @@ export type CriteriaProposalView = {
   agreeRatio: number | null;
   rule: CriteriaChangeRule;
   myVote: VoteValue | null;
+};
+
+export type NextMilestone = {
+  skillLevelId: string;
+  level: number;
+  title: string | null;
+  description: string | null;
+  /** Việc cần làm (tiêu chí chấm). */
+  task: string | null;
 };
 
 export type SkillDetail = {
@@ -249,9 +305,15 @@ export type SkillDetail = {
   /** Cấp dùng cho chỉ số "đạt cấp X+" = maxLevel − 1 (tối thiểu 1). */
   advancedMinLevel: number;
   advancedCount: number;
-  parents: { skillId: string; slug: string; name: string; requiredLevel: number }[];
-  children: { skillId: string; slug: string; name: string; requiredLevel: number }[];
+  /** requiredLevelTitle = tên mốc của kỹ năng cha cần đạt. */
+  parents: { skillId: string; slug: string; name: string; requiredLevel: number; requiredLevelTitle: string | null }[];
+  /** requiredLevelTitle = tên mốc của kỹ năng NÀY mà kỹ năng con yêu cầu. */
+  children: { skillId: string; slug: string; name: string; requiredLevel: number; requiredLevelTitle: string | null }[];
   myLevel: number | null;
+  /** Tên mốc người xem đã đạt (null khi chưa theo / level 0). */
+  myLevelTitle: string | null;
+  /** Mốc kế tiếp của người xem (level hiện tại + 1; chưa theo = mốc 1). null khi đã đạt mốc cuối. */
+  nextMilestone: NextMilestone | null;
   myPendingProof: PendingProofView | null;
   /** Người xem có đủ kỹ năng cha để nộp cấp kế tiếp không. */
   myPrerequisitesMet: boolean | null;
@@ -299,12 +361,19 @@ export async function getSkillDetail(
     isFollowing =
       (await db.skillFollow.count({ where: { userId: input.userId, skillId: skill.id } })) > 0;
   }
-  const pending = await pendingProofsFor(db, input.userId, [skill.id]);
+  const parentIdsAll = skill.skillEdgesChildSkill.map((e) => e.parentSkillId);
+  const titleOf = await loadLevelTitles(db, [skill.id, ...parentIdsAll]);
+  const pending = await pendingProofsFor(db, input.userId, [skill.id], titleOf);
+  const levels = skill.skillLevels.map(toLevelView);
+  const nextLv = levels.find((l) => l.level === (myLevel ?? 0) + 1);
+  const nextMilestone: NextMilestone | null = nextLv
+    ? { skillLevelId: nextLv.skillLevelId, level: nextLv.level, title: nextLv.title, description: nextLv.description, task: nextLv.task }
+    : null;
 
   const proposals = await db.proposal.findMany({
     where: { skillId: skill.id, kind: "edit_criteria", status: { in: ["gathering", "voting"] } },
     orderBy: { createdAt: "desc" },
-    include: { skillLevel: { select: { level: true } }, proposalVotes: true },
+    include: { skillLevel: { select: { level: true, title: true } }, proposalVotes: true },
   });
 
   const openProposals: CriteriaProposalView[] = proposals.map((p) => {
@@ -324,6 +393,7 @@ export async function getSkillDetail(
       id: p.id,
       skillLevelId: p.skillLevelId,
       targetLevel: p.skillLevel?.level ?? null,
+      levelTitle: p.skillLevel?.title ?? null,
       summary: typeof payload.summary === "string" ? payload.summary : null,
       rationale: p.rationale,
       proposedCriteria,
@@ -349,7 +419,7 @@ export async function getSkillDetail(
     maxLevel: skill.maxLevel,
     holderCount: skill.holderCount,
     rarity: rarityOf(skill.holderCount, thresholds),
-    levels: skill.skillLevels.map(toLevelView),
+    levels,
     practicingCount,
     advancedMinLevel,
     advancedCount,
@@ -358,14 +428,18 @@ export async function getSkillDetail(
       slug: e.parentSkill.slug,
       name: e.parentSkill.name,
       requiredLevel: e.requiredLevel,
+      requiredLevelTitle: titleOf(e.parentSkill.id, e.requiredLevel),
     })),
     children: skill.skillEdgesParentSkill.map((e) => ({
       skillId: e.childSkill.id,
       slug: e.childSkill.slug,
       name: e.childSkill.name,
       requiredLevel: e.requiredLevel,
+      requiredLevelTitle: titleOf(skill.id, e.requiredLevel),
     })),
     myLevel,
+    myLevelTitle: titleOf(skill.id, myLevel),
+    nextMilestone,
     myPendingProof: pending.get(skill.id) ?? null,
     myPrerequisitesMet,
     isFollowing,

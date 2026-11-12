@@ -4,6 +4,7 @@ export * from "./config";
 export * from "./jobs";
 export * from "./rarity";
 export * from "./xp";
+export * from "./milestones";
 export * from "./skills";
 export * from "./discover";
 export * from "./profile";

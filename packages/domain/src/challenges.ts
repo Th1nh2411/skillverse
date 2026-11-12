@@ -90,6 +90,8 @@ export type CommunityPendingProof = {
   anonymousCode: string;
   skill: { slug: string; name: string; category: { slug: string; name: string }; rarity: Rarity };
   targetLevel: number;
+  /** Tên mốc của targetLevel. */
+  levelTitle: string | null;
   durationS: number | null;
   caption: string | null;
   submittedAt: Date;
@@ -129,7 +131,7 @@ export async function getPendingProofsForCommunity(
   const levels = rows.length
     ? await db.skillLevel.findMany({
         where: { OR: rows.map((r) => ({ skillId: r.skillId, level: r.targetLevel })) },
-        select: { skillId: true, level: true, minReviewers: true },
+        select: { skillId: true, level: true, title: true, minReviewers: true },
       })
     : [];
   const thresholds = await getRarityThresholds(db);
@@ -139,15 +141,17 @@ export async function getPendingProofsForCommunity(
       const mine = p.viewerId
         ? r.reviewAssignments.find((a) => a.reviewerId === p.viewerId && a.state === "assigned" && a.dueAt >= now)
         : undefined;
+      const lv = levels.find((l) => l.skillId === r.skillId && l.level === r.targetLevel);
       return {
         anonymousCode: anonymousCode(r.id),
         skill: { slug: r.skill.slug, name: r.skill.name, category: r.skill.category, rarity: rarityOf(r.skill.holderCount, thresholds) },
         targetLevel: r.targetLevel,
+        levelTitle: lv?.title ?? null,
         durationS: r.durationS,
         caption: r.caption,
         submittedAt: r.createdAt,
         votes: r.reviewAssignments.filter((a) => a.state === "done").length,
-        required: levels.find((l) => l.skillId === r.skillId && l.level === r.targetLevel)?.minReviewers ?? 0,
+        required: lv?.minReviewers ?? 0,
         myAssignmentId: mine?.id ?? null,
         isMine: !!p.viewerId && r.userId === p.viewerId,
       };

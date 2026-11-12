@@ -174,6 +174,8 @@ export type ReviewQueueItem = {
   anonymousCode: string;
   skill: ReviewSkill;
   targetLevel: number;
+  /** Tên mốc của targetLevel. */
+  levelTitle: string | null;
   durationS: number | null;
   assignedAt: Date;
   dueAt: Date;
@@ -212,9 +214,10 @@ export async function getReviewQueue(db: Db, p: { reviewerId: string; now?: Date
   const levels = rows.length
     ? await db.skillLevel.findMany({
         where: { OR: rows.map((r) => ({ skillId: r.proof.skillId, level: r.proof.targetLevel })) },
-        select: { skillId: true, level: true, minReviewers: true },
+        select: { skillId: true, level: true, title: true, minReviewers: true },
       })
     : [];
+  const findLevel = (skillId: string, level: number) => levels.find((l) => l.skillId === skillId && l.level === level);
   const minRev = (skillId: string, level: number) =>
     levels.find((l) => l.skillId === skillId && l.level === level)?.minReviewers ?? 0;
   const thresholds = await getRarityThresholds(db);
@@ -225,6 +228,7 @@ export async function getReviewQueue(db: Db, p: { reviewerId: string; now?: Date
       anonymousCode: anonymousCode(r.proof.id),
       skill: toReviewSkill(r.proof.skill, thresholds),
       targetLevel: r.proof.targetLevel,
+      levelTitle: findLevel(r.proof.skillId, r.proof.targetLevel)?.title ?? null,
       durationS: r.proof.durationS,
       assignedAt: r.assignedAt,
       dueAt: r.dueAt,

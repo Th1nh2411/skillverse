@@ -1,6 +1,7 @@
 import type { Prisma, RiskLevel } from "@skillverse/db";
 import { getRarityThresholds, type RarityThresholds } from "./config";
 import type { Db } from "./db";
+import { loadLevelTitles } from "./milestones";
 import { rarityOf, type Rarity } from "./rarity";
 
 export type SkillSummary = {
@@ -162,7 +163,7 @@ export type NearbyPerson = {
   displayName: string;
   avatarUrl: string | null;
   accountLevel: number;
-  topSkills: { slug: string; name: string; level: number }[];
+  topSkills: { slug: string; name: string; level: number; levelTitle: string | null }[];
 };
 
 export type NearbyPeople = {
@@ -208,11 +209,15 @@ export async function nearbyPeople(
           where: { level: { gte: 1 }, skill: { status: "active" } },
           orderBy: { level: "desc" },
           take: 3,
-          select: { level: true, skill: { select: { slug: true, name: true } } },
+          select: { level: true, skill: { select: { id: true, slug: true, name: true } } },
         },
       },
     }),
   ]);
+  const titleOf = await loadLevelTitles(
+    db,
+    users.flatMap((u) => u.userSkills.map((us) => us.skill.id)),
+  );
   return {
     enabled: true,
     total,
@@ -222,7 +227,12 @@ export async function nearbyPeople(
       displayName: u.displayName,
       avatarUrl: u.avatarUrl,
       accountLevel: u.accountLevel,
-      topSkills: u.userSkills.map((us) => ({ slug: us.skill.slug, name: us.skill.name, level: us.level })),
+      topSkills: u.userSkills.map((us) => ({
+        slug: us.skill.slug,
+        name: us.skill.name,
+        level: us.level,
+        levelTitle: titleOf(us.skill.id, us.level),
+      })),
     })),
   };
 }

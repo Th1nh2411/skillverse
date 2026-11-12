@@ -53,6 +53,8 @@ export type FirstChallenge = {
   /** Cấp kế tiếp hợp lệ để nộp (= level hiện tại + 1). */
   targetLevel: number;
   levelTitle: string | null;
+  /** Hướng dẫn của mốc (không phải tiêu chí chấm). */
+  levelDescription: string | null;
   xpReward: number;
   criteria: CriterionView[];
 };
@@ -132,6 +134,7 @@ export async function completeOnboarding(
         name: pick.name,
         targetLevel,
         levelTitle: level.title,
+        levelDescription: level.description,
         xpReward: level.xpReward,
         criteria: (level.currentVersion?.criteria ?? []).map((c) => ({
           id: c.id,

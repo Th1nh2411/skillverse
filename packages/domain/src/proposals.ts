@@ -8,6 +8,7 @@ import { withTx, type Db } from "./db";
 import { normalizeVi } from "./discover";
 import { DomainError } from "./errors";
 import { awardXp, bumpDailyQuest } from "./ledger";
+import { MILESTONE_DESCRIPTION_MAX, MILESTONE_TITLE_MAX } from "@skillverse/validation";
 import { assertCanPost } from "./moderation";
 
 const DAY_MS = 86_400_000;
@@ -19,13 +20,61 @@ export type NewSkillDefaults = { xp_per_level: number; min_reviewers: number; re
 
 export type CriterionInput = { text: string; kind?: CriterionKind; threshold?: number | null };
 
+/** Một mốc trong đề xuất kỹ năng mới: tên mốc, hướng dẫn (tùy chọn), tiêu chí chấm (thường 1 = việc cần làm). */
+export type NewSkillLevelInput = { title: string; description?: string | null; criteria: CriterionInput[] };
+
+export type NewSkillPayloadLevel = {
+  level: number;
+  /** null với payload cũ (trước D72) chưa có tên mốc. */
+  title: string | null;
+  description: string | null;
+  criteria: CriterionInput[];
+};
+
 export type NewSkillPayload = {
   name: string;
   categorySlug: string;
   description: string | null;
   riskLevel: RiskLevel;
-  levels: { level: number; criteria: CriterionInput[] }[];
+  levels: NewSkillPayloadLevel[];
 };
+
+const RISK_LEVELS: readonly RiskLevel[] = ["none", "low", "high"];
+
+function parseCriterion(c: unknown): CriterionInput | null {
+  if (typeof c === "string") return c.trim() ? { text: c.trim(), kind: "checklist", threshold: null } : null;
+  if (!c || typeof c !== "object") return null;
+  const o = c as { text?: unknown; kind?: unknown; threshold?: unknown };
+  if (typeof o.text !== "string" || !o.text.trim()) return null;
+  const kind = o.kind === "time_limit" || o.kind === "count" ? o.kind : "checklist";
+  return { text: o.text.trim(), kind, threshold: typeof o.threshold === "number" ? o.threshold : null };
+}
+
+/**
+ * Đọc payload đề xuất kỹ năng mới (mọi phiên bản). Payload cũ: `levels[i]` là `{ level, criteria }` hoặc mảng tiêu chí,
+ * không có tên mốc → `title = null`, `description = null`.
+ */
+export function parseNewSkillPayload(raw: unknown): NewSkillPayload {
+  const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const levelsRaw = Array.isArray(o.levels) ? (o.levels as unknown[]) : [];
+  const levels = levelsRaw.map((lv, i): NewSkillPayloadLevel => {
+    if (Array.isArray(lv)) {
+      return { level: i + 1, title: null, description: null, criteria: lv.flatMap((c) => parseCriterion(c) ?? []) };
+    }
+    const l = (lv && typeof lv === "object" ? lv : {}) as Record<string, unknown>;
+    const title = typeof l.title === "string" && l.title.trim() ? l.title.trim() : null;
+    const description = typeof l.description === "string" && l.description.trim() ? l.description.trim() : null;
+    const criteria = Array.isArray(l.criteria) ? (l.criteria as unknown[]).flatMap((c) => parseCriterion(c) ?? []) : [];
+    return { level: typeof l.level === "number" ? l.level : i + 1, title, description, criteria };
+  });
+  return {
+    name: typeof o.name === "string" ? o.name : "",
+    categorySlug: typeof o.categorySlug === "string" ? o.categorySlug : "",
+    description: typeof o.description === "string" ? o.description : null,
+    riskLevel: RISK_LEVELS.includes(o.riskLevel as RiskLevel) ? (o.riskLevel as RiskLevel) : "none",
+    levels,
+  };
+}
 
 export type CriteriaEditPayload = { summary: string; criteria: CriterionInput[] };
 
@@ -67,8 +116,8 @@ export async function proposeNewSkill(
     categorySlug: string;
     description?: string | null;
     riskLevel: RiskLevel;
-    /** Tiêu chí theo cấp, phần tử i là cấp i+1. */
-    levels: CriterionInput[][];
+    /** Mốc theo thứ tự, phần tử i là cấp i+1: tên mốc, hướng dẫn, tiêu chí chấm. */
+    levels: NewSkillLevelInput[];
     rationale?: string | null;
     now?: Date;
   },
@@ -76,7 +125,18 @@ export async function proposeNewSkill(
   const now = p.now ?? new Date();
   const name = p.name.trim();
   if (name.length < 2) throw new DomainError("BAD_REQUEST", "Tên kỹ năng quá ngắn.");
-  if (p.levels.length === 0) throw new DomainError("BAD_REQUEST", "Cần tiêu chí cho từng cấp.");
+  if (p.levels.length === 0) throw new DomainError("BAD_REQUEST", "Cần ít nhất một mốc.");
+  const levels: NewSkillPayloadLevel[] = p.levels.map((lv, i) => {
+    const title = lv.title.trim();
+    if (title.length < 1 || title.length > MILESTONE_TITLE_MAX) {
+      throw new DomainError("BAD_REQUEST", `Tên mốc cần 1–${MILESTONE_TITLE_MAX} ký tự.`);
+    }
+    const description = lv.description?.trim() || null;
+    if (description && description.length > MILESTONE_DESCRIPTION_MAX) {
+      throw new DomainError("BAD_REQUEST", `Hướng dẫn mốc tối đa ${MILESTONE_DESCRIPTION_MAX} ký tự.`);
+    }
+    return { level: i + 1, title, description, criteria: cleanCriteria(lv.criteria) };
+  });
   return withTx(db, async (tx) => {
     await assertCanPost(tx, p.authorId, now);
     const cat = await tx.category.findUnique({ where: { slug: p.categorySlug } });
@@ -96,7 +156,7 @@ export async function proposeNewSkill(
       categorySlug: cat.slug,
       description: p.description?.trim() || null,
       riskLevel: p.riskLevel,
-      levels: p.levels.map((c, i) => ({ level: i + 1, criteria: cleanCriteria(c) })),
+      levels,
     };
     const votingEndsAt = new Date(now.getTime() + rule.days * DAY_MS);
     const proposal = await tx.proposal.create({
@@ -183,7 +243,10 @@ export async function decideNewSkill(
       return { proposalId: pr.id, status: "rejected", skillId: null, skillSlug: null };
     }
 
-    const payload = pr.payload as unknown as NewSkillPayload;
+    const payload = parseNewSkillPayload(pr.payload);
+    if (payload.levels.length === 0 || payload.levels.some((l) => l.criteria.length === 0)) {
+      throw new DomainError("PRECONDITION_FAILED", "Đề xuất thiếu tiêu chí cho mốc.");
+    }
     const cat = await tx.category.findUnique({ where: { slug: payload.categorySlug } });
     if (!cat) throw new DomainError("PRECONDITION_FAILED", "Danh mục của đề xuất không còn tồn tại.");
     const defaults = await getConfig<NewSkillDefaults>(tx, "new_skill_defaults");
@@ -209,6 +272,8 @@ export async function decideNewSkill(
         data: {
           skillId: skill.id,
           level: lv.level,
+          title: lv.title,
+          description: lv.description,
           xpReward: defaults.xp_per_level * lv.level,
           minReviewers: defaults.min_reviewers,
           minReviewerLevel: Math.max(1, lv.level - defaults.reviewer_level_offset),
@@ -441,6 +506,8 @@ export type ProposalSummary = {
   author: { handle: string; displayName: string };
   skill: { slug: string; name: string } | null;
   targetLevel: number | null;
+  /** Tên mốc của targetLevel (sửa tiêu chí). */
+  levelTitle: string | null;
   createdAt: Date;
   votingEndsAt: Date | null;
   supportCount: number;
@@ -465,7 +532,7 @@ function titleOf(kind: ProposalKind, payload: unknown): string {
 const summaryInclude = {
   author: { select: { handle: true, displayName: true } },
   skill: { select: { slug: true, name: true } },
-  skillLevel: { select: { level: true } },
+  skillLevel: { select: { level: true, title: true } },
   _count: { select: { proposalComments: true } },
 } as const;
 
@@ -488,6 +555,7 @@ async function toSummaries(
       author: r.author,
       skill: r.skill,
       targetLevel: r.skillLevel?.level ?? null,
+      levelTitle: r.skillLevel?.title ?? null,
       createdAt: r.createdAt,
       votingEndsAt: r.votingEndsAt,
       supportCount: r.supportCount,
@@ -537,6 +605,7 @@ export async function listProposals(
 
 export type ProposalDetail = ProposalSummary & {
   rationale: string | null;
+  /** new_skill: luôn chuẩn hóa qua parseNewSkillPayload (levels[].title/description có thể null với đề xuất cũ). */
   payload: NewSkillPayload | CriteriaEditPayload | Record<string, unknown>;
   /** Với edit_criteria: tiêu chí hiện hành của cấp đó để so sánh. */
   currentCriteria: { position: number; text: string }[] | null;
@@ -553,7 +622,7 @@ export async function getProposal(db: Db, p: { proposalId: string; viewerId?: st
     include: {
       ...summaryInclude,
       skillLevel: {
-        select: { level: true, currentVersion: { select: { criteria: { orderBy: { position: "asc" }, select: { position: true, text: true } } } } },
+        select: { level: true, title: true, currentVersion: { select: { criteria: { orderBy: { position: "asc" }, select: { position: true, text: true } } } } },
       },
     },
   });
@@ -571,7 +640,7 @@ export async function getProposal(db: Db, p: { proposalId: string; viewerId?: st
   return {
     ...summary!,
     rationale: r.rationale,
-    payload: r.payload as ProposalDetail["payload"],
+    payload: r.kind === "new_skill" ? parseNewSkillPayload(r.payload) : (r.payload as ProposalDetail["payload"]),
     currentCriteria: r.skillLevel?.currentVersion?.criteria ?? null,
     rule,
     myWeight,

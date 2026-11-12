@@ -5,6 +5,7 @@ import type { PostKind, Prisma } from "@skillverse/db";
 import { withTx, type Db } from "./db";
 import { DomainError } from "./errors";
 import { getRarityThresholds, type RarityThresholds } from "./config";
+import { loadLevelTitles, type LevelTitleLookup } from "./milestones";
 import { assertCanPost } from "./moderation";
 import { rarityOf, type Rarity } from "./rarity";
 
@@ -23,7 +24,7 @@ export type FeedItem = {
   /** category + rarity để vẽ huy hiệu vải (hình theo danh mục, chỉ thêu theo độ hiếm). */
   skill: { slug: string; name: string; category: { slug: string; name: string }; rarity: Rarity } | null;
   /** Bài lên cấp: cấp đạt + số người duyệt đạt / tổng phiếu ("3/3 người duyệt"). proofId để mở thẻ chia sẻ. */
-  levelUp: { proofId: string; level: number; passVotes: number; totalVotes: number } | null;
+  levelUp: { proofId: string; level: number; levelTitle: string | null; passVotes: number; totalVotes: number } | null;
   myReactions: ReactionKind[];
   /** true khi bài đến từ người / kỹ năng đang theo dõi (hoặc của chính mình). */
   followed: boolean;
@@ -151,8 +152,12 @@ export async function getHomeFeed(
     : [];
 
   const thresholds = await getRarityThresholds(db);
+  const titleOf = await loadLevelTitles(
+    db,
+    rows.flatMap(({ row }) => (row.kind === "level_up" && row.skillId ? [row.skillId] : [])),
+  );
   return {
-    items: rows.map(({ row, followed }) => toFeedItem(row, followed, reactions, thresholds)),
+    items: rows.map(({ row, followed }) => toFeedItem(row, followed, reactions, thresholds, titleOf)),
     nextCursor: next ? encodeCursor(next) : null,
   };
 }
@@ -162,6 +167,7 @@ function toFeedItem(
   followed: boolean,
   reactions: { postId: string; kind: string }[],
   thresholds: RarityThresholds,
+  titleOf: LevelTitleLookup,
 ): FeedItem {
   return {
     id: row.id,
@@ -185,6 +191,7 @@ function toFeedItem(
         ? {
             proofId: row.proofId,
             level: row.proof.targetLevel,
+            levelTitle: row.skillId ? titleOf(row.skillId, row.proof.targetLevel) : null,
             passVotes: row.proof.reviews.filter((v) => v.verdict === "pass").length,
             totalVotes: row.proof.reviews.length,
           }

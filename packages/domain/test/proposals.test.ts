@@ -51,7 +51,11 @@ async function usersAtLevel(skillId: string, n: number, level: number) {
   return users.map((u) => u.id);
 }
 
-const levels = [["Tạo được tiếng kêu"], ["Giữ một nốt 5 giây"], ["Thổi một giai điệu"]].map((l) => l.map((text) => ({ text })));
+const levels = [
+  ["Tiếng đầu tiên", "Tạo được tiếng kêu", "Kẹp lá giữa hai ngón cái, thổi nhẹ."],
+  ["Nốt dài", "Giữ một nốt 5 giây", ""],
+  ["Giai điệu", "Thổi một giai điệu", "Chọn bài quen thuộc, ngắn."],
+].map(([title, text, description]) => ({ title: title!, description, criteria: [{ text: text! }] }));
 
 describe("đề xuất kỹ năng mới", () => {
   it("ủng hộ đủ → editor_review → biên tập viên mở kỹ năng (v1), XP + huy hiệu tác giả", async () => {
@@ -101,6 +105,12 @@ describe("đề xuất kỹ năng mới", () => {
       [3, 300, 3, 2, 1],
     ]);
     expect(skill.skillLevels[2]?.currentVersion?.criteria.map((c) => c.text)).toEqual(["Thổi một giai điệu"]);
+    // Mốc: tên + hướng dẫn được ghi vào skill_levels (hướng dẫn rỗng → null)
+    expect(skill.skillLevels.map((l) => [l.title, l.description])).toEqual([
+      ["Tiếng đầu tiên", "Kẹp lá giữa hai ngón cái, thổi nhẹ."],
+      ["Nốt dài", null],
+      ["Giai điệu", "Chọn bài quen thuộc, ngắn."],
+    ]);
     expect(await db.xpLedger.findFirst({ where: { userId: author.id, reason: "proposal_accepted" } })).toMatchObject({ amount: 150 });
     expect(await db.userBadge.count({ where: { userId: author.id, badge: { slug: "proposal-accepted" } } })).toBe(1);
     const detail = await getProposal(db, { proposalId });

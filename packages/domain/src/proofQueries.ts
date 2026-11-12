@@ -107,6 +107,8 @@ export type LevelUpSummary = {
   skill: { slug: string; name: string; category: { slug: string; name: string }; maxLevel: number; rarity: Rarity };
   level: number;
   levelTitle: string | null;
+  /** Tên mốc kế tiếp (null khi vừa xong mốc cuối). */
+  nextLevelTitle: string | null;
   isMaxLevel: boolean;
   xpAwarded: number;
   accountLevelBefore: number;
@@ -154,9 +156,13 @@ export async function getLevelUpSummary(db: Db, p: { proofId: string; userId: st
   if (proof.userId !== p.userId) throw new DomainError("FORBIDDEN", "Bạn không xem được bằng chứng này.");
   if (proof.status !== "passed") throw new DomainError("PRECONDITION_FAILED", "Bằng chứng chưa được xác thực.");
 
-  const [level, ledgerRow, curve, thresholds] = await Promise.all([
+  const [level, nextLevel, ledgerRow, curve, thresholds] = await Promise.all([
     db.skillLevel.findUnique({
       where: { skillId_level: { skillId: proof.skillId, level: proof.targetLevel } },
+      select: { title: true },
+    }),
+    db.skillLevel.findUnique({
+      where: { skillId_level: { skillId: proof.skillId, level: proof.targetLevel + 1 } },
       select: { title: true },
     }),
     db.xpLedger.findFirst({ where: { userId: p.userId, refType: "proof", refId: proof.id, reason: "proof_passed" } }),
@@ -204,6 +210,7 @@ export async function getLevelUpSummary(db: Db, p: { proofId: string; userId: st
     },
     level: proof.targetLevel,
     levelTitle: level?.title ?? null,
+    nextLevelTitle: proof.targetLevel < proof.skill.maxLevel ? (nextLevel?.title ?? null) : null,
     isMaxLevel: proof.targetLevel === proof.skill.maxLevel,
     xpAwarded,
     accountLevelBefore: accountLevelForXp(totalAfter - xpAwarded, curve.step),

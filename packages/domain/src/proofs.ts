@@ -9,6 +9,7 @@ import { getConfig, getRarityThresholds, type MediaLimits, type ReputationDeltas
 import { withTx, type Db } from "./db";
 import { DomainError } from "./errors";
 import { applyReputation, awardXp } from "./ledger";
+import { levelUpPostBody, loadLevelTitles, milestoneLabel } from "./milestones";
 import { rarityOf } from "./rarity";
 
 const HOUR_MS = 3_600_000;
@@ -137,16 +138,18 @@ export async function submitProof(db: Db, p: SubmitProofParams): Promise<SubmitP
     const lv = new Map(mine.map((m) => [m.skillId, m.level]));
     const current = lv.get(skill.id) ?? 0;
     if (current !== p.targetLevel - 1) {
+      const titleOf = await loadLevelTitles(tx, [skill.id]);
       throw new DomainError(
         "PRECONDITION_FAILED",
-        `Bạn đang ở cấp ${current}, chỉ có thể nộp bằng chứng cho cấp ${current + 1}.`,
+        `Chỉ có thể nộp bằng chứng cho ${milestoneLabel(titleOf(skill.id, current + 1), current + 1)} (mốc kế tiếp của bạn).`,
       );
     }
     const unmet = skill.skillEdgesChildSkill.find((e) => (lv.get(e.parentSkillId) ?? 0) < e.requiredLevel);
     if (unmet) {
+      const titleOf = await loadLevelTitles(tx, [unmet.parentSkillId]);
       throw new DomainError(
         "PRECONDITION_FAILED",
-        `Cần đạt ${unmet.parentSkill.name} cấp ${unmet.requiredLevel} trước.`,
+        `Cần đạt ${unmet.parentSkill.name} ${milestoneLabel(titleOf(unmet.parentSkillId, unmet.requiredLevel), unmet.requiredLevel)} trước.`,
       );
     }
 
@@ -361,6 +364,10 @@ export type FinalizeProofResult =
       sanctionId: string;
       previousLevel: number;
       newLevel: number;
+      /** Tên mốc bị thu hồi (targetLevel của bằng chứng). */
+      levelTitle: string | null;
+      /** Tên mốc sau khi thu hồi (null khi về 0). */
+      newLevelTitle: string | null;
       xpRevoked: number;
       penalizedReviewerIds: string[];
     }
@@ -377,6 +384,8 @@ export type FinalizeProofResult =
       proofId: string;
       skillId: string;
       newLevel: number;
+      /** Tên mốc vừa xong (skill_levels.title của targetLevel). */
+      levelTitle: string | null;
       xpAwarded: number;
       badges: string[];
       passRatio: number;
@@ -524,7 +533,7 @@ export async function finalizeProof(
         kind: "level_up",
         proofId: proof.id,
         skillId: proof.skillId,
-        body: `${proof.skill.name}: lên cấp ${proof.targetLevel}`,
+        body: levelUpPostBody(proof.skill.name, level.title, proof.targetLevel),
         createdAt: now,
       },
     });
@@ -537,6 +546,7 @@ export async function finalizeProof(
       proofId: proof.id,
       skillId: proof.skillId,
       newLevel,
+      levelTitle: level.title,
       xpAwarded: level.xpReward,
       badges: awarded,
       passRatio,
@@ -629,6 +639,7 @@ async function revokeInTx(tx: Tx, proof: ProofForRevoke, r: RevokeParams, now: D
     await applyReputation(tx, { userId: reviewerId, delta: deltas.approved_fraud, reason: "approved_fraud", refId: proof.id, now });
   }
 
+  const titleOf = await loadLevelTitles(tx, [proof.skillId]);
   await tx.proof.update({ where: { id: proof.id }, data: { status: "removed" } });
   await tx.post.updateMany({ where: { proofId: proof.id, kind: "level_up", deletedAt: null }, data: { deletedAt: now } });
   await tx.notification.create({
@@ -640,6 +651,8 @@ async function revokeInTx(tx: Tx, proof: ProofForRevoke, r: RevokeParams, now: D
     sanctionId: sanction.id,
     previousLevel,
     newLevel,
+    levelTitle: titleOf(proof.skillId, proof.targetLevel),
+    newLevelTitle: titleOf(proof.skillId, newLevel),
     xpRevoked,
     penalizedReviewerIds: approvers,
   };
