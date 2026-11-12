@@ -38,6 +38,24 @@ Lead chạy toàn bộ thấy fail không ổn định (discover :14/:24/:37/:48
 - (c) lỗi UI/API thật: không có.
 - Kết quả: 2 lần chạy liên tiếp (lần 1 xóa `.next-e2e`, khởi động lạnh) đều 32/32 pass.
 
+## Bản cuối (Giai đoạn 5) — tổng kết
+
+- Chế độ chốt cổng: `E2E_PROD=1 pnpm e2e` (`next build` + `next start`, DB `skillverse_e2e` reset + seed mỗi lượt). Lần chạy cuối (2026-11-12): toàn bộ e2e giai đoạn 1–5, **72 test, xanh 2 lần liên tiếp** (72/72 mỗi lần, khoảng 1.1 phút chưa tính build, 0 skip).
+- Các file: auth, api, onboarding, profile, skills, discover (GĐ1) · proof-flow, proof-review-rules, cron (GĐ2) · revoke, social (GĐ3) · proposals (GĐ4) · pwa-theme (GĐ5).
+- Test chỉ ghi DB e2e trong hai trường hợp được lead cho phép (`e2e/helpers/fixtures.ts`): hạ ngưỡng app_config và kéo `voting_ends_at` về quá khứ. Còn lại chỉ đọc để kiểm chứng.
+
+### Giai đoạn 4 — Cộng đồng góp ý (proposals.spec.ts)
+- Q4.1: chưa đăng nhập 401, dưới 3 cấp 400, trùng tên 409 → minhhoang đề xuất "Gấp giấy origami" → quocbao, thuha ủng hộ (supporters hạ còn 3) → `editor_review`, chưa có kỹ năng → minhhoang gọi `admin.proposals`/`admin.decideProposal` 403 → bientap duyệt → skill `active`, 3 cấp đều có criteria_versions v1, XP `proposal_accepted` cho tác giả đúng 1 dòng → `skill.search` và màn Khám phá tìm thấy, mở được chi tiết.
+- Q4.2: tuankiet nộp bằng chứng cấp 3 "Thắt nút dây" (gắn phiên bản cũ) → quocbao đề xuất sửa tiêu chí cấp 3 → phiếu: quocbao, bientap (cấp 5, weight 1), hoangnam (cấp 3, weight 0, đổi phiếu vẫn 1 dòng); min_votes hạ còn 2 → chưa hết hạn thì chưa đổi → `voting_ends_at` quá hạn → `POST /api/cron` → `closeExpiredProposals.result.criteriaAccepted ≥ 1`, proposal `accepted`, criteria_versions version+1 với source_proposal_id, current_version_id trỏ bản mới, tiêu chí bản cũ nguyên văn, bằng chứng cũ giữ criteria_version_id cũ, XP tác giả 1 dòng; cron chạy lại không tạo bản thứ hai → UI: chi tiết kỹ năng hiện tiêu chí mới; người duyệt bằng chứng cũ thấy tiêu chí cũ.
+- Q4.3 rà soát: không có `criterion.update/delete`, `criteriaVersion.update/delete` hay `UPDATE criteria` trong domain/api/web; đóng đề xuất chỉ `criteriaVersion.create` + `skillLevel.update(currentVersionId)`. Ngưỡng (supporters, days, min_votes, agree_ratio, voter_min_level) đọc từ app_config.
+
+### Giai đoạn 5 (pwa-theme.spec.ts + rà soát cuối)
+- Manifest: lang vi, standalone, icon PNG 192/512 + maskable đều tải được 200.
+- Service worker (chỉ production): trang được SW điều khiển; Cache Storage không có URL `/api/*`; mất mạng → "Bạn đang ngoại tuyến".
+- Giao diện sáng: Cài đặt → switch "Giao diện sáng" (aria-checked) → `html[data-theme=light]`, cookie `sv-theme=light`, giữ qua tải lại, nền đổi, a11y cơ bản đạt; tắt lại được.
+- Trang 404 mới ("Lạc đường rồi") trả HTTP 200 do streaming từ `loading.tsx` (soft-404) — 4 test cũ kỳ vọng status 404 là test sai (đã sửa sang kiểm nội dung + meta noindex); báo ui là mức nhỏ (không bắt buộc sửa).
+- Rà soát cuối (2026-11-12): level chỉ ghi trong finalizeProof (kể cả thu hồi `revokeInTx`); `caches.ts` chỉ đồng bộ cache `user_skills.xp`/`total_xp`/`reputation` từ sổ cái (không chạm level); xp_ledger/reputation_events không update/delete; không UPDATE criteria; không Prisma/domain trong UI; không emoji; không chuỗi "·" (trừ tiêu đề tab); không dữ liệu cá nhân trên URL (theo handle/slug/id ngẫu nhiên).
+
 ## Giai đoạn 3 — Xã hội và an toàn
 
 ### E2E
