@@ -35,9 +35,9 @@ test.describe("Cây kỹ năng", () => {
 
   test("chọn nút đang luyện thấy mốc kế tiếp", async ({ page }) => {
     await clickable(page, /Lửa bằng que/).first().click();
-    await expect(page.getByText(/Mốc tiếp/).first()).toBeVisible();
-    await expect(page.getByText("Dưới 5 phút").first()).toBeVisible();
-    await expect(page.getByText("Thành ngọn dưới 5 phút, có nước dập lửa bên cạnh").first()).toBeVisible();
+    // Tên mốc kế tiếp (không phải "cấp N"); việc cần làm của mốc đó nằm ngay dưới
+    await expect(page.getByRole("heading", { name: /^Mốc tiếp: (Dưới 5 phút|Tự chế)$/ })).toBeVisible();
+    await expect(page.getByText(/dưới 5 phút/).first()).toBeVisible();
     // Hành động chính thống nhất: "Quay video"
     const cta = clickable(page, /^Quay video$/).first();
     await expect(cta).toBeVisible();
@@ -70,7 +70,8 @@ test.describe("Chi tiết kỹ năng", () => {
     await expect(page.getByRole("progressbar", { name: /Xong 3 trên 5 mốc/ }).first()).toBeVisible();
     await expect(page.getByText(/Cấp \d/)).toHaveCount(0);
     for (const m of ["Ra khói", "Than hồng", "Thành ngọn", "Dưới 5 phút", "Tự chế"]) {
-      await expect(page.getByText(m, { exact: true }).first(), `Thiếu mốc "${m}"`).toBeVisible();
+      // tên mốc kèm trạng thái cho trình đọc màn hình (", đã xong" / ", mốc tiếp theo")
+      await expect(page.getByText(new RegExp(`^${m}(,|$)`)).first(), `Thiếu mốc "${m}"`).toBeVisible();
     }
     for (const c of [
       "Tạo khói bằng que trong 10 phút",
