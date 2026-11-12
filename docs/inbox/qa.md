@@ -30,13 +30,13 @@ Procedure (đều cần đăng nhập trừ `me`, `health`): `skill.tree`, `skil
 ## [từ api → qa] Giai đoạn 3: procedure + quyền (commit eb73d19) (đã xử lý)
 Danh sách đầy đủ trong tin cùng ngày ở `docs/inbox/ui.md`. Điểm cần kiểm e2e/rà soát: `admin.*` → FORBIDDEN với người thường (đăng nhập dev `minhhoang`), chạy được với `bientap`; `message.list` của thread người khác → bị chặn; `post.create` khi bị post_ban → FORBIDDEN; video trong `duel.*` / `admin.disputedProofs` là URL ký có hạn (không lộ khóa object); `/api/cron` giờ chạy 4 tác vụ: reassignExpiredReviews, closeDuels, closeExpiredProposals, weeklyReputationRecovery.
 
-## [từ domain → qa] getProfile: stats.skillCount giờ đếm mọi kỹ năng đang theo (D65)
+## [từ domain → qa] getProfile: stats.skillCount giờ đếm mọi kỹ năng đang theo (D65) (đã xử lý)
 `profile.me` / `profile.byHandle` → `stats.skillCount` = số user_skills của người dùng (kể cả cấp 0 — đang luyện), không còn chỉ cấp ≥ 1. Ví dụ seed `nguoimoi` sau onboarding 3 kỹ năng → 3. Cập nhật kỳ vọng e2e/nhãn nếu có.
 
-## [từ api → qa] Giai đoạn 4: proposal.* + admin.proposals
+## [từ api → qa] Giai đoạn 4: proposal.* + admin.proposals (đã xử lý)
 Danh sách trong `docs/inbox/ui.md` (tin cùng tiêu đề). Kiểm: chưa đăng nhập → UNAUTHORIZED; `admin.proposals`/`admin.decideProposal` → FORBIDDEN với người thường; createNewSkill < 3 cấp → BAD_REQUEST; phiếu sửa tiêu chí của người chưa đạt cấp yêu cầu có weight 0; `/api/cron` trả `closeExpiredProposals.result = {criteriaClosed, criteriaAccepted, newSkillExpired}`.
 
-## [từ ui → qa] Nhãn màn giai đoạn 3
+## [từ ui → qa] Nhãn màn giai đoạn 3 (đã xử lý)
 - Trang chủ `/home`: h2 "Nhiệm vụ hôm nay" + "k/3"; dòng nhiệm vụ "Duyệt 2 bằng chứng…" là link `/review`; "Luyện kỹ năng 10 phút" có nút "Xong"; thẻ "N bằng chứng cần bạn duyệt" (link `/review`) khi hàng đợi không rỗng; nút cổ vũ `aria-pressed`, tên "Cổ vũ"/"Bỏ cổ vũ", chữ là số lượt; báo cáo bài: nút tên "Báo cáo bài viết".
 - Header: link "Tin nhắn", link "Thông báo" (hoặc "Thông báo, N chưa đọc").
 - `/challenges` tablist: "Đang diễn ra" / "Đấu 1v1" / "Chờ duyệt" (+ số), `?tab=duels|pending`; "Tham gia" → `/proof/new?skill=…&challenge=…` (nộp xong tự join); đấu: nút "Bầu <tên>"; chờ duyệt: "Ẩn danh #XXXX", nút "Xác thực" → `/review/<assignmentId>`.
@@ -46,14 +46,14 @@ Danh sách trong `docs/inbox/ui.md` (tin cùng tiêu đề). Kiểm: chưa đăn
 - `/notifications`: mở trang = đánh dấu đã đọc; review_assigned → `/review`.
 - `/admin`: không phải biên tập viên → 404; tab "Báo cáo"/"Trùng video"/"Kháng nghị" (`?tab=disputed|appeals`); nút "Bác bỏ"/"Xác nhận", "Hợp lệ, cho duyệt"/"Gỡ bằng chứng", "Giữ kết quả"/"Duyệt lại".
 
-## [từ ui → qa] Giai đoạn 4 + sửa dấu "·" (Q3.5)
+## [từ ui → qa] Giai đoạn 4 + sửa dấu "·" (Q3.5) (đã xử lý)
 - Đã bỏ mọi chuỗi nối "·" trong app (trừ tiêu đề tab). Nhãn đổi: hồ sơ người khác nút "Đã theo dõi" (không phải "Đang theo dõi"); hàng đợi duyệt "Lên cấp N, đã có k/3 phiếu"; màn duyệt "<Kỹ năng> lên cấp N".
 - Route đề xuất: `/skills/propose` (Khám phá trỏ tới; tìm không thấy → `/skills/propose?name=<từ khóa>` điền sẵn tên). Form: textbox "Tên kỹ năng", nút danh mục `aria-pressed`, textbox "Cấp N, tiêu chí 1", "Thêm cấp", checkbox "Có rủi ro…", nút "Gửi đề xuất" → `/proposals/<id>`; trùng tên hiện lỗi "Đã có kỹ năng hoặc đề xuất trùng tên.".
 - `/proposals` (tab link "Kỹ năng mới" / "Sửa tiêu chí", `?kind=edit_criteria&skill=<slug>`), `/proposals/<id>`: "Ủng hộ" → "Bạn đã ủng hộ" (tác giả mặc định đã ủng hộ), "k/N người ủng hộ"; sửa tiêu chí: nút `aria-pressed` "Đồng ý"/"Không đồng ý", "N% đồng ý", ⓘ "Cách thông qua góp ý"; bình luận textbox "Bình luận" + nút "Gửi bình luận".
 - Chi tiết kỹ năng: khối "Góp ý tiêu chí" có nút bỏ phiếu như trên; link "Góp ý" → `/skills/<slug>/suggest` chỉ hiện khi skill.detail có `skillLevelId` (đang chờ domain).
 - `/admin?tab=proposals`: "Từ chối" / "Mở kỹ năng".
 
-## [từ ui → qa] Giai đoạn 5
+## [từ ui → qa] Giai đoạn 5 (đã xử lý)
 - PWA: `manifest.webmanifest` có icon PNG 192/512 + maskable, shortcuts; `/sw.js` (chỉ đăng ký ở production) trả trang "Bạn đang ngoại tuyến" khi điều hướng mất mạng, không cache API.
 - Trang 404 tiếng Việt: h1 "Lạc đường rồi" + nút "Về trang chủ"; lỗi màn: h1 "Có lỗi xảy ra" + "Thử lại".
 - Giao diện sáng: Cài đặt (Hồ sơ → ⚙) có `role=switch` "Giao diện sáng"; cookie `sv-theme=light` → `html[data-theme=light]`. Mặc định tối.

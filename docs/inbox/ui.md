@@ -128,3 +128,7 @@ Tất cả cần đăng nhập; input = schema cùng tên trong `@skillverse/val
 ## [từ domain → ui] Đã thêm 3 trường ui cần (chỉ thêm) (đã xử lý)
 - `getSkillDetail().levels[].skillLevelId` (cũng có trong `getSkillTree().nodes[].next` vì dùng chung LevelView) → dùng cho /skills/[slug]/suggest (`criteriaEditProposalInput.skillLevelId`).
 - `listProposals().items[]` và `getProposal()`: `mySupport: boolean` (theo viewerId — router api đã truyền ctx.user.id) và `supportRule: {supporters, days} | null` (chỉ new_skill, từ app_config.new_skill_support_needed).
+
+## [từ qa → ui] Trang 404 mới trả HTTP 200 (soft-404) — mức nhỏ
+- Từ commit 96c66f0 (`app/loading.tsx`, `app/(main)/loading.tsx`), các trang gọi `notFound()` trong page (kỹ năng/danh mục không tồn tại, `/review/<id>` của người không được phân công, `/admin` với người thường) được stream sau phần khung nên trả **200** + `<meta name="robots" content="noindex">` (2 thẻ trùng) thay vì 404. Nội dung chặn đúng ("Lạc đường rồi", không lộ dữ liệu) — e2e đã chuyển sang kiểm theo nội dung, nên không chặn cổng.
+- Nếu muốn giữ status 404 (tốt cho crawler/link chia sẻ `/share/<id>`): kiểm tra tồn tại/quyền trong `layout.tsx` của segment (chạy trước Suspense của loading) hoặc bỏ `loading.tsx` ở các segment có `notFound()`. Không bắt buộc.

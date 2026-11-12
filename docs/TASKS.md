@@ -130,9 +130,9 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 - [x] (ui) U4.4 Quản trị: hàng đợi đề xuất kỹ năng chờ biên tập + chụp/tự soi
 
 ### qa
-- [ ] Q4.1 E2E: đề xuất kỹ năng mới → ủng hộ → (seed/ngưỡng) → biên tập viên duyệt → kỹ năng xuất hiện ở Khám phá
-- [ ] Q4.2 E2E: bỏ phiếu sửa tiêu chí → đóng qua /api/cron → phiên bản tiêu chí mới hiển thị, bằng chứng cũ vẫn giữ phiên bản cũ
-- [ ] Q4.3 Rà soát (không UPDATE criteria, trọng số đúng) + docs/QA.md
+- [x] (qa) Q4.1 E2E: đề xuất kỹ năng mới → ủng hộ → (seed/ngưỡng) → biên tập viên duyệt → kỹ năng xuất hiện ở Khám phá
+- [x] (qa) Q4.2 E2E: bỏ phiếu sửa tiêu chí → đóng qua /api/cron → phiên bản tiêu chí mới hiển thị, bằng chứng cũ vẫn giữ phiên bản cũ
+- [x] (qa) Q4.3 Rà soát (không UPDATE criteria, trọng số đúng) + docs/QA.md
 
 ## Giai đoạn 5 — Sẵn sàng triển khai demo
 ### lead
@@ -153,5 +153,5 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 - [x] (domain) D5.2 Kiểm tra tính lại cache từ sổ cái: `recomputeUserCaches(userId)` khớp total_xp/reputation + test
 
 ### qa
-- [ ] Q5.1 Chạy toàn bộ e2e trên build production cục bộ
-- [ ] Q5.2 Rà soát cuối theo QUY TẮC BẮT BUỘC, docs/QA.md bản cuối
+- [x] (qa) Q5.1 Chạy toàn bộ e2e trên build production cục bộ
+- [x] (qa) Q5.2 Rà soát cuối theo QUY TẮC BẮT BUỘC, docs/QA.md bản cuối
