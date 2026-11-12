@@ -63,19 +63,23 @@ export function Avatar({
   );
 }
 
-/** Màn trống là lời mời hành động. */
+/**
+ * Màn trống là lời mời hành động. `art` (hình minh họa nét tay) thay cho `icon` khi có; một dòng chữ là đủ.
+ */
 export function EmptyState({
   icon: Icon,
+  art,
   title,
   action,
 }: {
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  art?: ReactNode;
   title: string;
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-[var(--radius-card)] border border-dashed border-border px-6 py-10 text-center">
-      <Icon size={32} strokeWidth={1.8} className="text-muted" aria-hidden />
+    <div className="flex flex-col items-center gap-4 rounded-[var(--radius-card)] border border-dashed border-border px-6 py-8 text-center">
+      {art ? <div className="text-muted">{art}</div> : Icon ? <Icon size={32} strokeWidth={1.8} className="text-muted" aria-hidden /> : null}
       <p className="max-w-[28ch] text-[15px] font-semibold">{title}</p>
       {action}
     </div>

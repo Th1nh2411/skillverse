@@ -1,20 +1,23 @@
 import {
   Amphora,
+  Backpack,
   Box,
   Cable,
   Circle,
   Compass,
   Droplets,
   Filter,
+  FlameKindling,
   FlipHorizontal2,
   Flame,
   HeartPulse,
   Leaf,
-  LockKeyhole,
-  MountainSnow,
+  KeyRound,
+  Mountain,
   Orbit,
   Rabbit,
   Spline,
+  Spool,
   Tent,
   Waves,
   type LucideIcon,
@@ -31,34 +34,39 @@ export type Rarity = "legendary" | "rare" | null;
 export type Thread = "legendary" | "rare" | "common";
 export const threadOf = (r: Rarity | undefined): Thread => r ?? "common";
 
+/** Biểu tượng riêng từng kỹ năng (thẻ, nút cây kỹ năng, hồ sơ, màn đăng bằng chứng). Thiếu → theo danh mục. */
 const SKILL_ICONS: Record<string, LucideIcon> = {
   "sinh-ton-co-ban": Compass,
   "nhom-lua": Flame,
-  "lua-bang-que": Flame,
+  "lua-bang-que": FlameKindling,
   "tim-nguon-nuoc": Droplets,
   "loc-nuoc": Filter,
   "dung-trai": Tent,
   "bay-don-gian": Rabbit,
-  "song-sot-72-gio": MountainSnow,
+  "song-sot-72-gio": Backpack,
   "that-nut-day": Cable,
   "so-cuu": HeartPulse,
   "huyt-sao-bang-la": Leaf,
   "viet-chu-nguoc-guong": FlipHorizontal2,
   "tung-hung": Orbit,
   "giai-rubik-bit-mat": Box,
-  "mo-khoa-the-thao": LockKeyhole,
+  "mo-khoa-the-thao": KeyRound,
   "thoi-thuy-tinh": Amphora,
   "ben-day-paracord": Spline,
-  "dan-len": Spline,
-  "leo-nui": MountainSnow,
+  "dan-len": Spool,
+  "leo-nui": Mountain,
 };
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   "sinh-ton": Compass,
   "ky-nang-di": Orbit,
-  "thu-cong": Spline,
+  "thu-cong": Spool,
   "the-chat": Waves,
 };
+
+export function categoryIcon(categorySlug: string): LucideIcon {
+  return CATEGORY_ICONS[categorySlug] ?? Circle;
+}
 
 export function skillIcon(slug: string, categorySlug?: string): LucideIcon {
   return SKILL_ICONS[slug] ?? (categorySlug ? CATEGORY_ICONS[categorySlug] : undefined) ?? Circle;

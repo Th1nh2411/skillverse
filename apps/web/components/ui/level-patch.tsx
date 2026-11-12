@@ -11,7 +11,7 @@ import {
 } from "@/lib/skill-visual";
 
 /**
- * Huy hiệu cấp độ vẽ như miếng vải thêu: viền vắt sổ (merrow) bằng chỉ, nền vải dệt chéo,
+ * Huy hiệu kỹ năng vẽ như miếng vải thêu: viền vắt sổ (merrow) bằng chỉ, nền vải dệt chéo,
  * đường khâu chạy bên trong. Hình theo danh mục, màu chỉ theo độ hiếm; Huyền thoại có thêm
  * một đường chỉ thứ hai. Đây là điểm nhấn duy nhất của giao diện.
  *
@@ -24,14 +24,13 @@ export type LevelPatchProps = {
   categorySlug: string;
   rarity?: Rarity;
   state?: "earned" | "practicing" | "locked";
-  /** Số hiển thị giữa miếng vải (cấp). Bỏ trống để hiện biểu tượng. */
-  level?: number;
+  /** Biểu tượng kỹ năng thêu giữa miếng vải (xem skillIcon). Không hiện số cấp: số chỉ dùng nội bộ. */
   icon?: LucideIcon;
   size?: number;
   /** Nhãn cho trình đọc màn hình; bỏ trống nếu miếng vải chỉ để trang trí bên cạnh chữ. */
   label?: string;
   className?: string;
-  /** Chuyển động "khâu": chỉ chạy vòng quanh viền rồi hiện số. Tắt khi prefers-reduced-motion. */
+  /** Chuyển động "khâu": chỉ chạy vòng quanh viền rồi hiện biểu tượng. Tắt khi prefers-reduced-motion. */
   stitch?: boolean;
 };
 
@@ -94,7 +93,6 @@ export function LevelPatch({
   categorySlug,
   rarity: rarityIn = null,
   state = "earned",
-  level,
   icon: Icon,
   size = 56,
   label,
@@ -145,7 +143,6 @@ export function LevelPatch({
   }
 
   const earned = state === "earned";
-  const fontSize = level !== undefined && level >= 10 ? 34 : 40;
 
   return (
     <svg
@@ -245,24 +242,7 @@ export function LevelPatch({
         />
       ) : null}
 
-      {level !== undefined ? (
-        <text
-          x="50"
-          y={shape === "shield" ? 49 : 51}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fill={thread}
-          fontWeight={800}
-          fontSize={fontSize}
-          className={stitch ? "patch-pop" : undefined}
-          style={{
-            fontFamily: "var(--font-display)",
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          {level}
-        </text>
-      ) : Icon ? (
+      {Icon ? (
         <Icon
           x={33}
           y={shape === "shield" ? 31 : 33}

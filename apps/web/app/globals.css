@@ -196,3 +196,25 @@ body {
     opacity: 1;
   }
 }
+
+/* Lên cấp: dải băng tên mốc được khâu sau huy hiệu */
+.patch-ribbon {
+  opacity: 0;
+  animation: ribbon-in 420ms cubic-bezier(0.2, 1.3, 0.4, 1) 1800ms forwards;
+}
+@keyframes ribbon-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) rotate(-6deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-2deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .patch-ribbon {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -1,3 +1,4 @@
+import { MilestoneBar } from "@/components/ui/milestone";
 import { notFound } from "next/navigation";
 import { Bell, Flame } from "lucide-react";
 import { LevelPatch } from "@/components/ui/level-patch";
@@ -16,9 +17,9 @@ export default function KitPage() {
       <h1 className="font-display text-[28px] font-extrabold">Bộ thành phần</h1>
       {cats.map((c) => (
         <div key={c} className="flex items-center gap-3">
-          <LevelPatch categorySlug={c} level={3} size={64} />
-          <LevelPatch categorySlug={c} rarity="rare" level={4} size={64} />
-          <LevelPatch categorySlug={c} rarity="legendary" level={5} size={64} />
+          <LevelPatch categorySlug={c} icon={skillIcon("", c)} size={64} />
+          <LevelPatch categorySlug={c} rarity="rare" icon={skillIcon("", c)} size={64} />
+          <LevelPatch categorySlug={c} rarity="legendary" icon={skillIcon("", c)} size={64} />
           <LevelPatch categorySlug={c} rarity="rare" state="practicing" icon={skillIcon("", c)} size={64} />
           <LevelPatch categorySlug={c} state="locked" size={64} />
         </div>
@@ -30,9 +31,9 @@ export default function KitPage() {
         <InfoSheet title="Cách tính độ hiếm">Đường chỉ thêu cho biết độ hiếm.</InfoSheet>
       </div>
       <ProgressBar value={2340} max={3000} label="XP" />
-      <ProgressBar value={3} max={5} tone="thread" size="sm" label="Cấp" />
+      <MilestoneBar value={3} max={5} showCount />
       <div className="flex gap-3">
-        <Button>Gửi xác thực</Button>
+        <Button>Gửi video</Button>
         <Button variant="secondary">Hướng dẫn</Button>
       </div>
       <EmptyState icon={Flame} title="Chưa có kỹ năng nào. Chọn kỹ năng đầu tiên" action={<Button size="md">Chọn kỹ năng</Button>} />
