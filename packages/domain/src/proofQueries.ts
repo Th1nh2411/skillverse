@@ -6,6 +6,7 @@ import { getAccountLevelCurve, getConfig, getRarityThresholds } from "./config";
 import type { Db } from "./db";
 import { DomainError } from "./errors";
 import { rarityOf, type Rarity } from "./rarity";
+import { isSaved } from "./saves";
 import { accountLevelForXp } from "./xp";
 
 const DAY_MS = 86_400_000;
@@ -32,6 +33,8 @@ export type ProofStatusView = {
   appeal: { status: AppealStatus; createdAt: Date } | null;
   canAppeal: boolean;
   appealDeadline: Date | null;
+  /** Người xem đã lưu bằng chứng này (D74). */
+  saved: boolean;
 };
 
 /** Trạng thái bằng chứng cho người nộp (hoặc biên tập viên). Không lộ danh tính người duyệt. */
@@ -99,6 +102,7 @@ export async function getProofStatus(
     canAppeal:
       proof.userId === p.userId && !proof.appeal && !!appealDeadline && now.getTime() <= appealDeadline.getTime(),
     appealDeadline,
+    saved: await isSaved(db, p.userId, "proof", proof.id),
   };
 }
 
@@ -122,6 +126,7 @@ export type LevelUpSummary = {
   /** Kỹ năng con vừa mở nhờ đạt cấp này (mọi kỹ năng cha khác cũng đã đạt). */
   unlockedSkills: { slug: string; name: string }[];
   displayName: string;
+  saved: boolean;
 };
 
 /** Màn Lên cấp cho người nộp (bằng chứng phải đã đạt). */
@@ -221,6 +226,7 @@ export async function getLevelUpSummary(db: Db, p: { proofId: string; userId: st
     badges: proof.userBadges.map((b) => b.badge),
     unlockedSkills,
     displayName: proof.user.displayName,
+    saved: await isSaved(db, p.userId, "proof", proof.id),
   };
 }
 
@@ -236,10 +242,12 @@ export type ShareCard = {
   rarity: Rarity;
   verifiedCount: number;
   decidedAt: Date | null;
+  /** Người xem (nếu đăng nhập) đã lưu bằng chứng này. false khi không có viewerId. */
+  saved: boolean;
 };
 
 /** Dữ liệu công khai cho thẻ chia sẻ / trang /share/[proofId]. Chỉ bằng chứng đã đạt của tài khoản còn hoạt động. */
-export async function getShareCard(db: Db, p: { proofId: string }): Promise<ShareCard> {
+export async function getShareCard(db: Db, p: { proofId: string; viewerId?: string | null }): Promise<ShareCard> {
   const proof = await db.proof.findFirst({
     where: { id: p.proofId, status: "passed", deletedAt: null, user: { deletedAt: null, status: { not: "banned" } } },
     select: {
@@ -268,5 +276,6 @@ export async function getShareCard(db: Db, p: { proofId: string }): Promise<Shar
     rarity: rarityOf(proof.skill.holderCount, thresholds),
     verifiedCount: proof.reviews.length,
     decidedAt: proof.decidedAt,
+    saved: await isSaved(db, p.viewerId, "proof", proof.id),
   };
 }

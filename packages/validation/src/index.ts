@@ -19,5 +19,6 @@ export * from "./onboarding";
 export * from "./proofs";
 export * from "./social";
 export * from "./proposals";
+export * from "./personal";
 
 export { z };

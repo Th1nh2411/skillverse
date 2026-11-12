@@ -8,6 +8,7 @@ import { getRarityThresholds, type RarityThresholds } from "./config";
 import { loadLevelTitles, type LevelTitleLookup } from "./milestones";
 import { assertCanPost } from "./moderation";
 import { rarityOf, type Rarity } from "./rarity";
+import { savedIds } from "./saves";
 
 export const REACTION_KINDS = ["like", "cheer"] as const;
 export type ReactionKind = (typeof REACTION_KINDS)[number];
@@ -26,6 +27,8 @@ export type FeedItem = {
   /** Bài lên cấp: cấp đạt + số người duyệt đạt / tổng phiếu ("3/3 người duyệt"). proofId để mở thẻ chia sẻ. */
   levelUp: { proofId: string; level: number; levelTitle: string | null; passVotes: number; totalVotes: number } | null;
   myReactions: ReactionKind[];
+  /** Người xem đã lưu bài này (D74). */
+  saved: boolean;
   /** true khi bài đến từ người / kỹ năng đang theo dõi (hoặc của chính mình). */
   followed: boolean;
 };
@@ -156,8 +159,14 @@ export async function getHomeFeed(
     db,
     rows.flatMap(({ row }) => (row.kind === "level_up" && row.skillId ? [row.skillId] : [])),
   );
+  const saved = await savedIds(
+    db,
+    p.userId,
+    "post",
+    rows.map((r) => r.row.id),
+  );
   return {
-    items: rows.map(({ row, followed }) => toFeedItem(row, followed, reactions, thresholds, titleOf)),
+    items: rows.map(({ row, followed }) => ({ ...toFeedItem(row, followed, reactions, thresholds, titleOf), saved: saved.has(row.id) })),
     nextCursor: next ? encodeCursor(next) : null,
   };
 }
@@ -168,7 +177,7 @@ function toFeedItem(
   reactions: { postId: string; kind: string }[],
   thresholds: RarityThresholds,
   titleOf: LevelTitleLookup,
-): FeedItem {
+): Omit<FeedItem, "saved"> {
   return {
     id: row.id,
     kind: row.kind,

@@ -2,6 +2,7 @@ import { getAccountLevelCurve, getRarityThresholds } from "./config";
 import type { Db } from "./db";
 import { DomainError } from "./errors";
 import { loadLevelTitles } from "./milestones";
+import { loadSelfProgress } from "./selfChecks";
 import { rarityOf, rarityRank, type Rarity } from "./rarity";
 import { xpProgress, type XpProgress } from "./xp";
 
@@ -11,10 +12,13 @@ export type FeaturedSkill = {
   name: string;
   category: { slug: string; name: string };
   level: number;
-  /** Tên mốc đã đạt (null khi level 0). */
+  /** Tên mốc đã xác thực (null khi level 0). */
   levelTitle: string | null;
+  /** Tiến độ tự đánh dấu (D73), luôn ≥ level; tiến độ hiển thị = selfLevel. */
+  selfLevel: number;
+  selfLevelTitle: string | null;
   maxLevel: number;
-  /** Tên mốc kế tiếp (null khi đã đạt mốc cuối). */
+  /** Tên mốc kế tiếp sau selfLevel (null khi đã xong mốc cuối). */
   nextLevelTitle: string | null;
   holderCount: number;
   rarity: Rarity;
@@ -123,8 +127,14 @@ export async function getProfile(
     db,
     userSkills.map((us) => us.skill.id),
   );
+  const self = await loadSelfProgress(
+    db,
+    user.id,
+    userSkills.map((us) => us.skill.id),
+  );
+  const selfOf = (us: (typeof userSkills)[number]) => self.selfLevel(us.skill.id, us.level, us.skill.maxLevel);
   const featured: FeaturedSkill[] = userSkills
-    .filter((us) => us.level >= 1 || pendingBySkill.has(us.skill.id))
+    .filter((us) => us.level >= 1 || selfOf(us) >= 1 || pendingBySkill.has(us.skill.id))
     .map((us) => ({
       skillId: us.skill.id,
       slug: us.skill.slug,
@@ -132,8 +142,10 @@ export async function getProfile(
       category: us.skill.category,
       level: us.level,
       levelTitle: titleOf(us.skill.id, us.level),
+      selfLevel: selfOf(us),
+      selfLevelTitle: titleOf(us.skill.id, selfOf(us)),
       maxLevel: us.skill.maxLevel,
-      nextLevelTitle: us.level < us.skill.maxLevel ? titleOf(us.skill.id, us.level + 1) : null,
+      nextLevelTitle: selfOf(us) < us.skill.maxLevel ? titleOf(us.skill.id, selfOf(us) + 1) : null,
       holderCount: us.skill.holderCount,
       rarity: rarityOf(us.skill.holderCount, thresholds),
       verifiedByCount: verifiers.get(us.skill.id)?.size ?? 0,
@@ -182,7 +194,11 @@ export type UserSkillItem = {
   name: string;
   level: number;
   levelTitle: string | null;
+  /** Tiến độ tự đánh dấu (D73), ≥ level. Danh sách vẫn chỉ gồm kỹ năng đã xác thực ≥ 1 (dạy khi trao đổi). */
+  selfLevel: number;
+  selfLevelTitle: string | null;
   maxLevel: number;
+  /** Tên mốc kế tiếp sau selfLevel. */
   nextLevelTitle: string | null;
   category: { slug: string; name: string };
   rarity: Rarity;
@@ -215,15 +231,23 @@ export async function listUserSkills(db: Db, input: { handle?: string; userId?: 
     db,
     rows.map((r) => r.skill.id),
   );
+  const self = await loadSelfProgress(
+    db,
+    user.id,
+    rows.map((r) => r.skill.id),
+  );
   return rows
-    .map((r) => ({
+    .map((r) => ({ r, sl: self.selfLevel(r.skill.id, r.level, r.skill.maxLevel) }))
+    .map(({ r, sl }) => ({
       skillId: r.skill.id,
       slug: r.skill.slug,
       name: r.skill.name,
       level: r.level,
       levelTitle: titleOf(r.skill.id, r.level),
+      selfLevel: sl,
+      selfLevelTitle: titleOf(r.skill.id, sl),
       maxLevel: r.skill.maxLevel,
-      nextLevelTitle: r.level < r.skill.maxLevel ? titleOf(r.skill.id, r.level + 1) : null,
+      nextLevelTitle: sl < r.skill.maxLevel ? titleOf(r.skill.id, sl + 1) : null,
       category: r.skill.category,
       rarity: rarityOf(r.skill.holderCount, thresholds),
     }))

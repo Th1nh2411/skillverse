@@ -319,15 +319,17 @@ describe("submitProof — media_limits + ai_precheck giả lập", () => {
   it("chặn định dạng/dung lượng ngoài media_limits; lưu ai_precheck chỉ tham khảo", async () => {
     const { skill, submitter } = await scenario();
     await expect(submit(skill, submitter.id, 1, { contentType: "image/gif" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(submit(skill, submitter.id, 1, { sizeBytes: 61 * 1024 * 1024 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    const r = await submit(skill, submitter.id, 1, { contentType: "video/mp4", sizeBytes: 10 * 1024 * 1024, durationS: 64 });
+    // D75 (migration 0008): 20 MB, 60 giây
+    await expect(submit(skill, submitter.id, 1, { sizeBytes: 21 * 1024 * 1024 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(submit(skill, submitter.id, 1, { durationS: 61 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    const r = await submit(skill, submitter.id, 1, { contentType: "video/mp4", sizeBytes: 10 * 1024 * 1024, durationS: 45 });
     const proof = await db.proof.findUniqueOrThrow({ where: { id: r.proofId } });
     expect(proof.aiPrecheck).toEqual({
       advisoryOnly: true,
       checks: [
-        { key: "duration", ok: true, detail: "64/180 giây" },
+        { key: "duration", ok: true, detail: "45/60 giây" },
         { key: "format", ok: true, detail: "video/mp4" },
-        { key: "size", ok: true, detail: "10.0/60 MB" },
+        { key: "size", ok: true, detail: "10.0/20 MB" },
       ],
     });
   });

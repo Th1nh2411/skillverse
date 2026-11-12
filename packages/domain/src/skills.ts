@@ -4,6 +4,8 @@ import type { Db } from "./db";
 import { DomainError } from "./errors";
 import { loadLevelTitles, type LevelTitleLookup } from "./milestones";
 import { rarityOf, type Rarity } from "./rarity";
+import { isSaved } from "./saves";
+import { loadSelfProgress } from "./selfChecks";
 
 export type CriterionView = {
   id: string;
@@ -123,10 +125,13 @@ export type SkillTreeNode = {
   name: string;
   riskLevel: RiskLevel;
   level: number;
-  /** Tên mốc đã đạt (null khi level 0). */
+  /** Tên mốc đã xác thực (null khi level 0). */
   levelTitle: string | null;
+  /** Tiến độ tự đánh dấu (D73) — luôn ≥ level; tiến độ hiển thị = selfLevel. */
+  selfLevel: number;
+  selfLevelTitle: string | null;
   maxLevel: number;
-  /** Tên mốc kế tiếp (null khi đã đạt mốc cuối). */
+  /** Tên mốc kế tiếp sau tiến độ (selfLevel); null khi đã xong mốc cuối. */
   nextLevelTitle: string | null;
   state: SkillNodeState;
   holderCount: number;
@@ -141,9 +146,12 @@ export type SkillTreeNode = {
     requiredLevelTitle: string | null;
     userLevel: number;
     userLevelTitle: string | null;
+    /** Tiến độ tự đánh dấu của người xem ở kỹ năng cha. */
+    userSelfLevel: number;
+    /** Mở khóa khi max(selfLevel, level) của kỹ năng cha ≥ requiredLevel (D73). */
     met: boolean;
   }[];
-  /** Yêu cầu cấp kế tiếp (null nếu đã đạt cấp cao nhất). */
+  /** Mốc kế tiếp sau tiến độ selfLevel (null nếu đã xong mốc cuối). Nộp bằng chứng vẫn cho level + 1. */
   next: (LevelView & { holdersAtOrAbove: number }) | null;
   pendingProof: PendingProofView | null;
 };
@@ -195,11 +203,19 @@ export async function getSkillTree(
 
   const titleOf = await loadLevelTitles(db, [...skillIds, ...parentIds]);
   const pending = await pendingProofsFor(db, input.userId, skillIds, titleOf);
+  const allIds = [...new Set([...skillIds, ...parentIds])];
+  const self = await loadSelfProgress(db, input.userId, allIds);
+  const maxLevels = new Map(
+    (await db.skill.findMany({ where: { id: { in: allIds } }, select: { id: true, maxLevel: true } })).map((r) => [r.id, r.maxLevel]),
+  );
+  const selfOf = (skillId: string) => self.selfLevel(skillId, myLevels.get(skillId) ?? 0, maxLevels.get(skillId) ?? 0);
 
   const nodes: SkillTreeNode[] = skills.map((s) => {
     const level = myLevels.get(s.id) ?? 0;
+    const selfLevel = selfOf(s.id);
     const prerequisites = s.skillEdgesChildSkill.map((e) => {
       const userLevel = myLevels.get(e.parentSkillId) ?? 0;
+      const userSelfLevel = selfOf(e.parentSkillId);
       return {
         skillId: e.parentSkillId,
         slug: e.parentSkill.slug,
@@ -208,12 +224,13 @@ export async function getSkillTree(
         requiredLevelTitle: titleOf(e.parentSkillId, e.requiredLevel),
         userLevel,
         userLevelTitle: titleOf(e.parentSkillId, userLevel),
-        met: userLevel >= e.requiredLevel,
+        userSelfLevel,
+        met: Math.max(userLevel, userSelfLevel) >= e.requiredLevel,
       };
     });
     const state: SkillNodeState =
       level >= s.maxLevel ? "achieved" : prerequisites.every((p) => p.met) ? "practicing" : "locked";
-    const nextRow = level < s.maxLevel ? s.skillLevels.find((l) => l.level === level + 1) : undefined;
+    const nextRow = selfLevel < s.maxLevel ? s.skillLevels.find((l) => l.level === selfLevel + 1) : undefined;
     return {
       skillId: s.id,
       slug: s.slug,
@@ -221,6 +238,8 @@ export async function getSkillTree(
       riskLevel: s.riskLevel,
       level,
       levelTitle: titleOf(s.id, level),
+      selfLevel,
+      selfLevelTitle: titleOf(s.id, selfLevel),
       maxLevel: s.maxLevel,
       nextLevelTitle: nextRow?.title ?? null,
       state,
@@ -289,6 +308,14 @@ export type NextMilestone = {
   task: string | null;
 };
 
+/** Mốc trong chi tiết kỹ năng, kèm trạng thái của người xem. */
+export type DetailLevelView = LevelView & {
+  /** Người xem đã tự đánh dấu mốc này (D73). */
+  checked: boolean;
+  /** Mốc đã được cộng đồng xác thực (level ≥ mốc). */
+  verified: boolean;
+};
+
 export type SkillDetail = {
   id: string;
   slug: string;
@@ -299,7 +326,7 @@ export type SkillDetail = {
   maxLevel: number;
   holderCount: number;
   rarity: Rarity;
-  levels: LevelView[];
+  levels: DetailLevelView[];
   /** Số người có user_skills chưa đạt cấp cao nhất. */
   practicingCount: number;
   /** Cấp dùng cho chỉ số "đạt cấp X+" = maxLevel − 1 (tối thiểu 1). */
@@ -312,8 +339,13 @@ export type SkillDetail = {
   myLevel: number | null;
   /** Tên mốc người xem đã đạt (null khi chưa theo / level 0). */
   myLevelTitle: string | null;
-  /** Mốc kế tiếp của người xem (level hiện tại + 1; chưa theo = mốc 1). null khi đã đạt mốc cuối. */
+  /** Tiến độ tự đánh dấu (≥ myLevel ?? 0); tiến độ hiển thị = selfLevel. 0 khi chưa đăng nhập. */
+  selfLevel: number;
+  selfLevelTitle: string | null;
+  /** Mốc kế tiếp sau tiến độ selfLevel (chưa theo = mốc 1). null khi đã xong mốc cuối. */
   nextMilestone: NextMilestone | null;
+  /** Người xem đã lưu kỹ năng này (D74). */
+  saved: boolean;
   myPendingProof: PendingProofView | null;
   /** Người xem có đủ kỹ năng cha để nộp cấp kế tiếp không. */
   myPrerequisitesMet: boolean | null;
@@ -364,8 +396,15 @@ export async function getSkillDetail(
   const parentIdsAll = skill.skillEdgesChildSkill.map((e) => e.parentSkillId);
   const titleOf = await loadLevelTitles(db, [skill.id, ...parentIdsAll]);
   const pending = await pendingProofsFor(db, input.userId, [skill.id], titleOf);
-  const levels = skill.skillLevels.map(toLevelView);
-  const nextLv = levels.find((l) => l.level === (myLevel ?? 0) + 1);
+  const self = await loadSelfProgress(db, input.userId, [skill.id]);
+  const checkedSet = self.checked(skill.id);
+  const selfLevel = self.selfLevel(skill.id, myLevel ?? 0, skill.maxLevel);
+  const levels: DetailLevelView[] = skill.skillLevels.map((l) => ({
+    ...toLevelView(l),
+    checked: checkedSet.has(l.level),
+    verified: (myLevel ?? 0) >= l.level,
+  }));
+  const nextLv = levels.find((l) => l.level === selfLevel + 1);
   const nextMilestone: NextMilestone | null = nextLv
     ? { skillLevelId: nextLv.skillLevelId, level: nextLv.level, title: nextLv.title, description: nextLv.description, task: nextLv.task }
     : null;
@@ -439,7 +478,10 @@ export async function getSkillDetail(
     })),
     myLevel,
     myLevelTitle: titleOf(skill.id, myLevel),
+    selfLevel,
+    selfLevelTitle: titleOf(skill.id, selfLevel),
     nextMilestone,
+    saved: await isSaved(db, input.userId, "skill", skill.id),
     myPendingProof: pending.get(skill.id) ?? null,
     myPrerequisitesMet,
     isFollowing,

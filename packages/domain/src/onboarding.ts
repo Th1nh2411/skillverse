@@ -6,6 +6,7 @@ import { listCategories, rarestSkills, type SkillSummary } from "./discover";
 import { DomainError } from "./errors";
 import { getRarityThresholds } from "./config";
 import { rarityOf } from "./rarity";
+import { ensurePracticing } from "./selfChecks";
 import type { CriterionView } from "./skills";
 
 export type OnboardingOptions = {
@@ -94,14 +95,7 @@ export async function completeOnboarding(
     }
 
     // Không đặt `level` — dùng mặc định 0 của cột; level chỉ đổi trong finalizeProof().
-    await tx.userSkill.createMany({
-      data: skillIds.map((skillId) => ({ userId: user.id, skillId })),
-      skipDuplicates: true,
-    });
-    await tx.skillFollow.createMany({
-      data: skillIds.map((skillId) => ({ userId: user.id, skillId })),
-      skipDuplicates: true,
-    });
+    await ensurePracticing(tx, user.id, skillIds);
     if (!user.onboardedAt) {
       await tx.user.update({ where: { id: user.id }, data: { onboardedAt: new Date() } });
     }

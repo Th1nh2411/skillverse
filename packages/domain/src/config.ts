@@ -16,7 +16,13 @@ export type ReputationDeltas = {
   weekly_recovery: number;
 };
 export type CriteriaChangeRule = { agree_ratio: number; min_votes: number; voter_min_level: number };
-export type MediaLimits = { max_mb: number; max_seconds: number; allowed_types: string[] };
+export type MediaLimits = {
+  max_mb: number;
+  max_seconds: number;
+  allowed_types: string[];
+  /** Gợi ý cho máy quay trên trình duyệt (D75, migration 0008). Thiếu ở DB cũ → api dùng mặc định. */
+  recorder?: { height: number; video_bits_per_second: number };
+};
 
 export function getRarityThresholds(db: Db): Promise<RarityThresholds> {
   return getConfig<RarityThresholds>(db, "rarity_thresholds");
