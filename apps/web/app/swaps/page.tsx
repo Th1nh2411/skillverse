@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getServerCaller } from "@/lib/server/trpc";
 import { BackButton } from "@/components/ui/back-button";
 import { EmptyState } from "@/components/ui/misc";
-import { TrailArt } from "@/components/illustrations";
+import { ArtHeader, SwapArt, TrailArt } from "@/components/illustrations";
 import { SwapCard } from "./swap-card";
 
 export const metadata: Metadata = { title: "Trao đổi kỹ năng" };
@@ -15,10 +15,10 @@ export default async function SwapsPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-10">
-      <header className="flex items-center gap-1 px-3 pt-3">
+      <ArtHeader art={<SwapArt size={112} />}>
         <BackButton fallback="/profile" />
-        <h1 className="font-display text-[22px] font-extrabold">Trao đổi kỹ năng</h1>
-      </header>
+        <h1 className="font-display text-[22px] font-extrabold leading-tight">Trao đổi kỹ năng</h1>
+      </ArtHeader>
       {swaps.length === 0 ? (
         <div className="px-5 pt-4">
           <EmptyState art={<TrailArt size={140} />} title="Chưa có đề nghị trao đổi nào" />

@@ -262,3 +262,63 @@ export function SewingRingArt({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+/** Tin nhắn: hai bong bóng thoại khâu viền. */
+export function ChatArt(p: ArtProps) {
+  return (
+    <Art {...p}>
+      <path d="M24 24 h64 a10 10 0 0 1 10 10 v26 a10 10 0 0 1 -10 10 h-40 l-14 12 v-12 h-10 a10 10 0 0 1 -10 -10 v-26 a10 10 0 0 1 10 -10 z" fill={PAPER} />
+      <path d="M30 40 h48M30 52 h32" strokeWidth={1.4} />
+      <path d="M78 52 h48 a10 10 0 0 1 10 10 v20 a10 10 0 0 1 -10 10 h-6 v10 l-12 -10 h-30 a10 10 0 0 1 -10 -10 v-20 a10 10 0 0 1 10 -10 z" fill="var(--color-surface-3)" strokeDasharray="4 3" />
+      <circle cx="94" cy="72" r="2.4" fill={AMBER} stroke="none" />
+      <circle cx="104" cy="72" r="2.4" fill={AMBER} stroke="none" />
+      <circle cx="114" cy="72" r="2.4" fill={AMBER} stroke="none" />
+    </Art>
+  );
+}
+
+/** Trao đổi kỹ năng: hai miếng vải đổi chỗ theo đường chỉ. */
+export function SwapArt(p: ArtProps) {
+  return (
+    <Art {...p}>
+      <path d="M30 34 l18 -6 l18 6 v16 c0 12 -8 18 -18 22 c-10 -4 -18 -10 -18 -22 z" fill={PAPER} />
+      <circle cx="116" cy="62" r="20" fill="var(--color-surface-3)" />
+      <circle cx="116" cy="62" r="14" strokeDasharray="3 3" />
+      <path d="M70 30 q22 -16 40 6" stroke={AMBER} strokeDasharray="4 4" />
+      <path d="M104 30 l6 6 l-8 2" stroke={AMBER} />
+      <path d="M96 92 q-26 14 -46 -12" stroke={AMBER} strokeDasharray="4 4" />
+      <path d="M56 86 l-6 -6 l8 -2" stroke={AMBER} />
+      <Sparkle x={140} y={24} s={3} />
+    </Art>
+  );
+}
+
+/** Thông báo: chuông treo trên dây chỉ. */
+export function BellArt(p: ArtProps) {
+  return (
+    <Art {...p}>
+      <path d="M80 6 v14" strokeDasharray="2 4" />
+      <path d="M56 70 c0 -26 8 -46 24 -46 s24 20 24 46 l8 10 h-64 z" fill={PAPER} />
+      <path d="M72 88 a8 8 0 0 0 16 0" />
+      <path d="M118 40 q8 8 4 20M42 40 q-8 8 -4 20" stroke={AMBER} />
+      <Sparkle x={132} y={24} s={3} />
+    </Art>
+  );
+}
+
+/**
+ * Dải tiêu đề minh họa: giấy chấm lưới, hình nét tay bên phải. Dùng cho đầu các màn danh sách
+ * và đầu chi tiết kỹ năng / cây kỹ năng để màn hình bớt trống mà vẫn yên tĩnh.
+ */
+export function ArtHeader({ art, children, className = "" }: { art: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <header
+      className={`relative mx-3 mt-2 flex min-h-[92px] items-center gap-1 overflow-hidden rounded-[20px] border border-border bg-surface bg-dotgrid py-2 pr-28 ${className}`}
+    >
+      {children}
+      <div aria-hidden className="pointer-events-none absolute -bottom-1 right-2 text-muted">
+        {art}
+      </div>
+    </header>
+  );
+}

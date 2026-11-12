@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  BadgeCheck,
+  Check,
   ChevronRight,
   Plus,
   ShieldAlert,
@@ -14,9 +16,10 @@ import { BackButton } from "@/components/ui/back-button";
 import { LevelPatch } from "@/components/ui/level-patch";
 import { CriteriaVote } from "@/components/criteria-vote";
 import { SaveButton } from "@/components/save-button";
+import { CategoryArt } from "@/components/illustrations";
 import { MilestoneTrail } from "./milestone-trail";
 import { InfoSheet } from "@/components/ui/sheet";
-import { milestoneName, titleAt } from "@/lib/milestone";
+import { titleAt } from "@/lib/milestone";
 import { formatNumber, skillIcon } from "@/lib/skill-visual";
 
 type Detail = RouterOutputs["skill"]["detail"];
@@ -51,7 +54,12 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
         <SaveButton targetType="skill" targetId={d.id} saved={d.saved} />
       </header>
 
-      <section className="flex items-center gap-4 px-5 pt-2">
+      <section className="relative mx-3 mt-1 flex items-center gap-4 overflow-hidden rounded-[20px] border border-border bg-surface bg-dotgrid px-3.5 py-4">
+        <CategoryArt
+          slug={d.category.slug}
+          size={150}
+          className="pointer-events-none absolute -bottom-4 -right-6 text-muted opacity-40"
+        />
         <LevelPatch
           categorySlug={d.category.slug}
           rarity={d.rarity}
@@ -59,12 +67,24 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
           icon={icon}
           size={76}
           label={d.name}
+          className="relative shrink-0"
         />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="relative flex min-w-0 flex-1 flex-col gap-1">
           <h1 className="font-display text-[27px] font-extrabold leading-[1.15]">{d.name}</h1>
           {d.selfLevel > 0 ? (
-            <p className="text-[14px] text-muted">
-              Đang ở mốc <b className="font-semibold text-text">{milestoneName(d.selfLevelTitle, d.selfLevel)}</b>
+            <p className="tabular flex flex-wrap items-center gap-x-3 text-[14px] text-muted">
+              {d.selfLevel > myLevel ? (
+                <span className="inline-flex items-center gap-1">
+                  <Check size={15} strokeWidth={3} aria-hidden />
+                  Xong {d.selfLevel} mốc
+                </span>
+              ) : null}
+              {myLevel > 0 ? (
+                <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                  <BadgeCheck size={16} aria-hidden />
+                  {myLevel} đã xác nhận
+                </span>
+              ) : null}
             </p>
           ) : null}
         </div>

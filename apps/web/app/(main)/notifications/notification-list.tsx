@@ -5,9 +5,9 @@ import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import type { RouterOutputs } from "@skillverse/api";
 import { BackButton } from "@/components/ui/back-button";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { EmptyState, Skeleton, QueryError } from "@/components/ui/misc";
-import { NotebookArt } from "@/components/illustrations";
+import { ArtHeader, BellArt, NotebookArt } from "@/components/illustrations";
 import { notificationCopy } from "@/lib/notification-copy";
 import { timeAgo } from "@/lib/time";
 import { useTRPC } from "@/lib/trpc";
@@ -37,10 +37,10 @@ export function NotificationList() {
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
   return (
     <main className="flex flex-col">
-      <header className="flex items-center gap-1 px-3 pt-3">
+      <ArtHeader art={<BellArt size={112} />}>
         <BackButton fallback="/home" />
         <h1 className="font-display text-[22px] font-extrabold">Thông báo</h1>
-      </header>
+      </ArtHeader>
       {list.isPending ? (
         <div className="flex flex-col gap-2 px-5 pt-3">
           <Skeleton className="h-14" />
@@ -52,7 +52,15 @@ export function NotificationList() {
         </div>
       ) : items.length === 0 ? (
         <div className="px-5 pt-3">
-          <EmptyState art={<NotebookArt size={140} />} title="Chưa có thông báo nào" />
+          <EmptyState
+            art={<NotebookArt size={140} />}
+            title="Chưa có thông báo nào. Theo dõi vài người cùng sở thích nhé"
+            action={
+              <ButtonLink href="/discover" size="md">
+                Khám phá
+              </ButtonLink>
+            }
+          />
         </div>
       ) : (
         <ul className="flex flex-col pt-2">

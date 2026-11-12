@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Clock, ShieldCheck } from "lucide-react";
-import { NotebookArt } from "@/components/illustrations";
+import { ArtHeader, NotebookArt } from "@/components/illustrations";
 import { milestoneName } from "@/lib/milestone";
 import { getServerCaller } from "@/lib/server/trpc";
 import { patchOf } from "@/lib/skill-visual";
@@ -22,11 +22,13 @@ export default async function ReviewQueuePage() {
   const q = await api.review.queue();
   return (
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col">
-      <header className="flex items-center gap-1 px-3 pt-3">
+      <ArtHeader art={<NotebookArt size={112} />} className="flex-wrap">
         <BackButton fallback="/home" />
-        <h1 className="flex-1 font-display text-[22px] font-extrabold">Cần duyệt</h1>
-        <ReputationChip value={q.reputation} />
-      </header>
+        <div className="flex min-w-0 flex-col items-start gap-1">
+          <h1 className="font-display text-[22px] font-extrabold leading-tight">Cần duyệt</h1>
+          <ReputationChip value={q.reputation} />
+        </div>
+      </ArtHeader>
 
       {q.items.length === 0 ? (
         <div className="px-5 pt-4">

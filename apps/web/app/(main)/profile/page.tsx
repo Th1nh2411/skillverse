@@ -7,7 +7,7 @@ import { getServerCaller } from "@/lib/server/trpc";
 import { ButtonLink } from "@/components/ui/button";
 import { AppHeader } from "@/components/app-header";
 import { Avatar, EmptyState, ProgressBar } from "@/components/ui/misc";
-import { TrailArt } from "@/components/illustrations";
+import { CategoryArt, TrailArt } from "@/components/illustrations";
 import { NextMilestoneCard } from "@/components/next-milestone";
 import { pickNextSkill } from "@/lib/next-skill";
 import { SkillProgressRow } from "@/components/skill-progress";
@@ -36,7 +36,12 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     <main className="flex flex-col">
       <AppHeader extra={<SettingsButton logout={logout} isEditor={p.isEditor} />} />
 
-      <section className="flex items-center gap-4 px-5 pt-4">
+      <section className="relative mx-3 mt-2 flex items-center gap-4 overflow-hidden rounded-[20px] border border-border bg-surface bg-dotgrid px-3.5 py-4">
+        <CategoryArt
+          slug={p.topCategories[0]?.slug ?? "sinh-ton"}
+          size={140}
+          className="pointer-events-none absolute -bottom-3 -right-4 text-muted opacity-50"
+        />
         <div className="relative shrink-0">
           <Avatar name={p.displayName} size={76} ring />
           <span
@@ -46,7 +51,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
             {p.xp.level}
           </span>
         </div>
-        <div className="flex min-w-0 flex-col gap-1">
+        <div className="relative flex min-w-0 flex-col gap-1">
           <h1 className="truncate font-display text-[24px] font-extrabold leading-tight">{p.displayName}</h1>
           <p className="truncate text-[14px] text-muted">@{p.handle}</p>
           {p.topCategories.length > 0 ? (
@@ -144,7 +149,6 @@ function FeaturedRow({ s }: { s: Featured }) {
       <SkillProgressRow
         s={s}
         pending={s.pendingTargetLevel !== null}
-        verifiedByCount={s.verifiedByCount}
       />
     </li>
   );

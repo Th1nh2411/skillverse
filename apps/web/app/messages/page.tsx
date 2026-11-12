@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getServerCaller } from "@/lib/server/trpc";
 import { BackButton } from "@/components/ui/back-button";
 import { Avatar, EmptyState } from "@/components/ui/misc";
-import { TrailArt } from "@/components/illustrations";
+import { ArtHeader, ChatArt, TrailArt } from "@/components/illustrations";
 import { timeAgo } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Tin nhắn" };
@@ -13,10 +13,10 @@ export default async function MessagesPage() {
   const threads = await api.message.threads();
   return (
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col">
-      <header className="flex items-center gap-1 px-3 pt-3">
+      <ArtHeader art={<ChatArt size={112} />}>
         <BackButton fallback="/home" />
         <h1 className="font-display text-[22px] font-extrabold">Tin nhắn</h1>
-      </header>
+      </ArtHeader>
       {threads.length === 0 ? (
         <div className="px-5 pt-4">
           <EmptyState art={<TrailArt size={140} />} title="Chưa có tin nhắn. Nhắn từ hồ sơ một người luyện cùng kỹ năng." />
