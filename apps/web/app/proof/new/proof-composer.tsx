@@ -12,7 +12,7 @@ import { InfoSheet } from "@/components/ui/sheet";
 import { useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc";
 import { skillIcon, type Rarity } from "@/lib/skill-visual";
-import { formatDuration, precheck, readVideoMeta, type CheckItem, type MediaLimits, type VideoClip } from "@/lib/video";
+import { durationLimitLabel, formatDuration, precheck, readVideoMeta, type CheckItem, type MediaLimits, type VideoClip } from "@/lib/video";
 
 type Props = {
   limits: MediaLimits;
@@ -179,7 +179,7 @@ export function ProofComposer({ limits, challengeId, skill, progress, target }: 
               Chọn video có sẵn
             </Button>
             <p className="tabular text-center text-[12px] text-muted">
-              Tối đa {formatDuration(limits.maxSeconds)}, {limits.maxMb} MB
+              Tối đa {durationLimitLabel(limits.maxSeconds)}, {limits.maxMb} MB
             </p>
             {notice ? (
               <p role="alert" className="text-center text-[13px] text-danger">

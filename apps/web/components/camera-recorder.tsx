@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { baseType, bitrateFor, formatDuration, pickRecorderType, readVideoMeta, type MediaLimits, type VideoClip } from "@/lib/video";
 
 /**
- * Quay video trong app: MediaRecorder, ưu tiên 720p, tự dừng ở giới hạn thời lượng.
+ * Quay video trong app: MediaRecorder, khung hình theo proof.limits.recorder (mặc định 480p), tự dừng ở giới hạn thời lượng.
  * Toàn màn hình; Esc hoặc nút X để hủy.
  */
 export function CameraRecorder({
@@ -43,7 +43,7 @@ export function CameraRecorder({
       }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+          video: { facingMode: facing, height: { ideal: limits.recorder.height }, frameRate: { ideal: 30 } },
           audio: true,
         });
         if (cancelled) {

@@ -1,5 +1,11 @@
 /** Giới hạn video (app_config.media_limits, đổi sang camelCase). */
-export type MediaLimits = { maxMb: number; maxSeconds: number; allowedTypes: string[] };
+export type MediaLimits = {
+  maxMb: number;
+  maxSeconds: number;
+  allowedTypes: string[];
+  /** Gợi ý máy quay từ app_config.media_limits.recorder (D75): chiều cao khung hình + bitrate. */
+  recorder: { height: number; videoBitsPerSecond: number };
+};
 
 export type VideoClip = {
   file: File;
@@ -29,9 +35,9 @@ export function pickRecorderType(allowed: string[]): string | null {
 
 export const baseType = (t: string) => t.split(";")[0]!.trim().toLowerCase();
 
-/** Bitrate để video dài nhất vẫn dưới giới hạn dung lượng (chừa 10%), trần 2.5 Mbps cho 720p. */
+/** Bitrate theo gợi ý máy chủ, nhưng không vượt mức để video dài nhất vẫn dưới giới hạn dung lượng (chừa 10%). */
 export function bitrateFor(limits: MediaLimits): number {
-  return Math.floor(Math.min(2_500_000, (limits.maxMb * 8_000_000 * 0.9) / limits.maxSeconds));
+  return Math.floor(Math.min(limits.recorder.videoBitsPerSecond, (limits.maxMb * 8_000_000 * 0.9) / limits.maxSeconds));
 }
 
 /** Đọc thời lượng + kích thước khung hình. `fallbackDuration` dùng khi trình duyệt trả Infinity (webm từ MediaRecorder). */
@@ -72,7 +78,7 @@ export function precheck(clip: VideoClip, limits: MediaLimits): CheckItem[] {
 
   const dur = formatDuration(clip.durationS);
   if (clip.durationS > limits.maxSeconds) {
-    items.push({ key: "duration", state: "fail", label: dur, detail: `Tối đa ${formatDuration(limits.maxSeconds)}.` });
+    items.push({ key: "duration", state: "fail", label: dur, detail: `Tối đa ${durationLimitLabel(limits.maxSeconds)}.` });
   } else if (clip.durationS < 5) {
     items.push({ key: "duration", state: "warn", label: dur, detail: "Video rất ngắn, người xem có thể chưa thấy đủ." });
   } else {
@@ -80,9 +86,10 @@ export function precheck(clip: VideoClip, limits: MediaLimits): CheckItem[] {
   }
 
   const short = Math.min(clip.width, clip.height);
-  if (short > 0 && short < 720) {
-    items.push({ key: "res", state: "warn", label: `${short}p`, detail: "Dưới 720p, người duyệt có thể khó thấy chi tiết." });
-  } else if (short >= 720) {
+  const minRes = Math.min(limits.recorder.height, 480);
+  if (short > 0 && short < minRes) {
+    items.push({ key: "res", state: "warn", label: `${short}p`, detail: `Dưới ${minRes}p, người xem có thể khó thấy chi tiết.` });
+  } else if (short >= minRes) {
     items.push({ key: "res", state: "pass", label: `${short}p` });
   }
 
@@ -98,4 +105,9 @@ export function formatDuration(s: number): string {
   const m = Math.floor(s / 60);
   const r = Math.max(0, Math.round(s - m * 60));
   return `${m}:${String(r).padStart(2, "0")}`;
+}
+
+/** Giới hạn thời lượng cho người đọc: "60 giây", "3 phút". */
+export function durationLimitLabel(s: number): string {
+  return s < 120 ? `${s} giây` : s % 60 === 0 ? `${s / 60} phút` : formatDuration(s);
 }
