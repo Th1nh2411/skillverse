@@ -320,7 +320,7 @@ async function reset() {
     "messages", "message_threads", "notifications", "daily_quests", "reactions", "comments", "posts",
     "proposal_votes", "proposal_comments", "sanctions", "reports", "fraud_signals", "device_fingerprints",
     "review_marks", "reviews", "review_assignments", "appeals", "user_badges", "xp_ledger", "reputation_events",
-    "skill_follows", "follows",
+    "skill_follows", "follows", "milestone_checks", "saves",
   ];
   for (const t of tables) await prisma.$executeRawUnsafe(`DELETE FROM ${t}`);
   await prisma.$executeRawUnsafe(`UPDATE user_skills SET last_proof_id = NULL`);
@@ -652,6 +652,46 @@ async function main() {
       votingEndsAt: new Date(now + 14 * 86400000),
     },
   });
+
+  // D73: tự đánh dấu mốc (tiến độ cá nhân, không đổi level đã xác thực) + D74: mục đã lưu — cho minhhoang.
+  const mh = users.get("minhhoang")!;
+  const selfChecks: Array<[string, number[]]> = [
+    ["lua-bang-que", [4]], // đã xác thực 3 → tự đánh dấu mốc 4
+    ["tim-nguon-nuoc", [3, 4]], // đã xác thực 2 → tự đánh dấu 3, 4
+    ["huyt-sao-bang-la", [1, 2]], // chưa xác thực gì, đang tự luyện
+  ];
+  for (const [slug, lvs] of selfChecks) {
+    const s = skills.get(slug)!;
+    // Theo dõi kỹ năng như onboarding (level mặc định 0 nếu chưa có — không đặt level).
+    await prisma.userSkill.createMany({ data: [{ userId: mh, skillId: s.id }], skipDuplicates: true });
+    await prisma.skillFollow.createMany({ data: [{ userId: mh, skillId: s.id }], skipDuplicates: true });
+    for (const [i, lv] of lvs.entries()) {
+      await prisma.milestoneCheck.create({
+        data: { userId: mh, skillLevelId: s.levels.get(lv)!.levelId, createdAt: new Date(now - (lvs.length - i) * 86400000) },
+      });
+    }
+  }
+  const savedPost = await prisma.post.findFirst({
+    where: { authorId: { not: mh }, deletedAt: null },
+    orderBy: { likeCount: "desc" },
+    select: { id: true },
+  });
+  const savedProof = await prisma.proof.findFirst({
+    where: { userId: { not: mh }, status: "passed", deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  const saves: Array<[string, string | undefined]> = [
+    ["skill", skills.get("dan-len")!.id],
+    ["skill", skills.get("song-sot-72-gio")!.id],
+    ["post", savedPost?.id],
+    ["proof", savedProof?.id],
+  ];
+  for (const [i, [targetType, targetId]] of saves.entries()) {
+    if (targetId) {
+      await prisma.save.create({ data: { userId: mh, targetType, targetId, createdAt: new Date(now - (i + 1) * 3600000) } });
+    }
+  }
 
   console.log(
     `Seed xong: ${SKILLS.length} kỹ năng, ${USERS.length} người dùng. Đăng nhập dev bằng handle, vd. "minhhoang", "bientap", "nguoimoi".`,

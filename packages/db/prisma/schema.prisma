@@ -536,6 +536,7 @@ model SkillLevel {
   currentVersionId           String?           @map("current_version_id") @db.Uuid
   criteriaVersionsSkillLevel CriteriaVersion[] @relation("criteria_versions_skill_level_idToskill_levels")
   proposals                  Proposal[]
+  milestoneChecks            MilestoneCheck[]
   currentVersion             CriteriaVersion?  @relation("skill_levels_current_version_idTocriteria_versions", fields: [currentVersionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_current_version")
   skill                      Skill             @relation(fields: [skillId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -693,6 +694,8 @@ model User {
   swapRatings         SwapRating[]
   userBadges          UserBadge[]
   userSkills          UserSkill[]
+  milestoneChecks     MilestoneCheck[]
+  saves               Save[]
   xpLedger            XpLedger[]
 
   @@map("users")
@@ -884,4 +887,30 @@ enum XpReason {
   revoked
 
   @@map("xp_reason")
+}
+
+/// D73: tự đánh dấu mốc — tiến độ cá nhân, không phải level đã xác thực.
+model MilestoneCheck {
+  userId       String     @map("user_id") @db.Uuid
+  skillLevelId String     @map("skill_level_id") @db.Uuid
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  user         User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  skillLevel   SkillLevel @relation(fields: [skillLevelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, skillLevelId])
+  @@index([skillLevelId], map: "idx_milestone_checks_skill_level")
+  @@map("milestone_checks")
+}
+
+/// D74: mục đã lưu. target_type ∈ post | skill | proof (CHECK trong SQL); target_id đa hình, không FK.
+model Save {
+  userId     String   @map("user_id") @db.Uuid
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, targetType, targetId])
+  @@index([userId, createdAt(sort: Desc)], map: "idx_saves_user_created")
+  @@map("saves")
 }
