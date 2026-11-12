@@ -18,6 +18,7 @@ import {
   swapRouter,
 } from "./routers/social";
 import { skillRouter } from "./routers/skill";
+import { milestoneRouter, saveRouter } from "./routers/personal";
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({ ok: true as const })),
@@ -42,6 +43,8 @@ export const appRouter = router({
   report: reportRouter,
   proposal: proposalRouter,
   admin: adminRouter,
+  milestone: milestoneRouter,
+  save: saveRouter,
 });
 
 export type AppRouter = typeof appRouter;

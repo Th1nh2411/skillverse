@@ -3,11 +3,24 @@ import { fileAppealInput, proofCreateUploadInput, proofIdInput, submitProofInput
 import { createProofUpload, getMediaLimits, proofMediaUrl, verifyUploadedProofMedia } from "../media";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
+/** Dự phòng khi app_config.media_limits chưa có `recorder` (DB chưa chạy migration 0008). */
+const DEFAULT_RECORDER = { height: 480, video_bits_per_second: 1_500_000 };
+
 export const proofRouter = router({
   /** Giới hạn video từ app_config.media_limits (cần trước khi quay: tự dừng ở maxSeconds). */
   limits: protectedProcedure.query(async ({ ctx }) => {
     const l = await getMediaLimits(ctx.db);
-    return { maxMb: l.max_mb, maxBytes: l.max_mb * 1024 * 1024, maxSeconds: l.max_seconds, allowedTypes: l.allowed_types };
+    return {
+      maxMb: l.max_mb,
+      maxBytes: l.max_mb * 1024 * 1024,
+      maxSeconds: l.max_seconds,
+      allowedTypes: l.allowed_types,
+      /** Gợi ý máy quay (D75): chiều cao khung hình và bitrate cho MediaRecorder. */
+      recorder: {
+        height: l.recorder?.height ?? DEFAULT_RECORDER.height,
+        videoBitsPerSecond: l.recorder?.video_bits_per_second ?? DEFAULT_RECORDER.video_bits_per_second,
+      },
+    };
   }),
 
   /** Bước 1: xin URL PUT có thời hạn để tải video thẳng lên kho. */
@@ -63,5 +76,7 @@ export const levelUpRouter = router({
 
 export const shareRouter = router({
   /** Dữ liệu công khai cho trang /share/[proofId] (không cần đăng nhập; chỉ bằng chứng đã đạt). */
-  card: publicProcedure.input(proofIdInput).query(({ ctx, input }) => getShareCard(ctx.db, { proofId: input.proofId })),
+  card: publicProcedure
+    .input(proofIdInput)
+    .query(({ ctx, input }) => getShareCard(ctx.db, { proofId: input.proofId, viewerId: ctx.user?.id ?? null })),
 });

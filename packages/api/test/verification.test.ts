@@ -72,7 +72,13 @@ describe("quyền: chưa đăng nhập", () => {
 describe("upload video", () => {
   it("proof.limits đọc từ app_config.media_limits", async () => {
     const l = await (await caller(submitter)).proof.limits();
-    expect(l).toMatchObject({ maxMb: 60, maxBytes: 60 * 1024 * 1024, maxSeconds: 180 });
+    // D75 (migration 0008): 20 MB, 60 giây, gợi ý máy quay 480p ~1.5 Mbps
+    expect(l).toMatchObject({
+      maxMb: 20,
+      maxBytes: 20 * 1024 * 1024,
+      maxSeconds: 60,
+      recorder: { height: 480, videoBitsPerSecond: 1_500_000 },
+    });
     expect(l.allowedTypes).toContain("video/mp4");
     await expectCode((await caller(null)).proof.limits(), "UNAUTHORIZED");
   });
@@ -80,7 +86,8 @@ describe("upload video", () => {
   it("chặn định dạng / dung lượng ngoài app_config.media_limits", async () => {
     const c = await caller(submitter);
     await expectCode(c.proof.createUpload({ contentType: "image/png", sizeBytes: 1000 }), "BAD_REQUEST");
-    await expectCode(c.proof.createUpload({ contentType: "video/mp4", sizeBytes: 61 * 1024 * 1024 }), "BAD_REQUEST");
+    await expectCode(c.proof.createUpload({ contentType: "video/mp4", sizeBytes: 21 * 1024 * 1024 }), "BAD_REQUEST");
+    expect((await c.proof.createUpload({ contentType: "video/mp4", sizeBytes: 20 * 1024 * 1024 })).maxBytes).toBe(20 * 1024 * 1024);
   });
 
   it("khóa ngẫu nhiên không chứa dữ liệu cá nhân, gắn với người xin", async () => {
