@@ -129,7 +129,18 @@ describe("hiển thị + quy tắc chỉ dựa trên level đã xác thực", ()
     await checkMilestone(db, { userId: u.id, skillLevelId: lvId(base, 2) });
     tree = await getSkillTree(db, { userId: u.id, categorySlug: cat.slug });
     const b = tree.nodes.find((n) => n.skillId === base.id)!;
-    expect(b).toMatchObject({ level: 1, selfLevel: 2, selfLevelTitle: "Cấp 2", nextLevelTitle: "Cấp 3", next: { level: 3 } });
+    expect(b).toMatchObject({
+      level: 1,
+      selfLevel: 2,
+      selfLevelTitle: "Cấp 2",
+      nextLevelTitle: "Cấp 3",
+      next: { level: 3 },
+      nextSkillLevelId: lvId(base, 3),
+      verifiedCount: 1,
+      verifyLevel: 2,
+      verifyLevelTitle: "Cấp 2",
+      verifySkillLevelId: lvId(base, 2),
+    });
     const c = tree.nodes.find((n) => n.skillId === child.id)!;
     expect(c.state).toBe("practicing");
     expect(c.prerequisites[0]).toMatchObject({ userLevel: 1, userSelfLevel: 2, met: true });
@@ -154,10 +165,47 @@ describe("hiển thị + quy tắc chỉ dựa trên level đã xác thực", ()
     await checkMilestone(db, { userId: u.id, skillLevelId: lvId(base, 3) });
     const p = await getProfile(db, { userId: u.id });
     expect(p.featuredSkills.find((f) => f.skillId === child.id)).toMatchObject({ level: 0, selfLevel: 1, nextLevelTitle: "Cấp 2" });
-    expect(p.featuredSkills.find((f) => f.skillId === base.id)).toMatchObject({ level: 2, selfLevel: 3, selfLevelTitle: "Cấp 3" });
+    expect(p.featuredSkills.find((f) => f.skillId === base.id)).toMatchObject({
+      level: 2,
+      selfLevel: 3,
+      selfLevelTitle: "Cấp 3",
+      nextSkillLevelId: lvId(base, 4),
+      verifiedCount: 2,
+      verifyLevel: 3,
+      verifyLevelTitle: "Cấp 3",
+      verifySkillLevelId: lvId(base, 3),
+    });
+    expect(p.featuredSkills.find((f) => f.skillId === child.id)).toMatchObject({
+      nextSkillLevelId: lvId(child, 2),
+      verifiedCount: 0,
+      verifyLevel: 1,
+      verifySkillLevelId: lvId(child, 1),
+    });
     // Huy hiệu hiếm / danh mục vẫn theo level đã xác thực
     const list = await listUserSkills(db, { userId: u.id });
     expect(list.map((s) => [s.skillId, s.level, s.selfLevel])).toEqual([[base.id, 2, 3]]);
+    expect(list[0]).toMatchObject({ nextSkillLevelId: lvId(base, 4), verifiedCount: 2, verifyLevel: 3, verifySkillLevelId: lvId(base, 3) });
+  });
+
+  it("đã xác thực mốc cuối → verify* null; tự đánh dấu hết → nextSkillLevelId null", async () => {
+    const u = await fx.user(db);
+    await fx.setUserSkillLevel(db, u.id, base.id, 5);
+    await fx.setUserSkillLevel(db, u.id, child.id, 4);
+    await checkMilestone(db, { userId: u.id, skillLevelId: lvId(child, 5) });
+    const p = await getProfile(db, { userId: u.id });
+    expect(p.featuredSkills.find((f) => f.skillId === base.id)).toMatchObject({
+      verifiedCount: 5,
+      nextSkillLevelId: null,
+      verifyLevel: null,
+      verifyLevelTitle: null,
+      verifySkillLevelId: null,
+    });
+    expect(p.featuredSkills.find((f) => f.skillId === child.id)).toMatchObject({
+      selfLevel: 5,
+      nextSkillLevelId: null,
+      verifyLevel: 5,
+      verifySkillLevelId: lvId(child, 5),
+    });
   });
 
   it("nộp bằng chứng vẫn theo level đã xác thực + 1; người duyệt chỉ là người đã xác thực", async () => {

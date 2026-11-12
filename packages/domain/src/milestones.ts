@@ -10,18 +10,60 @@ import { DomainError } from "./errors";
 /** Tra tên mốc theo (skillId, level). Level 0 / không có → null. */
 export type LevelTitleLookup = (skillId: string, level: number | null | undefined) => string | null;
 
-/** Nạp tên mốc của mọi cấp cho các kỹ năng cho trước (một truy vấn). */
-export async function loadLevelTitles(db: Db, skillIds: Iterable<string>): Promise<LevelTitleLookup> {
+export type LevelIndex = {
+  titleOf: LevelTitleLookup;
+  /** skill_levels.id theo (skillId, level); level 0 / không có → null. */
+  idOf: (skillId: string, level: number | null | undefined) => string | null;
+};
+
+/** Nạp tên + id mốc của mọi cấp cho các kỹ năng cho trước (một truy vấn). */
+export async function loadLevelIndex(db: Db, skillIds: Iterable<string>): Promise<LevelIndex> {
   const ids = [...new Set(skillIds)];
-  const map = new Map<string, string | null>();
+  const map = new Map<string, { id: string; title: string | null }>();
   if (ids.length > 0) {
     const rows = await db.skillLevel.findMany({
       where: { skillId: { in: ids } },
-      select: { skillId: true, level: true, title: true },
+      select: { id: true, skillId: true, level: true, title: true },
     });
-    for (const r of rows) map.set(`${r.skillId}:${r.level}`, r.title);
+    for (const r of rows) map.set(`${r.skillId}:${r.level}`, { id: r.id, title: r.title });
   }
-  return (skillId, level) => (level == null || level < 1 ? null : (map.get(`${skillId}:${level}`) ?? null));
+  const get = (skillId: string, level: number | null | undefined) =>
+    level == null || level < 1 ? undefined : map.get(`${skillId}:${level}`);
+  return { titleOf: (s, l) => get(s, l)?.title ?? null, idOf: (s, l) => get(s, l)?.id ?? null };
+}
+
+/** Nạp tên mốc của mọi cấp cho các kỹ năng cho trước (một truy vấn). */
+export async function loadLevelTitles(db: Db, skillIds: Iterable<string>): Promise<LevelTitleLookup> {
+  return (await loadLevelIndex(db, skillIds)).titleOf;
+}
+
+/** Trường tiến độ chung cho kỹ năng của người dùng (hồ sơ, profile.skills, nút cây). */
+export type UserSkillProgressFields = {
+  /** = level đã xác thực (tiện cho tóm tắt UI). */
+  verifiedCount: number;
+  /** skill_levels.id của mốc kế tiếp sau selfLevel (null khi đã xong mốc cuối). */
+  nextSkillLevelId: string | null;
+  /** Mốc mà video bằng chứng sẽ nhắm tới = level đã xác thực + 1 (null khi đã xác thực mốc cuối). */
+  verifyLevel: number | null;
+  verifyLevelTitle: string | null;
+  verifySkillLevelId: string | null;
+};
+
+export function userSkillProgressFields(
+  idx: LevelIndex,
+  skillId: string,
+  verifiedLevel: number,
+  selfLevel: number,
+  maxLevel: number,
+): UserSkillProgressFields {
+  const verifyLevel = verifiedLevel < maxLevel ? verifiedLevel + 1 : null;
+  return {
+    verifiedCount: verifiedLevel,
+    nextSkillLevelId: selfLevel < maxLevel ? idx.idOf(skillId, selfLevel + 1) : null,
+    verifyLevel,
+    verifyLevelTitle: idx.titleOf(skillId, verifyLevel),
+    verifySkillLevelId: idx.idOf(skillId, verifyLevel),
+  };
 }
 
 /** Nhãn hiển thị cho một cấp: "mốc <tên>" hoặc dự phòng "cấp N" khi chưa có tên. */

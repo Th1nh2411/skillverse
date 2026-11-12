@@ -2,7 +2,13 @@ import type { CriterionKind, RiskLevel, VoteValue } from "@skillverse/db";
 import { getConfig, getRarityThresholds, type CriteriaChangeRule } from "./config";
 import type { Db } from "./db";
 import { DomainError } from "./errors";
-import { loadLevelTitles, type LevelTitleLookup } from "./milestones";
+import {
+  loadLevelIndex,
+  loadLevelTitles,
+  userSkillProgressFields,
+  type LevelTitleLookup,
+  type UserSkillProgressFields,
+} from "./milestones";
 import { rarityOf, type Rarity } from "./rarity";
 import { isSaved } from "./saves";
 import { loadSelfProgress } from "./selfChecks";
@@ -119,7 +125,7 @@ async function pendingProofsFor(db: Db, userId: string | null | undefined, skill
  */
 export type SkillNodeState = "achieved" | "practicing" | "locked";
 
-export type SkillTreeNode = {
+export type SkillTreeNode = UserSkillProgressFields & {
   skillId: string;
   slug: string;
   name: string;
@@ -201,7 +207,8 @@ export async function getSkillTree(
   const holdersAtOrAbove = (skillId: string, level: number) =>
     levelCounts.filter((r) => r.skillId === skillId && r.level >= level).reduce((n, r) => n + r._count._all, 0);
 
-  const titleOf = await loadLevelTitles(db, [...skillIds, ...parentIds]);
+  const idx = await loadLevelIndex(db, [...skillIds, ...parentIds]);
+  const titleOf = idx.titleOf;
   const pending = await pendingProofsFor(db, input.userId, skillIds, titleOf);
   const allIds = [...new Set([...skillIds, ...parentIds])];
   const self = await loadSelfProgress(db, input.userId, allIds);
@@ -242,6 +249,7 @@ export async function getSkillTree(
       selfLevelTitle: titleOf(s.id, selfLevel),
       maxLevel: s.maxLevel,
       nextLevelTitle: nextRow?.title ?? null,
+      ...userSkillProgressFields(idx, s.id, level, selfLevel, s.maxLevel),
       state,
       holderCount: s.holderCount,
       rarity: rarityOf(s.holderCount, thresholds),

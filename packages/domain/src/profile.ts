@@ -1,12 +1,12 @@
 import { getAccountLevelCurve, getRarityThresholds } from "./config";
 import type { Db } from "./db";
 import { DomainError } from "./errors";
-import { loadLevelTitles } from "./milestones";
+import { loadLevelIndex, userSkillProgressFields, type UserSkillProgressFields } from "./milestones";
 import { loadSelfProgress } from "./selfChecks";
 import { rarityOf, rarityRank, type Rarity } from "./rarity";
 import { xpProgress, type XpProgress } from "./xp";
 
-export type FeaturedSkill = {
+export type FeaturedSkill = UserSkillProgressFields & {
   skillId: string;
   slug: string;
   name: string;
@@ -123,10 +123,11 @@ export async function getProfile(
     verifiers.set(r.proof.skillId, set);
   }
 
-  const titleOf = await loadLevelTitles(
+  const idx = await loadLevelIndex(
     db,
     userSkills.map((us) => us.skill.id),
   );
+  const titleOf = idx.titleOf;
   const self = await loadSelfProgress(
     db,
     user.id,
@@ -151,6 +152,7 @@ export async function getProfile(
       verifiedByCount: verifiers.get(us.skill.id)?.size ?? 0,
       pendingTargetLevel: pendingBySkill.get(us.skill.id) ?? null,
       pendingLevelTitle: titleOf(us.skill.id, pendingBySkill.get(us.skill.id)),
+      ...userSkillProgressFields(idx, us.skill.id, us.level, selfOf(us), us.skill.maxLevel),
     }))
     .sort((a, b) => rarityRank(a.rarity) - rarityRank(b.rarity) || b.level - a.level || a.name.localeCompare(b.name));
 
@@ -188,7 +190,7 @@ export async function getProfile(
   };
 }
 
-export type UserSkillItem = {
+export type UserSkillItem = UserSkillProgressFields & {
   skillId: string;
   slug: string;
   name: string;
@@ -227,10 +229,11 @@ export async function listUserSkills(db: Db, input: { handle?: string; userId?: 
     }),
     getRarityThresholds(db),
   ]);
-  const titleOf = await loadLevelTitles(
+  const idx = await loadLevelIndex(
     db,
     rows.map((r) => r.skill.id),
   );
+  const titleOf = idx.titleOf;
   const self = await loadSelfProgress(
     db,
     user.id,
@@ -248,6 +251,7 @@ export async function listUserSkills(db: Db, input: { handle?: string; userId?: 
       selfLevelTitle: titleOf(r.skill.id, sl),
       maxLevel: r.skill.maxLevel,
       nextLevelTitle: sl < r.skill.maxLevel ? titleOf(r.skill.id, sl + 1) : null,
+      ...userSkillProgressFields(idx, r.skill.id, r.level, sl, r.skill.maxLevel),
       category: r.skill.category,
       rarity: rarityOf(r.skill.holderCount, thresholds),
     }))
