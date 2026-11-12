@@ -9,5 +9,5 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   // Chỉ biên tập viên; người khác thấy 404 (không lộ trang tồn tại). api cũng tự kiểm tra quyền.
   if (!(await getViewer())?.isEditor) notFound();
   const { tab } = await searchParams;
-  return <AdminView initialTab={tab === "disputed" || tab === "appeals" || tab === "proposals" ? tab : "reports"} />;
+  return <AdminView initialTab={tab === "disputed" || tab === "appeals" || tab === "proposals" || tab === "milestones" ? tab : "reports"} />;
 }

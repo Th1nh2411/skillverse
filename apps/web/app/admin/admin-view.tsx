@@ -4,7 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Copy, Flag, Inbox, Lightbulb, Scale } from "lucide-react";
 import { useId, useState } from "react";
 import type { RouterOutputs } from "@skillverse/api";
-import { REPORT_REASON_LABELS, SANCTION_KIND_LABELS, sanctionKindInput } from "@skillverse/validation";
+import {
+  MILESTONE_DESCRIPTION_MAX,
+  MILESTONE_TITLE_MAX,
+  REPORT_REASON_LABELS,
+  SANCTION_KIND_LABELS,
+  sanctionKindInput,
+} from "@skillverse/validation";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Skeleton, QueryError } from "@/components/ui/misc";
@@ -12,7 +18,7 @@ import { timeAgo } from "@/lib/time";
 import { milestoneName } from "@/lib/milestone";
 import { useTRPC } from "@/lib/trpc";
 
-type Tab = "reports" | "disputed" | "appeals" | "proposals";
+type Tab = "reports" | "disputed" | "appeals" | "proposals" | "milestones";
 type Report = RouterOutputs["admin"]["reports"]["items"][number];
 type Disputed = RouterOutputs["admin"]["disputedProofs"][number];
 type Appeal = RouterOutputs["admin"]["appeals"][number];
@@ -44,6 +50,7 @@ export function AdminView({ initialTab }: { initialTab: Tab }) {
     { key: "disputed", label: "Trùng video" },
     { key: "appeals", label: "Kháng nghị" },
     { key: "proposals", label: "Đề xuất" },
+    { key: "milestones", label: "Mốc" },
   ];
   return (
     <main className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-10">
@@ -70,7 +77,7 @@ export function AdminView({ initialTab }: { initialTab: Tab }) {
         ))}
       </div>
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="flex flex-col gap-3 px-5 pt-4">
-        {tab === "reports" ? <Reports /> : tab === "disputed" ? <DisputedList /> : tab === "appeals" ? <Appeals /> : <SkillProposals />}
+        {tab === "reports" ? <Reports /> : tab === "disputed" ? <DisputedList /> : tab === "appeals" ? <Appeals /> : tab === "proposals" ? <SkillProposals /> : <Milestones />}
       </div>
     </main>
   );
@@ -445,6 +452,110 @@ function ProposalCard({ p }: { p: SkillProposal }) {
           {decide.error.message}
         </p>
       ) : null}
+    </li>
+  );
+}
+
+/** Biên tập viên sửa tên / hướng dẫn từng mốc (không đụng việc cần làm: sửa qua góp ý + bỏ phiếu). */
+function Milestones() {
+  const trpc = useTRPC();
+  const [q, setQ] = useState("");
+  const [slug, setSlug] = useState<string | null>(null);
+  const search = useQuery({ ...trpc.skill.search.queryOptions({ query: q.trim(), limit: 8 }), enabled: q.trim().length > 0 });
+  const detail = useQuery({ ...trpc.skill.detail.queryOptions({ slug: slug ?? "" }), enabled: !!slug });
+
+  return (
+    <>
+      <input
+        type="search"
+        aria-label="Tìm kỹ năng"
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setSlug(null);
+        }}
+        placeholder="Tìm kỹ năng để sửa mốc"
+        className={input}
+      />
+      {!slug && search.data ? (
+        <ul className="flex flex-col">
+          {search.data.map((s) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onClick={() => setSlug(s.slug)}
+                className="flex min-h-11 w-full items-center justify-between rounded-[10px] px-2 text-left text-[15px] font-semibold hover:bg-surface"
+              >
+                {s.name}
+                <ChevronRight size={16} className="text-muted" aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {slug && detail.isPending ? <Loading /> : null}
+      {detail.error ? <QueryError onRetry={() => detail.refetch()} /> : null}
+      {slug && detail.data ? (
+        <ol className="flex flex-col gap-3">
+          {detail.data.levels.map((l) => (
+            <MilestoneEditor key={l.skillLevelId} lv={l} />
+          ))}
+        </ol>
+      ) : null}
+    </>
+  );
+}
+
+function MilestoneEditor({
+  lv,
+}: {
+  lv: { skillLevelId: string; level: number; title: string | null; description: string | null; task: string | null };
+}) {
+  const trpc = useTRPC();
+  const qc = useQueryClient();
+  const [title, setTitle] = useState(lv.title ?? "");
+  const [desc, setDesc] = useState(lv.description ?? "");
+  const save = useMutation(
+    trpc.admin.updateMilestone.mutationOptions({ onSuccess: () => qc.invalidateQueries({ queryKey: trpc.skill.detail.pathKey() }) }),
+  );
+  const changed = title.trim() !== (lv.title ?? "") || desc.trim() !== (lv.description ?? "");
+  return (
+    <li className={card}>
+      <label className="flex flex-col gap-1">
+        <span className="tabular text-[12px] font-semibold text-muted">Mốc {lv.level}</span>
+        <input value={title} maxLength={MILESTONE_TITLE_MAX} onChange={(e) => setTitle(e.target.value)} className={input} />
+      </label>
+      {lv.task ? <p className="text-[13px] text-muted">{lv.task}</p> : null}
+      <textarea
+        aria-label={`Cách làm mốc ${lv.level}`}
+        rows={3}
+        value={desc}
+        maxLength={MILESTONE_DESCRIPTION_MAX}
+        onChange={(e) => setDesc(e.target.value)}
+        placeholder="Cách làm (không bắt buộc)"
+        className={`${input} resize-none`}
+      />
+      <div className="flex items-center gap-3">
+        <Button
+          size="md"
+          disabled={!changed || title.trim().length === 0 || save.isPending}
+          onClick={() =>
+            save.mutate({
+              skillLevelId: lv.skillLevelId,
+              title: title.trim() !== (lv.title ?? "") ? title.trim() : undefined,
+              description: desc.trim() !== (lv.description ?? "") ? desc.trim() || null : undefined,
+            })
+          }
+        >
+          {save.isPending ? "Đang lưu" : "Lưu"}
+        </Button>
+        {save.isSuccess && !changed ? <span className="text-[13px] font-semibold text-teal">Đã lưu</span> : null}
+        {save.error ? (
+          <span role="alert" className="text-[13px] text-danger">
+            {save.error.message}
+          </span>
+        ) : null}
+      </div>
     </li>
   );
 }
