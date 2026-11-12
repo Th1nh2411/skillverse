@@ -1,15 +1,15 @@
 # Tiến độ
 
-Cập nhật: 2026-11-11
+Cập nhật: 2026-11-12
 
 | Giai đoạn | Trạng thái |
 | --- | --- |
 | 0. Khung monorepo, DB, layout | Xong |
 | 1. Hồ sơ và kỹ năng | Xong |
 | 2. Vòng lặp xác thực | Xong |
-| 3. Xã hội và an toàn | Đang làm (domain + api xong phần mình) |
-| 4. Cộng đồng góp ý | Chưa |
-| 5. Sẵn sàng triển khai demo | Chưa |
+| 3. Xã hội và an toàn | Xong (chờ qa cập nhật 4 test theo trang 404 mới) |
+| 4. Cộng đồng góp ý | domain/api/ui xong; qa đang viết e2e |
+| 5. Sẵn sàng triển khai demo | DEPLOY.md, script Neon, build production cục bộ xong; qa chạy e2e cuối |
 
 ## Bước 0 — xong
 - pnpm workspaces + Turborepo; `apps/web`, `packages/{db,domain,validation,api}`.
@@ -32,6 +32,16 @@ Cập nhật: 2026-11-11
 - ui: Đăng bằng chứng (quay MediaRecorder 720p hoặc chọn file), Trạng thái bằng chứng + kháng nghị, Duyệt ẩn danh theo tiêu chí + báo cáo, Lên cấp (huy hiệu "khâu"), trang chia sẻ công khai.
 - qa: e2e nộp → 3 người duyệt → lên cấp; trượt + kháng nghị; chặn người không được phân công; cron secret.
 - Cổng: lint + typecheck + 129 unit test + 46 e2e + next build xanh.
+
+## Giai đoạn 3 — xong
+- Trang chủ (nhiệm vụ ngày, chuỗi ngày, feed, cheer), Thử thách (thử thách tuần, đấu 1v1, chờ duyệt ẩn danh), Hồ sơ người khác + theo dõi + nhắn tin + trao đổi kỹ năng (/swaps), Thông báo, Quản trị biên tập viên (báo cáo, xử phạt, thu hồi level, trùng hash, kháng nghị).
+- e2e: thu hồi level (level hạ, XP âm, −15 uy tín người duyệt, không xóa bản ghi), quyền admin, nhắn tin, đấu 1v1. 61/61 xanh 2 lần (chế độ E2E_PROD=1).
+
+## Giai đoạn 4–5 (đang chốt)
+- domain: đề xuất kỹ năng mới, sửa tiêu chí có trọng số, closeExpiredProposals, người duyệt dự phòng (D68), recomputeUserCaches. 93 test.
+- api: router proposal.*, admin.proposals; header bảo mật, vercel.json. 41 test.
+- ui: form đề xuất, danh sách/chi tiết đề xuất, bỏ phiếu trên Chi tiết kỹ năng, quản trị đề xuất; PWA (icon, service worker offline), giao diện sáng "giấy sổ tay", trạng thái rỗng/lỗi/đang tải.
+- lead: DEPLOY.md, `pnpm db:deploy:remote`, build production cục bộ chạy được.
 
 ## Lỗi còn tồn tại
 - Bỏ phiếu sửa tiêu chí chưa có nút (Giai đoạn 4). Vài liên kết tới màn giai đoạn sau còn 404 (/proof/new?skill=, /skills/new, /u/<handle>).
