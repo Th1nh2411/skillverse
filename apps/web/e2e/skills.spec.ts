@@ -29,7 +29,7 @@ test.describe("Cây kỹ năng", () => {
   test("trạng thái nút đọc được bằng trình đọc màn hình", async ({ page }) => {
     // Trạng thái không chỉ bằng màu: tên truy cập của nút phải chứa tiến độ mốc / "chưa mở"
     await expect(clickable(page, /Sinh tồn cơ bản.*đã xong/i).first()).toBeVisible();
-    await expect(clickable(page, /Lửa bằng que.*xong 3\/5 mốc/i).first()).toBeVisible();
+    await expect(clickable(page, /Lửa bằng que.*xong [34]\/5 mốc/i).first()).toBeVisible();
     await expect(clickable(page, /Sống sót 72 giờ.*chưa mở/i).first()).toBeVisible();
   });
 
@@ -38,8 +38,9 @@ test.describe("Cây kỹ năng", () => {
     // Tên mốc kế tiếp (không phải "cấp N"); việc cần làm của mốc đó nằm ngay dưới
     await expect(page.getByRole("heading", { name: /^Mốc tiếp: (Dưới 5 phút|Tự chế)$/ })).toBeVisible();
     await expect(page.getByText(/dưới 5 phút/).first()).toBeVisible();
-    // Hành động chính thống nhất: "Quay video"
-    const cta = clickable(page, /^Quay video$/).first();
+    // Hành động chính: tự đánh dấu "Xong rồi"; nhờ xác nhận (quay video) là tùy chọn
+    await expect(clickable(page, /^Xong rồi$/).first()).toBeVisible();
+    const cta = clickable(page, /^(Nhờ xác nhận|Chờ duyệt)$/).first();
     await expect(cta).toBeVisible();
     expect(await cta.getAttribute("href"), "Không đưa dữ liệu cá nhân lên URL").not.toMatch(/user|email/i);
   });
@@ -67,7 +68,8 @@ test.describe("Chi tiết kỹ năng", () => {
     await expect(page.getByLabel(/Hiếm/).or(page.getByText(/^Hiếm$/)).first()).toBeVisible();
     await expect(page.getByText(/đang luyện/i).first()).toBeVisible();
     // Người dùng không thấy "Cấp N": tiến độ là thanh mốc 3/5 + tên mốc
-    await expect(page.getByRole("progressbar", { name: /Xong 3 trên 5 mốc/ }).first()).toBeVisible();
+    // seed D73: minhhoang tự đánh dấu thêm mốc 4 → tiến độ 4/5 (đã công nhận 3)
+    await expect(page.getByRole("progressbar", { name: /Xong [34] trên 5 mốc/ }).first()).toBeVisible();
     await expect(page.getByText(/Cấp \d/)).toHaveCount(0);
     for (const m of ["Ra khói", "Than hồng", "Thành ngọn", "Dưới 5 phút", "Tự chế"]) {
       // tên mốc kèm trạng thái cho trình đọc màn hình (", đã xong" / ", mốc tiếp theo")
@@ -84,8 +86,9 @@ test.describe("Chi tiết kỹ năng", () => {
     }
   });
 
-  test("hành động chính là quay video cho mốc kế tiếp", async ({ page }) => {
-    await expect(clickable(page, /^Quay video$/)).toHaveCount(1);
+  test("hành động chính là đánh dấu xong mốc kế tiếp, nhờ xác nhận là tùy chọn", async ({ page }) => {
+    await expect(clickable(page, /^Xong rồi$/)).toHaveCount(1);
+    await expect(clickable(page, /^(Nhờ xác nhận|Chờ duyệt)$/).first()).toBeVisible();
   });
 
   test("kỹ năng rủi ro cao có cảnh báo gọn", async ({ page }) => {
@@ -93,7 +96,7 @@ test.describe("Chi tiết kỹ năng", () => {
   });
 
   test("luật duyệt nằm sau nút thông tin (ⓘ), không hiện sẵn", async ({ page }) => {
-    const info = page.getByRole("button", { name: /^Cách |Thông tin|Giải thích/ });
+    const info = page.getByRole("button", { name: /^Cách |Thông tin|Giải thích|là gì$/ });
     test.skip((await info.count()) === 0, "Chưa có nút ⓘ trên màn chi tiết");
     await info.first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
