@@ -7,9 +7,9 @@ Cập nhật: 2026-11-12
 | 0. Khung monorepo, DB, layout | Xong |
 | 1. Hồ sơ và kỹ năng | Xong |
 | 2. Vòng lặp xác thực | Xong |
-| 3. Xã hội và an toàn | Xong (chờ qa cập nhật 4 test theo trang 404 mới) |
-| 4. Cộng đồng góp ý | domain/api/ui xong; qa đang viết e2e |
-| 5. Sẵn sàng triển khai demo | DEPLOY.md, script Neon, build production cục bộ xong; qa chạy e2e cuối |
+| 3. Xã hội và an toàn | Xong |
+| 4. Cộng đồng góp ý | Xong |
+| 5. Sẵn sàng triển khai demo | Xong |
 
 ## Bước 0 — xong
 - pnpm workspaces + Turborepo; `apps/web`, `packages/{db,domain,validation,api}`.
@@ -37,12 +37,20 @@ Cập nhật: 2026-11-12
 - Trang chủ (nhiệm vụ ngày, chuỗi ngày, feed, cheer), Thử thách (thử thách tuần, đấu 1v1, chờ duyệt ẩn danh), Hồ sơ người khác + theo dõi + nhắn tin + trao đổi kỹ năng (/swaps), Thông báo, Quản trị biên tập viên (báo cáo, xử phạt, thu hồi level, trùng hash, kháng nghị).
 - e2e: thu hồi level (level hạ, XP âm, −15 uy tín người duyệt, không xóa bản ghi), quyền admin, nhắn tin, đấu 1v1. 61/61 xanh 2 lần (chế độ E2E_PROD=1).
 
-## Giai đoạn 4–5 (đang chốt)
+## Giai đoạn 4–5 — xong
 - domain: đề xuất kỹ năng mới, sửa tiêu chí có trọng số, closeExpiredProposals, người duyệt dự phòng (D68), recomputeUserCaches. 93 test.
 - api: router proposal.*, admin.proposals; header bảo mật, vercel.json. 41 test.
 - ui: form đề xuất, danh sách/chi tiết đề xuất, bỏ phiếu trên Chi tiết kỹ năng, quản trị đề xuất; PWA (icon, service worker offline), giao diện sáng "giấy sổ tay", trạng thái rỗng/lỗi/đang tải.
 - lead: DEPLOY.md, `pnpm db:deploy:remote`, build production cục bộ chạy được.
 
+## Kiểm tra cuối (2026-11-12)
+- `pnpm check`: lint + typecheck xanh; 152 unit test (domain 93, api 41, validation 18).
+- `E2E_PROD=1 pnpm e2e`: 72/72 Playwright (giai đoạn 1–5), xanh nhiều lần liên tiếp.
+- `pnpm build` + `next start` cục bộ: chạy được; cron không secret → 401, đăng nhập dev tắt ở production, có CSP.
+
 ## Lỗi còn tồn tại
-- Bỏ phiếu sửa tiêu chí chưa có nút (Giai đoạn 4). Vài liên kết tới màn giai đoạn sau còn 404 (/proof/new?skill=, /skills/new, /u/<handle>).
+- Trang "không tìm thấy" trả HTTP 200 thay vì 404 ở các segment có `loading.tsx` (do streaming); nội dung vẫn chặn đúng và có `noindex`. Sửa sau: kiểm tồn tại/quyền ở `layout.tsx`.
+- Chưa chạy thử thật trên Vercel + Neon + R2 (cần tài khoản) — làm theo docs/DEPLOY.md.
+- Hash video là SHA-256 (D20); perceptual hash để bản chính thức.
+- DB dev `skillverse` còn dữ liệu thử của các agent; `SEED_RESET=1 pnpm db:seed` để làm sạch.
 - Ổ đĩa máy dev còn ~5 GB.
