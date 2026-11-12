@@ -21,7 +21,7 @@ test.describe("Cây kỹ năng", () => {
     for (const name of ["Sinh tồn cơ bản", "Nhóm lửa", "Lửa bằng que", "Lọc nước", "Sống sót 72 giờ"]) {
       await expect(clickable(page, new RegExp(name)).first(), `Thiếu nút "${name}"`).toBeVisible();
     }
-    for (const legend of ["Đã xong", "Đang luyện", "Chưa mở"]) {
+    for (const legend of ["Đã xác nhận", "Tự đánh dấu", "Chưa mở"]) {
       await expect(page.getByText(legend, { exact: true }).first()).toBeVisible();
     }
   });
