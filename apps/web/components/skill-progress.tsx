@@ -20,16 +20,19 @@ export function SkillProgressRow({
     name: string;
     category: { slug: string };
     rarity: Rarity;
+    /** Mốc đã được công nhận (video). */
     level: number;
+    /** Tiến độ hiển thị: tự đánh dấu hoặc được công nhận. */
+    selfLevel: number;
+    selfLevelTitle: string | null;
     maxLevel: number;
-    levelTitle: string | null;
   };
   pending?: boolean;
   verifiedByCount?: number;
   patchSize?: number;
 }) {
-  const done = s.level > 0;
-  const current = done ? milestoneName(s.levelTitle, s.level) : null;
+  const done = s.selfLevel > 0;
+  const current = done ? milestoneName(s.selfLevelTitle, s.selfLevel) : null;
   return (
     <Link
       href={`/skills/${s.slug}`}
@@ -38,7 +41,7 @@ export function SkillProgressRow({
       <LevelPatch
         categorySlug={s.category.slug}
         rarity={s.rarity}
-        state={done ? "earned" : "practicing"}
+        state={s.level > 0 ? "earned" : "practicing"}
         icon={skillIcon(s.slug, s.category.slug)}
         size={patchSize}
         label={s.name}
@@ -70,7 +73,7 @@ export function SkillProgressRow({
             "Chưa xong mốc nào"
           )}
         </span>
-        <MilestoneBar value={s.level} max={s.maxLevel} showCount showNext={false} />
+        <MilestoneBar value={s.selfLevel} max={s.maxLevel} showCount showNext={false} />
       </div>
     </Link>
   );

@@ -4,7 +4,8 @@ import { ChevronRight, Flame, ShieldCheck } from "lucide-react";
 import { getServerCaller } from "@/lib/server/trpc";
 import { AppHeader } from "@/components/app-header";
 import { InfoSheet } from "@/components/ui/sheet";
-import { NextMilestoneCard, pickNextSkill } from "@/components/next-milestone";
+import { NextMilestoneCard } from "@/components/next-milestone";
+import { pickNextSkill } from "@/lib/next-skill";
 import { QuestList } from "./quest-list";
 import { Feed } from "./feed";
 

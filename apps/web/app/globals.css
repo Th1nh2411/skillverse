@@ -218,3 +218,39 @@ body {
     opacity: 1;
   }
 }
+
+/* Đánh dấu xong mốc: dấu ✓ nảy nhẹ + vòng chỉ lan ra (chỉ khi người dùng bấm) */
+.tick-pop {
+  animation: tick-pop 380ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+@keyframes tick-pop {
+  from {
+    transform: scale(0.6);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.tick-burst {
+  border: 2px dashed var(--color-accent);
+  animation: tick-burst 600ms ease-out forwards;
+}
+@keyframes tick-burst {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tick-pop,
+  .tick-burst {
+    animation: none;
+  }
+  .tick-burst {
+    display: none;
+  }
+}

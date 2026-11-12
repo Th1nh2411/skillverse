@@ -68,10 +68,12 @@ async function PickSkill() {
                 />
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="truncate text-[15px] font-semibold">{s.name}</span>
-                  <span className="truncate text-[13px] text-muted">
-                    Mốc tiếp: <b className="font-semibold text-text">{milestoneName(s.nextLevelTitle, s.level + 1)}</b>
-                  </span>
-                  <MilestoneBar value={s.level} max={s.maxLevel} />
+                  {verifyTitle(s) ? (
+                    <span className="truncate text-[13px] text-muted">
+                      Nhờ xác nhận: <b className="font-semibold text-text">{verifyTitle(s)}</b>
+                    </span>
+                  ) : null}
+                  <MilestoneBar value={s.selfLevel} max={s.maxLevel} showNext={false} />
                 </span>
                 <ChevronRight size={18} className="text-muted" aria-hidden />
               </Link>
@@ -156,4 +158,11 @@ async function Compose({ slug, challengeId }: { slug: string; challengeId?: stri
       }}
     />
   );
+}
+
+/** Tên mốc cần xác nhận (level + 1). Hồ sơ trả tên mốc theo tiến độ tự đánh dấu, nên suy ra khi có thể. */
+function verifyTitle(s: { level: number; selfLevel: number; selfLevelTitle: string | null; nextLevelTitle: string | null }) {
+  if (s.selfLevel === s.level) return s.nextLevelTitle;
+  if (s.selfLevel === s.level + 1) return s.selfLevelTitle;
+  return null;
 }

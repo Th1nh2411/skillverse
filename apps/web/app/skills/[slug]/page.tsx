@@ -1,29 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ArrowRight,
-  Check,
   ChevronRight,
-  Hourglass,
-  Lightbulb,
-  Lock,
   Plus,
   ShieldAlert,
   TriangleAlert,
   Users,
-  Video,
-  Zap,
 } from "lucide-react";
 import type { RouterOutputs } from "@skillverse/api";
 import { getServerCaller } from "@/lib/server/trpc";
 import { orNotFound } from "@/lib/server-errors";
 import { BackButton } from "@/components/ui/back-button";
-import { ButtonLink } from "@/components/ui/button";
 import { LevelPatch } from "@/components/ui/level-patch";
-import { MilestoneBar } from "@/components/ui/milestone";
 import { CriteriaVote } from "@/components/criteria-vote";
-import { MilestoneRulesInfo } from "@/components/milestone-rules";
-import { SummitArt } from "@/components/illustrations";
+import { SaveButton } from "@/components/save-button";
+import { MilestoneTrail } from "./milestone-trail";
 import { InfoSheet } from "@/components/ui/sheet";
 import { milestoneName, titleAt } from "@/lib/milestone";
 import { formatNumber, skillIcon } from "@/lib/skill-visual";
@@ -44,10 +35,8 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
   const api = await getServerCaller();
   const d = await orNotFound(api.skill.detail({ slug }));
   const myLevel = d.myLevel ?? 0;
-  const nextLevel = myLevel < d.maxLevel ? myLevel + 1 : null;
-  const next = d.levels.find((l) => l.level === nextLevel) ?? null;
+  const verifyRef = d.levels.find((l) => l.level === myLevel + 1) ?? d.levels[d.levels.length - 1];
   const icon = skillIcon(d.slug, d.category.slug);
-  const allDone = nextLevel === null;
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[560px] flex-col pb-12">
@@ -55,24 +44,29 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
         <BackButton fallback="/discover" />
         <Link
           href={`/skills/tree/${d.category.slug}`}
-          className="inline-flex min-h-11 items-center px-1 text-[14px] font-semibold text-muted hover:text-text"
+          className="inline-flex min-h-11 flex-1 items-center px-1 text-[14px] font-semibold text-muted hover:text-text"
         >
           {d.category.name}
         </Link>
+        <SaveButton targetType="skill" targetId={d.id} saved={d.saved} />
       </header>
 
       <section className="flex items-center gap-4 px-5 pt-2">
         <LevelPatch
           categorySlug={d.category.slug}
           rarity={d.rarity}
-          state={myLevel > 0 ? "earned" : d.myPrerequisitesMet === false ? "locked" : "practicing"}
+          state={myLevel > 0 ? "earned" : d.myPrerequisitesMet === false && d.selfLevel === 0 ? "locked" : "practicing"}
           icon={icon}
           size={76}
           label={d.name}
         />
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h1 className="font-display text-[27px] font-extrabold leading-[1.15]">{d.name}</h1>
-          <MilestoneBar value={myLevel} max={d.maxLevel} showCount showNext={!allDone} />
+          {d.selfLevel > 0 ? (
+            <p className="text-[14px] text-muted">
+              Đang ở mốc <b className="font-semibold text-text">{milestoneName(d.selfLevelTitle, d.selfLevel)}</b>
+            </p>
+          ) : null}
         </div>
       </section>
 
@@ -94,179 +88,30 @@ export default async function SkillDetailPage({ params }: { params: Promise<{ sl
       </div>
       {d.description ? <p className="line-clamp-2 px-5 pt-2 text-[14px] leading-snug text-muted">{d.description}</p> : null}
 
-      <section aria-labelledby="milestones" className="mt-6 flex flex-col">
-        <div className="flex items-center gap-1 px-5">
-          <h2 id="milestones" className="text-[17px] font-bold">
-            {d.maxLevel} mốc
-          </h2>
-          <RulesInfo levels={d.levels} next={next} />
-        </div>
-
-        <ol className="mt-2 flex flex-col px-3">
-          {d.levels.map((lv, i) => (
-            <MilestoneItem
-              key={lv.level}
-              lv={lv}
-              last={i === d.levels.length - 1}
-              state={lv.level <= myLevel ? "done" : lv.level === nextLevel ? "next" : "locked"}
-              action={lv.level === nextLevel ? <NextAction d={d} /> : null}
-            />
-          ))}
-        </ol>
-
-        {allDone ? (
-          <div className="mx-5 mt-4 flex items-center gap-4 rounded-[var(--radius-card)] border border-dashed border-border px-4 py-3">
-            <SummitArt size={84} className="shrink-0 text-muted" />
-            <p className="text-[15px] font-semibold">Xong cả {d.maxLevel} mốc</p>
-          </div>
-        ) : null}
-      </section>
+      <MilestoneTrail
+        slug={d.slug}
+        categorySlug={d.category.slug}
+        levels={d.levels.map((l) => ({
+          skillLevelId: l.skillLevelId,
+          level: l.level,
+          title: l.title,
+          task: l.task,
+          description: l.description,
+          xpReward: l.xpReward,
+          checked: l.checked,
+          verified: l.verified,
+        }))}
+        verifiedLevel={myLevel}
+        pendingProofId={d.myPendingProof?.proofId ?? null}
+        prerequisitesMet={d.myPrerequisitesMet}
+        reviewers={verifyRef?.minReviewers ?? 3}
+        reviewerTitle={verifyRef ? titleAt(d.levels, verifyRef.minReviewerLevel) : null}
+      />
 
       {d.openProposals.length > 0 || d.levels.length > 0 ? (
         <Proposals slug={d.slug} proposals={d.openProposals} levels={d.levels} />
       ) : null}
     </div>
-  );
-}
-
-/** Luật chung của việc duyệt, giấu sau ⓘ. */
-function RulesInfo({ levels, next }: { levels: Level[]; next: Level | null }) {
-  const ref = next ?? levels[levels.length - 1];
-  const reviewers = ref?.minReviewers ?? 3;
-  const reviewerTitle = ref ? titleAt(levels, ref.minReviewerLevel) : null;
-  return (
-    <MilestoneRulesInfo reviewers={reviewers} reviewerTitle={reviewerTitle} />
-  );
-}
-
-function MilestoneItem({
-  lv,
-  state,
-  last,
-  action,
-}: {
-  lv: Level;
-  state: "done" | "next" | "locked";
-  last: boolean;
-  action: React.ReactNode;
-}) {
-  const name = milestoneName(lv.title, lv.level);
-  const task = lv.task;
-  const guide = lv.description;
-  const stateLabel = state === "done" ? "đã xong" : state === "next" ? "mốc tiếp theo" : "chưa tới";
-
-  const node = (
-    <span className="relative flex w-9 shrink-0 flex-col items-center self-stretch">
-      <span
-        className={`relative z-10 mt-2.5 flex size-8 items-center justify-center rounded-full ${
-          state === "done"
-            ? "bg-trail text-bg"
-            : state === "next"
-              ? "border-2 border-accent bg-bg text-accent"
-              : "border-2 border-dashed border-border-strong bg-bg text-muted"
-        }`}
-      >
-        {state === "done" ? (
-          <Check size={18} strokeWidth={3} aria-hidden />
-        ) : state === "next" ? (
-          <ArrowRight size={17} strokeWidth={2.6} aria-hidden />
-        ) : (
-          <Lock size={14} aria-hidden />
-        )}
-      </span>
-      {!last ? (
-        <span
-          aria-hidden
-          className={`-mb-2.5 flex-1 border-l-2 ${state === "done" ? "border-trail/70" : "border-dashed border-border-strong"}`}
-        />
-      ) : null}
-    </span>
-  );
-
-  const head = (
-    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-      <span className={`text-[16px] font-bold leading-snug ${state === "locked" ? "text-muted" : "text-text"}`}>
-        {name}
-        <span className="sr-only">, {stateLabel}</span>
-      </span>
-      {task ? (
-        <span className={`line-clamp-2 text-[14px] leading-snug ${state === "next" ? "text-text" : "text-muted"}`}>{task}</span>
-      ) : null}
-    </span>
-  );
-
-  if (state === "next") {
-    return (
-      <li className="flex gap-2">
-        {node}
-        <div className="mb-3 flex min-w-0 flex-1 flex-col gap-3 rounded-[var(--radius-card)] bg-surface p-3.5 outline outline-1 outline-accent-line">
-          <div className="flex items-start gap-2">
-            {head}
-            <span className="tabular inline-flex shrink-0 items-center gap-0.5 pt-0.5 text-[13px] font-bold text-accent">
-              <Zap size={13} aria-hidden />+{lv.xpReward}
-              <span className="sr-only">XP</span>
-            </span>
-          </div>
-          {guide ? (
-            <p className="flex items-start gap-2 text-[14px] leading-relaxed text-muted">
-              <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent" aria-label="Cách làm" />
-              <span>{guide}</span>
-            </p>
-          ) : null}
-          {action}
-        </div>
-      </li>
-    );
-  }
-
-  return (
-    <li className="flex gap-2">
-      {node}
-      {guide ? (
-        <details className="group mb-1 min-w-0 flex-1">
-          <summary className="flex min-h-14 cursor-pointer list-none items-start gap-2 rounded-[12px] px-1 py-2 hover:bg-surface [&::-webkit-details-marker]:hidden">
-            {head}
-            <ChevronRight
-              size={18}
-              className="mt-1 shrink-0 text-muted transition-transform group-open:rotate-90"
-              aria-label="Cách làm"
-            />
-          </summary>
-          <p className="flex items-start gap-2 px-1 pb-3 text-[14px] leading-relaxed text-muted">
-            <Lightbulb size={16} className="mt-0.5 shrink-0" aria-hidden />
-            <span>{guide}</span>
-          </p>
-        </details>
-      ) : (
-        <div className="mb-1 flex min-h-14 min-w-0 flex-1 px-1 py-2">{head}</div>
-      )}
-    </li>
-  );
-}
-
-/** Hành động chính duy nhất, đặt ngay trên mốc kế tiếp. */
-function NextAction({ d }: { d: Detail }) {
-  if (d.myPendingProof) {
-    return (
-      <ButtonLink href={`/proofs/${d.myPendingProof.proofId}`} variant="secondary" className="w-full">
-        <Hourglass size={18} aria-hidden />
-        Chờ duyệt
-      </ButtonLink>
-    );
-  }
-  if (d.myPrerequisitesMet === false) {
-    return (
-      <ButtonLink href={`/skills/tree/${d.category.slug}`} variant="secondary" className="w-full">
-        <Lock size={18} aria-hidden />
-        Xem điều kiện
-      </ButtonLink>
-    );
-  }
-  return (
-    <ButtonLink href={`/proof/new?skill=${d.slug}`} className="w-full">
-      <Video size={20} aria-hidden />
-      Quay video
-    </ButtonLink>
   );
 }
 
@@ -294,7 +139,7 @@ function Proposals({ slug, proposals, levels }: { slug: string; proposals: Propo
               <Link href={`/proposals/${p.id}`} className="flex min-h-11 items-center gap-2 text-[14px] leading-snug hover:underline">
                 <span className="flex-1">
                   {p.targetLevel ? <b className="font-semibold">{titleAt(levels, p.targetLevel)}: </b> : null}
-                  {(p.summary ?? p.proposedCriteria[0]?.text ?? "").replace(/^Cấp\s*\d+\s*:\s*/i, "")}
+                  {(p.summary ?? p.proposedCriteria[0]?.text ?? "").replace(/^(Cấp\s*\d+|Mốc [^:]{1,40})\s*:\s*/i, "")}
                 </span>
                 <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden />
               </Link>

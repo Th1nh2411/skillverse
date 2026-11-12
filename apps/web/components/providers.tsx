@@ -5,6 +5,7 @@ import superjson from "superjson";
 import { useState } from "react";
 import type { AppRouter } from "@skillverse/api";
 import { TRPCProvider } from "@/lib/trpc";
+import { ToastProvider } from "@/components/ui/toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -18,7 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </TRPCProvider>
     </QueryClientProvider>
   );
