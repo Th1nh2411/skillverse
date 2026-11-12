@@ -13,3 +13,4 @@ playwright-report
 .next-*
 apps/web/screenshots/
 apps/web/e2e/.results/
+apps/web/next-env.d.ts

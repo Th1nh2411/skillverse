@@ -136,9 +136,9 @@ Màn: Đề xuất kỹ năng mới (NewSkill.html), bỏ phiếu sửa tiêu ch
 
 ## Giai đoạn 5 — Sẵn sàng triển khai demo
 ### lead
-- [ ] L5.1 docs/DEPLOY.md: Neon (pooled + direct URL), R2 (bucket, API token, CORS cho PUT từ trình duyệt), Vercel (thư mục gốc apps/web, biến môi trường, build command), Auth.js Google OAuth + SMTP magic link, GitHub Actions secret CRON_SECRET + biến APP_URL, checklist sau triển khai
-- [ ] L5.2 Script `pnpm db:deploy:neon` (migrate deploy + seed lên Neon từ env)
-- [ ] L5.3 Build production chạy được cục bộ (`pnpm build && pnpm --filter @skillverse/web start`)
+- [x] L5.1 docs/DEPLOY.md: Neon (pooled + direct URL), R2 (bucket, API token, CORS cho PUT từ trình duyệt), Vercel (thư mục gốc apps/web, biến môi trường, build command), Auth.js Google OAuth + SMTP magic link, GitHub Actions secret CRON_SECRET + biến APP_URL, checklist sau triển khai
+- [x] L5.2 Script `pnpm db:deploy:remote` (migrate deploy + seed lên Neon từ env)
+- [x] L5.3 Build production chạy được cục bộ (`pnpm build && pnpm --filter @skillverse/web start`)
 
 ### api
 - [x] (api) A5.1 Kiểm tra cấu hình production: AUTH_DEV_LOGIN bị từ chối khi NODE_ENV=production trừ khi bật rõ; header bảo mật; cron.yml dùng secret; R2 presigned hoạt động với endpoint R2 (path-style, region auto)
