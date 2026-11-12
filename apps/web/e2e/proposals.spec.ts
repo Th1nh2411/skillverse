@@ -27,7 +27,7 @@ test.describe.serial("Đề xuất kỹ năng mới (Q4.1)", () => {
     await restore?.();
   });
 
-  test("validate: dưới 3 cấp bị chặn; chưa đăng nhập bị chặn", async ({ request }) => {
+  test("validate: dưới 3 mốc bị chặn; chưa đăng nhập bị chặn", async ({ request }) => {
     const anon = await trpcMutation(request, null, "proposal.createNewSkill", { name: NAME, categorySlug: "thu-cong", levels: [] });
     skipIfNoProcedure(anon, "proposal.createNewSkill");
     expect(anon.status).toBe(401);
@@ -35,7 +35,10 @@ test.describe.serial("Đề xuất kỹ năng mới (Q4.1)", () => {
     const r = await trpcMutation(request, token, "proposal.createNewSkill", {
       name: NAME,
       categorySlug: "thu-cong",
-      levels: [[{ text: "Gấp được hạc giấy" }], [{ text: "Gấp được hoa sen" }]],
+      levels: [
+        { title: "Hạc giấy", criteria: [{ text: "Gấp được hạc giấy" }] },
+        { title: "Hoa sen", criteria: [{ text: "Gấp được hoa sen" }] },
+      ],
     });
     expect(r.status).toBe(400);
   });
@@ -43,7 +46,12 @@ test.describe.serial("Đề xuất kỹ năng mới (Q4.1)", () => {
   test("tạo đề xuất → đủ người ủng hộ → chờ biên tập", async ({ request }) => {
     restore = await setConfig("new_skill_support_needed", { supporters: 3 });
     const author = await devToken(request, "minhhoang");
-    const levels = ["Gấp hạc giấy trong 3 phút", "Gấp hoa sen 8 cánh", "Gấp rồng từ một tờ giấy"].map((t) => [{ text: t }]);
+    // D72: mỗi mốc có tên + việc cần làm (tiêu chí) + hướng dẫn tùy chọn
+    const levels = [
+      ["Hạc giấy", "Gấp hạc giấy trong 3 phút"],
+      ["Hoa sen", "Gấp hoa sen 8 cánh"],
+      ["Rồng", "Gấp rồng từ một tờ giấy"],
+    ].map(([title, t]) => ({ title, criteria: [{ text: t }] }));
     const r = await trpcMutation(request, author, "proposal.createNewSkill", {
       name: NAME,
       categorySlug: "thu-cong",

@@ -83,8 +83,8 @@ test.describe.serial("Nộp bằng chứng → 3 người duyệt Đạt → Lê
   test("người nộp thấy Lên cấp", async ({ page }) => {
     test.skip(!proofId, "Bước nộp chưa chạy được");
     await loginAs(page, SUBMITTER.handle);
-    await gotoScreen(page, `/level-up/${proofId}`, "Lên cấp");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Lên cấp 4/);
+    await gotoScreen(page, `/level-up/${proofId}`, "Xong mốc");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Xong mốc /);
     await expect(page.getByText(new RegExp(SKILL.name)).first()).toBeVisible();
     await expect(page.getByText(/\+\s*\d+\s*XP/).first()).toBeVisible();
     const share = page.getByRole("button", { name: /^Chia sẻ thành tích$/ });

@@ -28,7 +28,7 @@ const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
  */
 export async function submitProofViaUi(page: Page, opts: { handle: SeedHandle; skillSlug: string; skillName: string; file: string }) {
   await loginAs(page, opts.handle);
-  await gotoScreen(page, `/proof/new?skill=${opts.skillSlug}`, "Đăng bằng chứng");
+  await gotoScreen(page, `/proof/new?skill=${opts.skillSlug}`, "Gửi video");
   const fileInput = page.locator('input[type="file"]');
   test.skip((await fileInput.count()) === 0, "Màn Đăng bằng chứng chưa có ô chọn file (U2.1) — chờ ui");
 
@@ -39,11 +39,11 @@ export async function submitProofViaUi(page: Page, opts: { handle: SeedHandle; s
   await fileInput.first().setInputFiles(opts.file);
   const safety = page.getByRole("checkbox", { name: /an toàn/i });
   if ((await safety.count()) > 0) await safety.first().check();
-  const caption = page.getByRole("textbox", { name: /^Mô tả/ });
+  const caption = page.getByRole("textbox", { name: /^(Mô tả|Ghi chú)/ });
   if ((await caption.count()) > 0) await caption.first().fill("Bằng chứng e2e");
 
-  const send = page.getByRole("button", { name: /^Gửi xác thực$/ });
-  await expect(send, "Nút Gửi xác thực phải bật sau khi upload xong").toBeEnabled({ timeout: 60_000 });
+  const send = page.getByRole("button", { name: /^Gửi video$/ });
+  await expect(send, "Nút Gửi video phải bật sau khi chọn video").toBeEnabled({ timeout: 60_000 });
   await send.click();
   // Thành công: chuyển sang /proofs/<id> (trang trạng thái) hoặc báo "Đã gửi xác thực" tại chỗ
   await expect
@@ -80,8 +80,8 @@ export async function reviewViaUi(
     const marks = page.getByRole("radio", { name: mark }).or(page.getByRole("button", { name: mark }));
     const n = await marks.count();
     expect(n, "Không có nút chấm Đạt/Chưa đạt theo tiêu chí").toBeGreaterThan(0);
-    // Trước khi chấm đủ, nút gửi bị khóa ("Chấm k/n tiêu chí")
-    await expect(page.getByRole("button", { name: /^Chấm \d+\/\d+ tiêu chí$/ })).toBeDisabled();
+    // Trước khi chấm đủ, nút gửi bị khóa ("Chọn kết quả" hoặc "Chấm k/n")
+    await expect(page.getByRole("button", { name: /^(Chọn kết quả|Chấm \d+\/\d+)$/ })).toBeDisabled();
     for (let i = 0; i < n; i++) {
       await marks.nth(i).click();
       await expect(marks.nth(i)).toHaveAttribute("aria-pressed", "true");
@@ -90,7 +90,7 @@ export async function reviewViaUi(
     const comment = page.getByRole("textbox", { name: /nhận xét/i });
     if ((await comment.count()) > 0) await comment.first().fill(opts.verdict === "pass" ? "Rõ ràng, đạt tiêu chí." : "Chưa đạt thời gian yêu cầu.");
 
-    const send = opts.verdict === "pass" ? /^Xác nhận đạt cấp \d+$/ : /^Gửi phiếu chưa đạt$/;
+    const send = opts.verdict === "pass" ? /^Gửi: Đạt$/ : /^Gửi: Chưa đạt$/;
     await page.getByRole("button", { name: send }).click();
     await expect(page.getByText(/Đã gửi phiếu/).first()).toBeVisible({ timeout: 30_000 });
   } finally {

@@ -18,7 +18,7 @@ test.describe("Onboarding người mới", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/giỏi điều gì/i);
     await expectBasicA11y(page, "Onboarding - chọn kỹ năng");
 
-    const next = page.getByRole("button", { name: /^(Tiếp tục|Đã chọn \d+\/\d+|Xong|Hoàn tất|Bắt đầu thôi)$/ });
+    const next = page.getByRole("button", { name: /^(Tiếp tục|Đã chọn \d+\/\d+|Xong|Hoàn tất|Bắt đầu thôi|Để sau)$/ });
 
     // Chọn 2 kỹ năng: chưa đủ, chưa được đi tiếp (quy tắc ≥ 3)
     for (const name of PICKS.slice(0, 2)) await clickable(page, name).first().click();

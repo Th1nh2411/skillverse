@@ -21,24 +21,25 @@ test.describe("Cây kỹ năng", () => {
     for (const name of ["Sinh tồn cơ bản", "Nhóm lửa", "Lửa bằng que", "Lọc nước", "Sống sót 72 giờ"]) {
       await expect(clickable(page, new RegExp(name)).first(), `Thiếu nút "${name}"`).toBeVisible();
     }
-    for (const legend of ["Đã đạt", "Đang luyện", "Chưa mở"]) {
+    for (const legend of ["Đã xong", "Đang luyện", "Chưa mở"]) {
       await expect(page.getByText(legend, { exact: true }).first()).toBeVisible();
     }
   });
 
   test("trạng thái nút đọc được bằng trình đọc màn hình", async ({ page }) => {
-    // Trạng thái không chỉ bằng màu: tên truy cập của nút phải chứa cấp hiện tại / "chưa mở"
-    await expect(clickable(page, /Sinh tồn cơ bản.*(cấp 5|đã đạt)/i).first()).toBeVisible();
-    await expect(clickable(page, /Lửa bằng que.*(cấp 3|đang luyện)/i).first()).toBeVisible();
+    // Trạng thái không chỉ bằng màu: tên truy cập của nút phải chứa tiến độ mốc / "chưa mở"
+    await expect(clickable(page, /Sinh tồn cơ bản.*đã xong/i).first()).toBeVisible();
+    await expect(clickable(page, /Lửa bằng que.*xong 3\/5 mốc/i).first()).toBeVisible();
     await expect(clickable(page, /Sống sót 72 giờ.*chưa mở/i).first()).toBeVisible();
   });
 
-  test("chọn nút đang luyện thấy yêu cầu cấp kế tiếp", async ({ page }) => {
+  test("chọn nút đang luyện thấy mốc kế tiếp", async ({ page }) => {
     await clickable(page, /Lửa bằng que/).first().click();
-    await expect(page.getByText(/Yêu cầu lên cấp 4|cấp 4/).first()).toBeVisible();
-    await expect(page.getByText("Lửa thành ngọn dưới 5 phút, video liên tục")).toBeVisible();
-    // SKILL.md: tên hành động thống nhất "Gửi xác thực"
-    const cta = clickable(page, /Gửi xác thực|Đăng bằng chứng/).first();
+    await expect(page.getByText(/Mốc tiếp/).first()).toBeVisible();
+    await expect(page.getByText("Dưới 5 phút").first()).toBeVisible();
+    await expect(page.getByText("Thành ngọn dưới 5 phút, có nước dập lửa bên cạnh").first()).toBeVisible();
+    // Hành động chính thống nhất: "Quay video"
+    const cta = clickable(page, /^Quay video$/).first();
     await expect(cta).toBeVisible();
     expect(await cta.getAttribute("href"), "Không đưa dữ liệu cá nhân lên URL").not.toMatch(/user|email/i);
   });
@@ -59,26 +60,31 @@ test.describe("Chi tiết kỹ năng", () => {
     await gotoScreen(page, "/skills/lua-bang-que", "Chi tiết kỹ năng");
   });
 
-  test("hiện tên, độ hiếm, số liệu và 5 cấp với tiêu chí phiên bản hiện tại", async ({ page }) => {
+  test("hiện tên, độ hiếm, số liệu và 5 mốc với việc cần làm phiên bản hiện tại", async ({ page }) => {
     await expectSingleH1(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Lửa bằng que/);
     // holder_count 214 → Hiếm (ngưỡng app_config.rarity_thresholds)
     await expect(page.getByLabel(/Hiếm/).or(page.getByText(/^Hiếm$/)).first()).toBeVisible();
     await expect(page.getByText(/đang luyện/i).first()).toBeVisible();
-    await expect(page.getByText(/cấp 4/i).first()).toBeVisible();
+    // Người dùng không thấy "Cấp N": tiến độ là thanh mốc 3/5 + tên mốc
+    await expect(page.getByRole("progressbar", { name: /Xong 3 trên 5 mốc/ }).first()).toBeVisible();
+    await expect(page.getByText(/Cấp \d/)).toHaveCount(0);
+    for (const m of ["Ra khói", "Than hồng", "Thành ngọn", "Dưới 5 phút", "Tự chế"]) {
+      await expect(page.getByText(m, { exact: true }).first(), `Thiếu mốc "${m}"`).toBeVisible();
+    }
     for (const c of [
       "Tạo khói bằng que trong 10 phút",
       "Tạo than hồng, chuyển vào bùi nhùi",
       "Lửa cháy thành ngọn trong 8 phút",
-      "Lửa thành ngọn dưới 5 phút, video liên tục",
-      "Tự làm bộ dụng cụ từ cây tại chỗ",
+      "Thành ngọn dưới 5 phút, có nước dập lửa bên cạnh",
+      "Tự làm bộ que từ cây tại chỗ, thành ngọn dưới 5 phút",
     ]) {
-      await expect(page.getByText(c).first(), `Thiếu tiêu chí "${c}"`).toBeVisible();
+      await expect(page.getByText(c).first(), `Thiếu việc cần làm "${c}"`).toBeVisible();
     }
   });
 
-  test("hành động chính là thử lên cấp kế tiếp", async ({ page }) => {
-    await expect(clickable(page, /Thử lên cấp 4|Lên cấp 4|Gửi xác thực|Đăng bằng chứng/).first()).toBeVisible();
+  test("hành động chính là quay video cho mốc kế tiếp", async ({ page }) => {
+    await expect(clickable(page, /^Quay video$/)).toHaveCount(1);
   });
 
   test("kỹ năng rủi ro cao có cảnh báo gọn", async ({ page }) => {

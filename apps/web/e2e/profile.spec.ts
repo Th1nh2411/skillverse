@@ -27,7 +27,7 @@ test.describe("Hồ sơ", () => {
   });
 
   test("kỹ năng nổi bật có độ hiếm và trạng thái", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /Kỹ năng nổi bật/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Kỹ năng$/ })).toBeVisible();
     // Mở khóa thể thao: holder_count 38 < 50 → Huyền thoại (độ hiếm thể hiện bằng huy hiệu, có tên truy cập được)
     await expect(page.getByText("Mở khóa thể thao").first()).toBeVisible();
     await expect(page.getByLabel(/Huyền thoại/).or(page.getByText(/Huyền thoại/)).first()).toBeVisible();

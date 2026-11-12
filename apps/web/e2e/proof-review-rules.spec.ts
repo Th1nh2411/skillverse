@@ -97,7 +97,7 @@ test.describe.serial("Trượt, kháng nghị và quyền duyệt", () => {
     test.skip(!proofId, "Bước nộp chưa chạy được");
     await loginAs(page, SUBMITTER.handle);
     await gotoScreen(page, `/proofs/${proofId}`, "Trạng thái bằng chứng");
-    await expect(page.getByText(/Chưa đạt cấp 4/).first()).toBeVisible();
+    await expect(page.getByText(/^Chưa đạt$/).first()).toBeVisible();
     // Kết quả theo tiêu chí, không lộ người duyệt
     await expect(page.locator("body")).not.toContainText(/quocbao|thuha|ducanh|bientap|Quốc Bảo|Thu Hà|Đức Anh/);
 
